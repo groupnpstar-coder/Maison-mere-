@@ -1,3 +1,1090 @@
-<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Maison Mère</title>
-<style>body{margin:0;font-family:system-ui,sans-serif;background:#fff;color:#121211;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px;box-sizing:border-box}h1{font-family:Georgia,serif;font-weight:400;font-size:34px;margin:0 0 12px}p{color:#5A5955;margin:0}@media(prefers-color-scheme:dark){body{background:#111110;color:#F3F2EE}p{color:#A8A6A0}}</style></head>
-<body><div><h1>Maison Mère</h1><p>Ton argent ne bouge pas sans ton accord. L'application arrive bientôt.</p></div></body></html>
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Maison Mère</title>
+<meta name="description" content="Ton argent ne bouge pas sans ton accord. Construis au pays en toute confiance.">
+<meta name="theme-color" content="#121211">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Maison Mère">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+/* Layout: one mobile column, max 480px, black and white like a document; money states carry the only color. */
+:root{
+  --bg:#FFFFFF; --fg:#121211; --muted:#5A5955; --line:#E3E2DE; --tile:#F0EFEB;
+  --ink:#121211; --on-ink:#FFFFFF;
+  --ok:#1D6B45; --warn:#9A5B05; --bad:#A3271C; --held:#3F4E8C;
+  --display:Georgia, 'Times New Roman', serif;
+  --body:system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111110; --fg:#F3F2EE; --muted:#A8A6A0; --line:#2C2B29; --tile:#1D1C1A;
+  --ink:#F3F2EE; --on-ink:#111110;
+  --ok:#5FC08E; --warn:#E3A94A; --bad:#EE7D70; --held:#9DAAE8; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#111110; --fg:#F3F2EE; --muted:#A8A6A0; --line:#2C2B29; --tile:#1D1C1A;
+  --ink:#F3F2EE; --on-ink:#111110;
+  --ok:#5FC08E; --warn:#E3A94A; --bad:#EE7D70; --held:#9DAAE8; color-scheme:dark }
+html,body{height:100%}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-weight:400;font-size:15px;line-height:1.5}
+*{box-sizing:border-box}
+#app{max-width:480px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 24px}
+button,input,select,textarea{font-family:inherit;font-size:15px;color:var(--fg)}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+h1,h2{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;line-height:1.1}
+h1{font-size:34px} h2{font-size:26px}
+.label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:500}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.stack{display:flex;flex-direction:column;gap:16px}
+.stack-s{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;gap:10px;align-items:center}
+.between{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.top{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;padding-block:14px 10px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.brand{font-family:var(--display);font-size:20px;background:none;border:none;padding:6px 0}
+.seg{display:flex;border:1px solid var(--fg)}
+.seg button{border:none;background:var(--bg);padding:8px 12px;font-size:11px;letter-spacing:.1em;font-weight:500;min-height:36px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--on-ink)}
+.test{font-size:12px;color:var(--warn);border:1px solid var(--warn);padding:8px 10px;margin-top:12px}
+main{flex:1;padding-block:22px}
+.btn{min-height:50px;border:none;background:var(--ink);color:var(--on-ink);font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:500;padding:0 18px;width:100%}
+.btn.ghost{background:var(--bg);color:var(--fg);border:1px solid var(--fg)}
+.btn.sm{min-height:40px;width:auto;font-size:11px;padding:0 14px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.link{background:none;border:none;padding:8px 0;font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-weight:500;text-decoration:underline;text-underline-offset:4px;text-align:left}
+.field{display:flex;flex-direction:column;gap:6px}
+.field input,.field select,.field textarea{border:none;border-bottom:1px solid var(--fg);background:transparent;padding:10px 0;min-height:44px;border-radius:0;width:100%}
+.field textarea{border:1px solid var(--line);padding:10px;resize:vertical}
+.list{display:flex;flex-direction:column}
+.item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 0;border:none;border-bottom:1px solid var(--line);background:none;text-align:left;width:100%}
+.item .t{font-weight:500}
+.item>div{min-width:0}
+.pill{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;padding:4px 7px;border:1px solid currentColor;white-space:nowrap}
+.s-attente{color:var(--muted)} .s-bloque{color:var(--held)} .s-fait{color:var(--warn)} .s-paye{color:var(--ok)} .s-litige{color:var(--bad)} .s-rembourse{color:var(--muted)}
+.verified{color:var(--ok)} .unverified{color:var(--muted)}
+.tabs{display:flex;gap:20px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs button{border:none;background:none;padding:12px 0 10px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;border-bottom:2px solid transparent;white-space:nowrap}
+.tabs button[aria-selected="true"]{border-bottom-color:var(--fg);font-weight:600}
+.step{border:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:10px}
+.step.current{border-color:var(--fg)}
+.money{font-variant-numeric:tabular-nums;font-weight:500}
+.big{font-family:var(--display);font-size:38px;font-variant-numeric:tabular-nums}
+.bar{display:flex;height:8px;background:var(--tile)}
+.bar span{display:block;height:100%}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.photo{display:flex;flex-direction:column;gap:4px}
+.photo img{width:100%;aspect-ratio:1;object-fit:cover;background:var(--tile);display:block;max-width:100%}
+.photo span{font-size:10px;color:var(--muted);line-height:1.3}
+.bubble{max-width:80%;padding:10px 13px;font-size:14px;background:var(--tile);overflow-wrap:anywhere}
+.bubble.me{align-self:flex-end;background:var(--ink);color:var(--on-ink)}
+.meta{font-size:10px;color:var(--muted)}
+.empty{border:1px dashed var(--line);padding:22px;text-align:center;color:var(--muted);font-size:14px}
+.stars{display:flex;gap:6px}
+.stars button{width:44px;height:44px;border:1px solid var(--fg);background:var(--bg);font-weight:600}
+.stars button[aria-pressed="true"]{background:var(--ink);color:var(--on-ink)}
+.notice{border-left:2px solid var(--fg);padding:4px 0 4px 12px;font-size:13px;color:var(--muted)}
+footer{font-size:11px;color:var(--muted);text-align:center;padding-top:20px;border-top:1px solid var(--line)}
+.err{color:var(--bad);font-size:13px}
+.house{display:flex;gap:16px;align-items:center;border:1px solid var(--line);padding:14px}
+.house svg{width:120px;height:96px;flex-shrink:0}
+.house .msg{font-family:var(--display);font-size:20px;line-height:1.2}
+.check{display:flex;gap:12px;align-items:flex-start;padding:13px 0;border:none;border-bottom:1px solid var(--line);background:none;text-align:left;width:100%}
+.check .box{width:22px;height:22px;border:1px solid var(--fg);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.check[aria-pressed="true"] .box{background:var(--ink);color:var(--on-ink)}
+.check[aria-pressed="true"] .txt{color:var(--muted);text-decoration:line-through}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.stat{border:1px solid var(--line);padding:12px;display:flex;flex-direction:column;gap:2px}
+.stat b{font-family:var(--display);font-weight:400;font-size:26px;font-variant-numeric:tabular-nums}
+.progress{height:6px;background:var(--tile)}
+.progress span{display:block;height:100%;background:var(--ok)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.chips button{flex-shrink:0;min-height:38px;padding:0 14px;border:1px solid var(--fg);background:var(--bg);font-size:12px;letter-spacing:.06em}
+.chips button[aria-pressed="true"]{background:var(--ink);color:var(--on-ink)}
+.badges{display:flex;flex-wrap:wrap;gap:6px}
+.badge{font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;padding:3px 7px;background:var(--tile);color:var(--fg)}
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;text-align:center;font-size:11px}
+.days div{display:flex;flex-direction:column;gap:3px;align-items:center}
+.dot{width:14px;height:14px;border:1px solid var(--fg)}
+.dot.on{background:var(--ok);border-color:var(--ok)}
+.lang{border:1px solid var(--line);background:var(--bg);min-height:36px;padding:0 6px;font-size:12px}
+@media (prefers-reduced-motion:no-preference){.btn,.item{transition:opacity .15s}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="top">
+    <button class="brand" data-a="home">Maison Mère</button>
+    <div class="row" style="gap:8px">
+    <label for="langSel" class="label" style="position:absolute;left:-9999px">Langue</label>
+    <select id="langSel" class="lang"><option value="fr">FR</option><option value="en">EN</option><option value="pt">PT</option><option value="ln">LN</option></select>
+    <div class="seg" id="modeSeg" hidden>
+      <button data-a="mode" data-v="client" aria-pressed="true">Client</button>
+      <button data-a="mode" data-v="pro" aria-pressed="false">Pro</button>
+      <button data-a="mode" data-v="admin" aria-pressed="false" id="adminBtn" hidden>Admin</button>
+    </div>
+    </div>
+  </div>
+  <p class="test" id="testBanner">Version de test : l'argent est fictif, rien n'est réellement payé.</p>
+  <main id="main">
+    <div class="stack">
+      <h1>Ton argent ne bouge pas sans ton accord.</h1>
+      <p class="muted">Ouverture de l'application…</p>
+    </div>
+  </main>
+  <footer id="footRule">Chacun peut noter l'autre et arrêter le contrat si l'accord n'est pas respecté.</footer>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="config.js"></script>
+<script>
+(function(){
+const PAYS=['RD Congo','Angola','Congo-Brazzaville','Cameroun','Côte d\'Ivoire','Sénégal','Belgique','France','Chine','Russie','Brésil','Autre'];
+const METIERS=['Maçonnerie','Ingénieur civil','Électricité','Plomberie','Menuiserie','Carrelage','Peinture','Toiture','Fournisseur de matériaux','Gardiennage','Installation de caméras','Géomètre','Photographe de chantier'];
+const STATUS_FR={attente:'À bloquer',bloque:'Argent bloqué',fait:'À valider',paye:'Payé',litige:'Litige',rembourse:'Remboursé',livre:'Livré'};
+const CATS=['Ciment','Blocs et briques','Fer à béton','Tôles','Sable et gravier','Bois','Plomberie','Électricité','Autre'];
+const I18N={
+ en:{'Version de test : l\'argent est fictif, rien n\'est réellement payé.':'Test version: the money is fictional, nothing is really paid.','Chacun peut noter l\'autre et arrêter le contrat si l\'accord n\'est pas respecté.':'Each side can rate the other and end the contract if the agreement is not respected.',
+  'À bloquer':'To hold','Argent bloqué':'Money held','À valider':'To approve','Payé':'Paid','Litige':'Dispute','Remboursé':'Refunded','Livré':'Delivered',
+  'Mes projets':'My projects','Nouveau projet':'New project','Trouver un professionnel':'Find a professional','Mon compte':'My account','Retour':'Back','Professionnels':'Professionals',
+  'Étapes':'Stages','Photos':'Photos','Messages':'Messages','Paiement':'Payment','Gardien':'Guard','Espace pro':'Pro space','Mes chantiers':'My sites',
+  'Marché des matériaux':'Materials market','Estimer le prix d\'une maison':'Estimate a house price','Mes commandes':'My orders','Plan de test':'Test plan','Espace admin':'Admin space',
+  'Vérifié':'Verified','Non vérifié':'Not verified','Bien noté':'Top rated','Fiable':'Reliable','Nouveau':'New','Commander':'Order','Valider et payer':'Approve and pay','Signaler un problème':'Report a problem','Étape terminée':'Stage complete','Avis':'Reviews','Laisser un avis':'Leave a review','Profil du client':'Client profile'},
+ pt:{'Version de test : l\'argent est fictif, rien n\'est réellement payé.':'Versão de teste: o dinheiro é fictício, nada é pago de verdade.','Chacun peut noter l\'autre et arrêter le contrat si l\'accord n\'est pas respecté.':'Cada um pode avaliar o outro e terminar o contrato se o acordo não for respeitado.',
+  'À bloquer':'A bloquear','Argent bloqué':'Dinheiro bloqueado','À valider':'A validar','Payé':'Pago','Litige':'Litígio','Remboursé':'Reembolsado','Livré':'Entregue',
+  'Mes projets':'Os meus projetos','Nouveau projet':'Novo projeto','Trouver un professionnel':'Encontrar um profissional','Mon compte':'A minha conta','Retour':'Voltar','Professionnels':'Profissionais',
+  'Étapes':'Etapas','Photos':'Fotos','Messages':'Mensagens','Paiement':'Pagamento','Gardien':'Guarda','Espace pro':'Espaço profissional','Mes chantiers':'As minhas obras',
+  'Marché des matériaux':'Mercado de materiais','Estimer le prix d\'une maison':'Estimar o preço de uma casa','Mes commandes':'As minhas encomendas','Plan de test':'Plano de teste','Espace admin':'Espaço admin',
+  'Vérifié':'Verificado','Non vérifié':'Não verificado','Bien noté':'Bem avaliado','Fiable':'Confiável','Nouveau':'Novo','Commander':'Encomendar','Valider et payer':'Validar e pagar','Signaler un problème':'Reportar um problema','Étape terminée':'Etapa concluída','Avis':'Avaliações','Laisser un avis':'Deixar uma avaliação','Profil du client':'Perfil do cliente'},
+ ln:{'Version de test : l\'argent est fictif, rien n\'est réellement payé.':'Version ya komeka : mbongo ezali ya solo te, eloko moko te efutami na solo.','Chacun peut noter l\'autre et arrêter le contrat si l\'accord n\'est pas respecté.':'Moto nyonso akoki kopesa mosusu note mpe kokata kontra soki boyokani ebatelami te.',
+  'À bloquer':'Ya kokanga','Argent bloqué':'Mbongo ekangami','À valider':'Ya kondima','Payé':'Efutami','Litige':'Ntembe','Remboursé':'Bazongisi','Livré':'Ekomi',
+  'Mes projets':'Misala na ngai','Nouveau projet':'Mosala ya sika','Trouver un professionnel':'Koluka mosali','Mon compte':'Kompte na ngai','Retour':'Kozonga','Professionnels':'Basali',
+  'Étapes':'Biteni','Photos':'Bafoto','Messages':'Bansango','Paiement':'Lifuti','Gardien':'Mokengeli','Espace pro':'Esika ya basali','Mes chantiers':'Bisika na ngai ya mosala',
+  'Marché des matériaux':'Zando ya bisaleli','Estimer le prix d\'une maison':'Koyeba ntalo ya ndako','Mes commandes':'Bakomande na ngai','Plan de test':'Mwango ya komeka','Espace admin':'Esika ya mokambi',
+  'Vérifié':'Endimami','Non vérifié':'Endimami te','Bien noté':'Note malamu','Fiable':'Ya kotyela motema','Nouveau':'Ya sika','Commander':'Kosomba','Valider et payer':'Kondima mpe kofuta','Signaler un problème':'Koyebisa likambo','Étape terminée':'Eteni esili','Avis':'Makanisi','Laisser un avis':'Kotika likanisi','Profil du client':'Profil ya kiliya'}
+};
+let LANG='fr'; try{LANG=localStorage.getItem('mm-lang')||'fr';}catch(e){}
+const t=fr=>{if(LANG==='fr')return fr;const o=(S.tr&&S.tr[LANG])||{};return o[fr]||(I18N[LANG]||{})[fr]||fr;};
+const ST=k=>t(STATUS_FR[k]||k);
+const REASONS=['Travail mal fait','Travail pas fait','Retard important','Autre problème'];
+const DAY=86400000;
+
+const S={db:null,uid:null,me:undefined,pros:[],myProjects:[],proProjects:[],mode:'client',view:'home',p:{},photos:[],msgs:[],err:'',busy:false,admin:false,allProjects:[],allProfiles:[],bugs:[],products:[],productsOn:false,myOrders:[],sellerOrders:[],guardProjects:[],checkins:[],checkinsLoaded:false};
+let unsubCk=null, watchedCk=null, proUnsubs=[];
+let unsubProPrj=null, unsubPhotos=null, unsubMsgs=null, watchedPid=null, watchedPhotos=null;
+const $main=document.getElementById('main');
+
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const eur=n=>(Number(n)||0).toLocaleString('fr-FR')+' €';
+const fdate=t=>t?new Date(t).toLocaleDateString('fr-FR',{day:'numeric',month:'short'}):'';
+const ftime=t=>t?new Date(t).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+const opts=(arr,sel)=>arr.map(x=>`<option${x===sel?' selected':''}>${esc(x)}</option>`).join('');
+const proById=id=>S.pros.find(p=>p.id===id);
+const allProjects=()=>{const m=new Map();[...S.allProjects,...S.myProjects,...S.proProjects,...S.guardProjects].forEach(p=>m.set(p.id,p));return [...m.values()];};
+const prjById=id=>allProjects().find(p=>p.id===id);
+const isVis=x=>!x.hidden||Date.now()-x.at>14*DAY;
+const vr=r=>(r||[]).filter(isVis);
+const avg=r0=>{const r=vr(r0);return r.length?(r.reduce((a,b)=>a+b.note,0)/r.length):0;};
+
+function go(view,p){S.view=view;S.p=p||{};S.err='';window.scrollTo(0,0);if(['market','estim','myfiche','home'].includes(view)&&(view!=='home'||S.mode==='pro'))ensureProducts();watchProject();render();}
+function ensureProducts(){if(S.productsOn||!S.db)return;S.productsOn=true;S.db.collection('products').onSnapshot(q=>{S.products=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});}
+
+/* ---------- boot ---------- */
+async function boot(){
+  const cfg=window.FIREBASE_CONFIG;
+  if(!window.firebase||!cfg||!cfg.apiKey||cfg.apiKey.indexOf('COLLE')===0) return fail('La configuration Firebase n\'est pas encore installée.');
+  try{firebase.initializeApp(cfg);}catch(e){return fail('Configuration Firebase invalide.');}
+  const db=firebase.firestore();
+  try{await db.enablePersistence({synchronizeTabs:true});}catch(e){}
+  S.db=db; S.auth=firebase.auth();
+  S.auth.onAuthStateChanged(u=>{
+    S.authReady=true;
+    if(!u){S.uid=null;S.me=null;render();return;}
+    if(S.uid===u.uid) return;
+    start(u);
+  });
+}
+function start(u){
+  const db=S.db;
+  S.uid=u.uid; S.email=(u.email||'').toLowerCase(); S.me=undefined;
+  S.admin=(window.ADMIN_EMAILS||[]).map(x=>String(x).toLowerCase()).includes(S.email);
+  db.doc('profiles/'+S.uid).onSnapshot(s=>{
+    const before=S.me&&S.me.proId;
+    S.me=s.exists?Object.assign({id:s.id},s.data()):null;
+    if(S.me&&S.me.proId!==before) watchProProjects();
+    render();
+  },()=>{});
+  if(S.admin){
+    db.collection('projects').onSnapshot(q=>{S.allProjects=q.docs.map(d=>Object.assign({id:d.id},d.data()));autoRelease();render();},()=>{});
+    db.collection('profiles').onSnapshot(q=>{S.allProfiles=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});
+    db.collection('orders').onSnapshot(q=>{S.adminOrders=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});
+    db.collection('bugs').onSnapshot(q=>{S.bugs=q.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>b.at-a.at);render();},()=>{});
+  }
+  db.doc('config/i18n').onSnapshot(s=>{S.tr=s.exists?s.data():null;render();},()=>{});
+  db.collection('pros').onSnapshot(q=>{S.pros=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});
+  db.collection('orders').where('clientUid','==',S.uid).onSnapshot(q=>{S.myOrders=q.docs.map(d=>Object.assign({id:d.id},d.data()));autoReleaseOrders();render();},()=>{});
+  db.collection('projects').where('clientUid','==',S.uid).onSnapshot(q=>{S.myProjects=q.docs.map(d=>Object.assign({id:d.id},d.data()));autoRelease();render();},()=>{});
+}
+function fail(msg){
+  $main.innerHTML=`<div class="stack"><h2>L'application ne peut pas s'ouvrir</h2><p class="muted">${esc(msg||'')} Vérifie ta connexion et réessaie.</p></div>`;
+}
+const AUTH_ERR={'auth/invalid-email':'Adresse email invalide.','auth/missing-password':'Entre un mot de passe.','auth/weak-password':'Mot de passe trop court : 6 caractères minimum.','auth/email-already-in-use':'Un compte existe déjà avec cet email. Connecte-toi.','auth/invalid-credential':'Email ou mot de passe incorrect.','auth/wrong-password':'Email ou mot de passe incorrect.','auth/user-not-found':'Aucun compte avec cet email.','auth/too-many-requests':'Trop d\'essais. Attends quelques minutes.','auth/network-request-failed':'Pas de connexion internet.','auth/operation-not-allowed':'La connexion par email n\'est pas activée dans Firebase (Authentication › Adresse e-mail/Mot de passe).'};
+function vAuth(){
+  return `<form class="stack" data-f="login">
+    <h1>Ton argent ne bouge pas sans ton accord.</h1>
+    <p class="muted">Connecte-toi ou crée ton compte. Un seul compte par personne.</p>
+    <div class="field"><label class="label" for="au-email">Email</label><input id="au-email" type="email" autocomplete="email" required maxlength="80"></div>
+    <div class="field"><label class="label" for="au-pass">Mot de passe (6 caractères minimum)</label><input id="au-pass" type="password" autocomplete="current-password" required maxlength="60"></div>
+    ${S.err?`<p class="err">${esc(S.err)}</p>`:''}${S.info?`<p class="small verified">${esc(S.info)}</p>`:''}
+    <button class="btn" type="submit">Se connecter</button>
+    <button class="btn ghost" type="button" data-a="auth-signup">Créer un compte</button>
+    <button class="link" type="button" data-a="auth-reset">Mot de passe oublié</button>
+  </form>`;
+}
+function watchProProjects(){
+  if(unsubProPrj){unsubProPrj();unsubProPrj=null;}
+  S.proProjects=[];
+  if(!S.me||!S.me.proId) return;
+  unsubProPrj=S.db.collection('projects').where('proId','==',S.me.proId).onSnapshot(q=>{S.proProjects=q.docs.map(d=>Object.assign({id:d.id},d.data()));autoRelease();render();},()=>{});
+  proUnsubs.forEach(u=>u());proUnsubs=[];S.sellerOrders=[];S.guardProjects=[];
+  proUnsubs.push(S.db.collection('orders').where('sellerProId','==',S.me.proId).onSnapshot(q=>{S.sellerOrders=q.docs.map(d=>Object.assign({id:d.id},d.data()));autoReleaseOrders();render();},()=>{}));
+  proUnsubs.push(S.db.collection('projects').where('guardProId','==',S.me.proId).onSnapshot(q=>{S.guardProjects=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{}));
+}
+function watchProject(){
+  const pid=S.view==='project'?S.p.id:null;
+  const ph=pid&&S.p.tab==='photos'?pid:null;
+  if(ph!==watchedPhotos){
+    if(unsubPhotos){unsubPhotos();unsubPhotos=null;}
+    S.photos=[];S.photosLoaded=false;watchedPhotos=ph;
+    if(ph) unsubPhotos=S.db.collection('photos').where('projectId','==',ph).onSnapshot(q=>{S.photos=q.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>b.at-a.at);S.photosLoaded=true;render();},()=>{});
+  }
+  const ck=pid&&S.p.tab==='guard'?pid:null;
+  if(ck!==watchedCk){
+    if(unsubCk){unsubCk();unsubCk=null;}
+    S.checkins=[];S.checkinsLoaded=false;watchedCk=ck;
+    if(ck) unsubCk=S.db.collection('checkins').where('projectId','==',ck).onSnapshot(q=>{S.checkins=q.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>b.at-a.at);S.checkinsLoaded=true;render();},()=>{});
+  }
+  if(pid===watchedPid) return;
+  if(unsubMsgs){unsubMsgs();unsubMsgs=null;}
+  S.msgs=[];watchedPid=pid;
+  if(!pid) return;
+  unsubMsgs=S.db.doc('messages/'+pid).onSnapshot(s=>{S.msgs=s.exists?(s.data().items||[]):[];render();},()=>{});
+}
+
+/* 7-day rule: a finished stage not answered by the client is paid automatically */
+function autoRelease(){
+  allProjects().forEach(p=>{
+    if(!p.steps) return;
+    let changed=false;
+    const steps=p.steps.map(st=>{
+      if(st.status==='fait'&&st.doneAt&&Date.now()-st.doneAt>7*DAY){changed=true;return Object.assign({},st,{status:'paye',paidAt:Date.now(),auto:true});}
+      return st;
+    });
+    if(changed) S.db.doc('projects/'+p.id).update({steps}).catch(()=>{});
+  });
+}
+
+/* ---------- render ---------- */
+function render(){
+  if(!S.authReady) return;
+  if(S.uid&&S.me===undefined) return;
+  const keep={};
+  $main.querySelectorAll('input[id],textarea[id],select[id]').forEach(el=>{if(el.type!=='file') keep[el.id]=el.value;});
+  const ae=document.activeElement&&document.activeElement.id;
+  const seg=document.getElementById('modeSeg');
+  seg.hidden=!S.me;
+  document.getElementById('adminBtn').hidden=!S.admin;
+  document.getElementById('langSel').value=LANG;
+  document.getElementById('testBanner').textContent=t('Version de test : l\'argent est fictif, rien n\'est réellement payé.');
+  document.getElementById('footRule').textContent=t('Chacun peut noter l\'autre et arrêter le contrat si l\'accord n\'est pas respecté.');
+  seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===S.mode)));
+  let html;
+  if(!S.uid) html=vAuth();
+  else if(!S.me) html=vSignup();
+  else {
+    const v={home:vHome,dir:vDir,pro:vProFiche,newp:vNewProject,project:vProject,myfiche:vMyFiche,account:vAccount,plan:vPlan,market:vMarket,estim:vEstim,orders:vOrders,client:vClient}[S.view]||vHome;
+    html=v();
+  }
+  $main.innerHTML=html;
+  Object.keys(keep).forEach(id=>{const el=document.getElementById(id);if(el&&el.dataset.fresh!=='1') el.value=keep[id];});
+  if(ae){const el=document.getElementById(ae);if(el){el.focus();try{const n=el.value.length;el.setSelectionRange(n,n);}catch(x){}}}
+  const box=document.getElementById('chat');if(box) box.scrollTop=box.scrollHeight;
+}
+
+function vSignup(){
+  return `<form class="stack" data-f="signup">
+    <h1>Ton argent ne bouge pas sans ton accord.</h1>
+    <p class="muted">Crée ton compte. Un seul compte par personne.</p>
+    <div class="field"><label class="label" for="su-name">Nom et prénom</label><input id="su-name" required maxlength="60" autocomplete="name"></div>
+    <div class="field"><label class="label" for="su-phone">Téléphone (WhatsApp)</label><input id="su-phone" required maxlength="25" inputmode="tel" placeholder="+32 …"></div>
+    <div class="field"><label class="label" for="su-pays">Pays où tu vis</label><select id="su-pays">${opts(PAYS,'Belgique')}</select></div>
+    <div class="field"><label class="label" for="su-ville">Ville</label><input id="su-ville" required maxlength="40"></div>
+    ${S.err?`<p class="err">${esc(S.err)}</p>`:''}
+    <button class="btn" type="submit">Créer mon compte</button>
+  </form>`;
+}
+
+function stepSummary(p){
+  const st=p.steps||[];
+  const cur=st.find(s=>s.status!=='paye'&&s.status!=='rembourse');
+  if(p.stopped) return `<span class="pill s-rembourse">Contrat arrêté</span>`;
+  if(!cur) return `<span class="pill s-paye">Terminé</span>`;
+  return `<span class="pill s-${cur.status}">${esc(cur.name)} · ${ST(cur.status)}</span>`;
+}
+
+function vHome(){
+  if(S.mode==='admin'&&S.admin) return vAdmin();
+  if(S.mode==='pro'){
+    if(!S.me.proId) return `<div class="stack">
+      <h1>Espace pro</h1>
+      <p>Tu travailles dans le bâtiment ? Crée ta fiche pour recevoir des chantiers. L'argent est bloqué avant que tu commences.</p>
+      <button class="btn" data-a="go" data-v="myfiche">Créer ma fiche pro</button></div>`;
+    const me=proById(S.me.proId);
+    const list=S.proProjects.sort((a,b)=>b.createdAt-a.createdAt);
+    return `<div class="stack">
+      <div class="stack-s"><span class="label">${me?esc(me.metier)+' · '+esc(me.ville):''}</span><h1>${me?esc(me.name):'Ma fiche'}</h1>
+      <span class="small ${me&&me.verified?'verified':'unverified'}">${me&&me.verified?'Vérifié':'Non vérifié : tu ne peux pas encore recevoir d\'argent'}</span></div>
+      <button class="link" data-a="go" data-v="myfiche">Voir et modifier ma fiche</button>
+      ${planCard()}
+      ${badgesHtml(me)}
+      ${me&&me.metier==='Fournisseur de matériaux'?sellerBlock(me):''}
+      ${S.guardProjects.length?`<span class="label">${t('Gardien')}</span><div class="list">${S.guardProjects.map(p=>`<button class="item" data-a="open" data-v="${p.id}" data-t="guard"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)} · ${eur(p.guard?p.guard.salary:0)} / mois</div></div><span class="pill s-bloque">${t('Gardien')}</span></button>`).join('')}</div>`:''}
+      <span class="label">${t('Mes chantiers')}</span>
+      ${list.length?`<div class="list">${list.map(p=>`<button class="item" data-a="open" data-v="${p.id}"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)} · client : ${esc(p.clientName)}</div></div>${stepSummary(p)}</button>`).join('')}</div>`
+      :`<div class="empty">Aucun chantier pour l'instant. Quand un client te choisit, son projet apparaît ici.</div>`}
+    </div>`;
+  }
+  const list=S.myProjects.sort((a,b)=>b.createdAt-a.createdAt);
+  return `<div class="stack">
+    <div class="stack-s"><span class="label">Bonjour ${esc(S.me.name.split(' ')[0])}</span><h1>${t('Mes projets')}</h1></div>
+    ${planCard()}
+    <button class="btn" data-a="go" data-v="newp">${t('Nouveau projet')}</button>
+    ${list.length?`<div class="list">${list.map(p=>`<button class="item" data-a="open" data-v="${p.id}"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)}, ${esc(p.pays)} · ${esc(p.proName)}</div></div>${stepSummary(p)}</button>`).join('')}</div>`
+    :`<div class="empty">Pas encore de projet. Crée ton premier : choisis un pro vérifié, découpe le travail en étapes et bloque l'argent étape par étape.</div>`}
+    <button class="btn ghost" data-a="go" data-v="dir">${t('Trouver un professionnel')}</button>
+    <div class="row"><button class="btn ghost" data-a="go" data-v="market">${t('Marché des matériaux')}</button><button class="btn ghost" data-a="go" data-v="estim">${t('Estimer le prix d\'une maison')}</button></div>
+    ${S.myOrders.length?`<button class="item" data-a="go" data-v="orders"><span class="t">${t('Mes commandes')}</span><span class="small muted">${S.myOrders.length} · ${S.myOrders.filter(o=>o.status==='livre').length} ${t('À valider').toLowerCase()}</span></button>`:''}
+    <button class="link" data-a="go" data-v="account">${t('Mon compte')}</button>
+  </div>`;
+}
+
+function vDir(){
+  const q=(S.p.q||'').toLowerCase(), c=S.p.pays||'Tous';
+  const list=S.pros.filter(p=>!p.hidden&&(c==='Tous'||p.pays===c)&&(!q||(p.name+' '+p.metier+' '+p.ville).toLowerCase().includes(q)))
+    .sort((a,b)=>(b.verified?1:0)-(a.verified?1:0)||avg(b.reviews)-avg(a.reviews));
+  return `<div class="stack">
+    <button class="link" data-a="home">Retour</button>
+    <h1>Professionnels</h1>
+    <div class="field"><label class="label" for="dir-q">Métier, nom ou ville</label><input id="dir-q" data-a="dirq" value="${esc(S.p.q||'')}" data-fresh="1"></div>
+    <div class="field"><label class="label" for="dir-pays">Pays</label><select id="dir-pays" data-a="dirpays" data-fresh="1">${opts(['Tous',...PAYS],c)}</select></div>
+    ${list.length?`<div class="list">${list.map(p=>`<button class="item" data-a="pro" data-v="${p.id}"><div><div class="t">${esc(p.name)}</div><div class="small muted">${esc(p.metier)} · ${esc(p.ville)}, ${esc(p.pays)}</div>
+      <div class="small ${p.verified?'verified':'unverified'}">${p.verified?'Vérifié':'Non vérifié'}${vr(p.reviews).length?' · '+avg(p.reviews).toFixed(1).replace('.',',')+'/5 · '+vr(p.reviews).length+' avis':''}${p.example?' · exemple':''}</div>${badgesHtml(p,true)}</div></button>`).join('')}</div>`
+    :`<div class="empty">Aucun professionnel trouvé. Essaie un autre pays ou un autre mot.</div>`}
+  </div>`;
+}
+
+function vProFiche(){
+  const p=proById(S.p.id); if(!p) return `<div class="stack"><button class="link" data-a="go" data-v="dir">Retour</button><p>Fiche introuvable.</p></div>`;
+  const r=vr(p.reviews);
+  return `<div class="stack">
+    <button class="link" data-a="go" data-v="dir">Retour</button>
+    <div class="stack-s"><span class="label">${esc(p.metier)} · ${esc(p.ville)}, ${esc(p.pays)}</span><h1>${esc(p.name)}</h1>
+    <span class="small ${p.verified?'verified':'unverified'}">${p.verified?'Vérifié · peut recevoir de l\'argent':'Non vérifié · ne peut pas encore recevoir d\'argent'}${p.example?' · fiche d\'exemple':''}</span></div>
+    ${badgesHtml(p)}
+    ${p.about?`<p>${esc(p.about)}</p>`:''}
+    <div class="stack-s"><span class="label">Contact</span><span class="money" style="user-select:all">${esc(p.phone||'—')}</span></div>
+    <div class="stack-s"><span class="label">Avis de clients ayant payé via l'app${r.length?' · '+avg(r).toFixed(1).replace('.',',')+'/5':''}</span>
+    ${reviewsList(p.reviews)}</div>
+    ${p.verified?`<button class="btn" data-a="newwith" data-v="${p.id}">Choisir pour un projet</button>`:`<p class="notice">Seuls les professionnels vérifiés peuvent recevoir de l'argent dans l'app.</p>`}
+  </div>`;
+}
+
+function vNewProject(){
+  const ver=S.pros.filter(p=>p.verified&&!p.hidden);
+  const pre=S.p.proId||'';
+  return `<form class="stack" data-f="newp">
+    <button class="link" type="button" data-a="home">Retour</button>
+    <h1>Nouveau projet</h1>
+    <div class="field"><label class="label" for="np-title">Nom du projet</label><input id="np-title" required maxlength="60" placeholder="Ma maison à Kinshasa"></div>
+    <div class="field"><label class="label" for="np-pays">Pays du chantier</label><select id="np-pays">${opts(PAYS,'RD Congo')}</select></div>
+    <div class="field"><label class="label" for="np-ville">Ville et quartier</label><input id="np-ville" required maxlength="50"></div>
+    <div class="field"><label class="label" for="np-pro">Professionnel (vérifié)</label>
+      <select id="np-pro" required><option value="">Choisir…</option>${ver.map(p=>`<option value="${p.id}"${p.id===pre?' selected':''}>${esc(p.name)} · ${esc(p.metier)} · ${esc(p.ville)}</option>`).join('')}</select>
+      ${ver.length?'':'<span class="small muted">Aucun pro vérifié pour l\'instant. Pour tester seul, passe en mode Pro, crée ta fiche et vérifie-la.</span>'}</div>
+    <span class="label">Étapes et montants</span>
+    ${[0,1,2,3].map(i=>`<div class="row"><div class="field" style="flex:2;min-width:0"><label class="label" for="np-s${i}">Étape ${i+1}</label><input id="np-s${i}" maxlength="40" value="${['Fondations','Murs','Toit',''][i]}"></div>
+      <div class="field" style="flex:1;min-width:0"><label class="label" for="np-a${i}">Montant €</label><input id="np-a${i}" inputmode="numeric" maxlength="7"></div></div>`).join('')}
+    <p class="small muted">Laisse une étape vide si tu n'en as pas besoin. Tu bloqueras l'argent une étape à la fois, à ton rythme.</p>
+    ${S.err?`<p class="err">${esc(S.err)}</p>`:''}
+    <button class="btn" type="submit">Créer le projet</button>
+  </form>`;
+}
+
+function role(p){return p.clientUid===S.uid?'client':(S.me.proId&&p.proId===S.me.proId?'pro':(S.me.proId&&p.guardProId===S.me.proId?'guard':'none'));}
+
+function vProject(){
+  const p=prjById(S.p.id); if(!p) return `<div class="stack"><button class="link" data-a="home">Retour</button><p class="muted">Chargement du projet…</p></div>`;
+  const r=role(p), tab=S.p.tab||'steps';
+  const tabs=[['steps','Étapes'],['photos','Photos'],['guard','Gardien'],['msgs','Messages'],['pay','Paiement']];
+  let body={steps:tSteps,photos:tPhotos,guard:tGuard,msgs:tMsgs,pay:tPay}[tab](p,r);
+  return `<div class="stack">
+    <button class="link" data-a="home">Retour</button>
+    <div class="stack-s"><span class="label">${esc(p.ville)}, ${esc(p.pays)} · ${r==='client'?'pro : '+esc(p.proName):'client : '+esc(p.clientName)}</span><h1>${esc(p.title)}</h1>
+    ${p.stopped?`<span class="pill s-rembourse" style="align-self:flex-start">Contrat arrêté le ${fdate(p.stopped.at)}</span>`:''}</div>
+    ${r!=='client'?`<button class="link" data-a="cprof" data-v="${p.clientUid}">${t('Profil du client')} : ${esc(p.clientName)}</button>`:''}
+    ${houseCard(p)}
+    <div class="tabs" role="tablist">${tabs.map(x=>`<button role="tab" aria-selected="${x[0]===tab}" data-a="tab" data-v="${x[0]}">${t(x[1])}</button>`).join('')}</div>
+    ${body}
+  </div>`;
+}
+
+function canBlock(p,i){return !p.stopped&&p.steps.slice(0,i).every(s=>s.status==='paye'||s.status==='rembourse');}
+
+function tSteps(p,r){
+  const curIdx=p.steps.findIndex(s=>s.status!=='paye'&&s.status!=='rembourse');
+  const steps=p.steps.map((st,i)=>{
+    let actions='', info='';
+    if(st.status==='attente'){
+      if(r==='client'&&canBlock(p,i)) actions=`<button class="btn" data-a="block" data-v="${i}">Bloquer ${eur(st.amount)}</button>`;
+      info=r==='pro'?'Le client n\'a pas encore bloqué l\'argent. Ne commence pas avant.':(canBlock(p,i)?'Bloque l\'argent pour que le travail commence.':'Disponible quand l\'étape précédente est payée.');
+    }
+    if(st.status==='bloque'){
+      info=r==='pro'?`${eur(st.amount)} bloqués pour toi. Envoie tes photos puis signale la fin de l'étape.`:'Le pro travaille. L\'argent attend ta validation.';
+      if(r==='pro') actions=`<button class="btn" data-a="done" data-v="${i}">Étape terminée</button>`;
+      if(r==='client') actions=`<button class="btn ghost sm" data-a="dispute" data-v="${i}">Signaler un problème</button>`;
+    }
+    if(st.status==='fait'){
+      const auto=st.doneAt+7*DAY;
+      info=r==='client'?`Le pro dit que c'est fait. Vérifie les photos. Sans réponse de ta part, l'argent part automatiquement le ${fdate(auto)}.`:`En attente de la validation du client. Sans réponse, l'argent part automatiquement le ${fdate(auto)}.`;
+      if(r==='client') actions=`<button class="btn" data-a="pay" data-v="${i}">Valider et payer ${eur(st.amount)}</button><button class="btn ghost" data-a="dispute" data-v="${i}">Signaler un problème</button>`;
+    }
+    if(st.status==='paye') info=`Payé le ${fdate(st.paidAt)}${st.auto?' (automatiquement après 7 jours)':''}${st.expert?' après décision de l\'expert':''}.`;
+    if(st.status==='rembourse') info=`Remboursé au client le ${fdate(st.paidAt)}.`;
+    if(st.status==='litige'){
+      info=`Litige : ${esc(st.dispute.reason)}${st.dispute.text?' · « '+esc(st.dispute.text)+' »':''}. L'argent reste bloqué. Un ingénieur indépendant, tiré au sort, va vérifier sur place. Celui qui a tort paie sa visite.`;
+      actions=`<span class="label">Test : simuler la décision de l'expert</span><div class="row"><button class="btn ghost sm" data-a="expert" data-v="${i}" data-d="ok">Travail conforme</button><button class="btn ghost sm" data-a="expert" data-v="${i}" data-d="redo">À refaire</button><button class="btn ghost sm" data-a="expert" data-v="${i}" data-d="refund">Rembourser</button></div>`;
+    }
+    if(S.p.disputeIdx===i){
+      actions=`<form class="stack-s" data-f="dispute" data-v="${i}">
+        <div class="field"><label class="label" for="dp-reason">Problème</label><select id="dp-reason">${opts(REASONS)}</select></div>
+        <div class="field"><label class="label" for="dp-text">Explique ce qui ne va pas</label><textarea id="dp-text" rows="3" maxlength="400"></textarea></div>
+        <div class="row"><button class="btn sm" type="submit">Ouvrir le litige</button><button class="btn ghost sm" type="button" data-a="nodispute">Annuler</button></div></form>`;
+    }
+    return `<div class="step${i===curIdx?' current':''}"><div class="between"><div class="stack-s" style="gap:2px;min-width:0"><span class="t" style="font-weight:500">${i+1}. ${esc(st.name)}</span><span class="money small">${eur(st.amount)}</span></div><span class="pill s-${st.status}">${ST(st.status)}</span></div>
+      ${info?`<p class="small muted" style="margin:0">${info}</p>`:''}${actions?`<div class="stack-s">${actions}</div>`:''}</div>`;
+  }).join('');
+  let review='';
+  const pend=p.steps.findIndex(st=>st.status==='paye'&&((r==='client'&&!st.rvClient)||(r==='pro'&&!st.rvPro)));
+  if(pend>=0) review=r==='client'?rvForm('step-c',p.id,pend,p.steps[pend].name+' · '+p.title,p.proName):rvForm('step-p',p.id,pend,p.steps[pend].name+' · '+p.title,p.clientName);
+  const stop=p.stopped?'':`<button class="link" data-a="${S.p.confirmStop?'stopyes':'stop'}">${S.p.confirmStop?'Confirmer : arrêter le contrat et rembourser l\'argent bloqué non validé':'Arrêter le contrat'}</button>${S.p.confirmStop?'<button class="link" data-a="stopno">Annuler</button>':''}`;
+  return `<div class="stack">${steps}${review}${stop}</div>`;
+}
+function reviewForm(id,title){
+  const n=S.p[id+'n']||0;
+  return `<form class="stack-s" data-f="${id}" style="border:1px solid var(--line);padding:16px"><span class="label">${esc(title)}</span>
+    <div class="stars">${[1,2,3,4,5].map(k=>`<button type="button" aria-pressed="${k===n}" aria-label="${k} sur 5" data-a="star" data-k="${id}" data-v="${k}">${k}</button>`).join('')}</div>
+    <div class="field"><label class="label" for="${id}-text">Commentaire</label><textarea id="${id}-text" rows="2" maxlength="300"></textarea></div>
+    <button class="btn sm" type="submit"${n?'':' disabled'}>Publier l'avis</button></form>`;
+}
+
+function tPhotos(p,r){
+  return `<div class="stack">
+    <label class="btn ghost" style="display:flex;align-items:center;justify-content:center" for="ph-file">Ajouter une photo du chantier</label>
+    <input id="ph-file" type="file" accept="image/*" capture="environment" hidden>
+    <div class="field"><label class="label" for="ph-step">Étape concernée</label><select id="ph-step">${p.steps.map((s,i)=>`<option value="${i}">${esc(s.name)}</option>`).join('')}</select></div>
+    ${S.busy?'<p class="small muted">Envoi de la photo…</p>':''}${S.err?`<p class="err">${esc(S.err)}</p>`:''}
+    <p class="small muted">Les photos sont compressées avant l'envoi (environ 60 Ko) et ne se chargent que dans cet onglet, pour économiser la connexion. Chaque photo est enregistrée avec sa date et l'auteur. Dans la vraie app, la position GPS est ajoutée et les photos se prennent seulement depuis l'appareil photo.</p>
+    ${!S.photosLoaded?'<p class="small muted">Chargement des photos…</p>':''}
+    ${S.photos.length?`<div class="grid3">${S.photos.map(ph=>`<div class="photo"><img loading="lazy" decoding="async" src="${esc(ph.data)}" alt="Photo du chantier, ${esc(p.steps[ph.step]?p.steps[ph.step].name:'')}"><span>${esc(p.steps[ph.step]?p.steps[ph.step].name:'')} · ${ftime(ph.at)}<br>${esc(ph.who)}</span></div>`).join('')}</div>`
+    :S.photosLoaded?`<div class="empty">Aucune photo pour l'instant.</div>`:''}
+  </div>`;
+}
+
+function tMsgs(p,r){
+  return `<div class="stack">
+    <p class="small muted">Les messages sont gardés comme preuve et ne peuvent pas être effacés.</p>
+    <div id="chat" class="stack-s" style="max-height:52vh;overflow-y:auto">
+      ${S.msgs.length?S.msgs.map(m=>`<div class="stack-s" style="gap:2px;${m.uid===S.uid?'align-items:flex-end':''}"><div class="bubble${m.uid===S.uid?' me':''}">${esc(m.text)}</div><span class="meta">${esc(m.who)} · ${ftime(m.at)}</span></div>`).join(''):'<div class="empty">Aucun message. Écris au '+(r==='client'?'pro':'client')+'.</div>'}
+    </div>
+    <form class="row" data-f="msg"><div class="field" style="flex:1;min-width:0"><label class="label" for="msg-text">Message</label><input id="msg-text" maxlength="500" autocomplete="off"></div><button class="btn sm" type="submit" style="align-self:flex-end">Envoyer</button></form>
+  </div>`;
+}
+
+function tPay(p){
+  const sum=k=>p.steps.filter(s=>k.includes(s.status)).reduce((a,s)=>a+(+s.amount||0),0);
+  const total=sum(['attente','bloque','fait','paye','litige','rembourse']), paid=sum(['paye']), held=sum(['bloque','fait','litige']), left=sum(['attente']), back=sum(['rembourse']);
+  const pc=x=>total?(x/total*100):0;
+  return `<div class="stack">
+    <div class="stack-s"><span class="label">Budget total</span><span class="big">${eur(total)}</span></div>
+    <div class="bar" aria-hidden="true"><span style="width:${pc(paid)}%;background:var(--ok)"></span><span style="width:${pc(held)}%;background:var(--held)"></span></div>
+    <div class="list">
+      <div class="item"><span>Payé au pro</span><span class="money s-paye">${eur(paid)}</span></div>
+      <div class="item"><span>Bloqué, en attente</span><span class="money s-bloque">${eur(held)}</span></div>
+      <div class="item"><span>Pas encore bloqué</span><span class="money">${eur(left)}</span></div>
+      ${back?`<div class="item"><span>Remboursé</span><span class="money">${eur(back)}</span></div>`:''}
+    </div>
+    <span class="label">Historique</span>
+    <div class="list">${p.steps.map(s=>`<div class="item"><div><div class="t">${esc(s.name)}</div><div class="small muted">${s.paidAt?(s.status==='rembourse'?'Remboursé':'Versé')+' le '+fdate(s.paidAt):s.blockedAt?'Bloqué le '+fdate(s.blockedAt):'Pas encore bloqué'}</div></div><span class="pill s-${s.status}">${ST(s.status)}</span></div>`).join('')}</div>
+    <p class="notice">L'argent part directement du compte bloqué vers le professionnel. Personne ne le touche entre les deux.</p>
+  </div>`;
+}
+
+function vMyFiche(){
+  const p=S.me.proId?proById(S.me.proId):null;
+  return `<form class="stack" data-f="fiche">
+    <button class="link" type="button" data-a="home">Retour</button>
+    <h1>${p?'Ma fiche pro':'Créer ma fiche pro'}</h1>
+    <div class="field"><label class="label" for="pf-name">Nom de l'entreprise ou ton nom</label><input id="pf-name" required maxlength="60" value="${esc(p?p.name:S.me.name)}"></div>
+    <div class="field"><label class="label" for="pf-metier">Métier</label><select id="pf-metier">${opts(METIERS,p&&p.metier)}</select></div>
+    <div class="field"><label class="label" for="pf-pays">Pays</label><select id="pf-pays">${opts(PAYS,p?p.pays:'RD Congo')}</select></div>
+    <div class="field"><label class="label" for="pf-ville">Ville</label><input id="pf-ville" required maxlength="40" value="${esc(p?p.ville:'')}"></div>
+    <div class="field"><label class="label" for="pf-phone">Téléphone (WhatsApp)</label><input id="pf-phone" required maxlength="25" value="${esc(p?p.phone:S.me.phone)}"></div>
+    <div class="field"><label class="label" for="pf-rccm">Numéro d'entreprise (RCCM ou autre)</label><input id="pf-rccm" maxlength="40" value="${esc(p?p.rccm:'')}"></div>
+    <div class="field"><label class="label" for="pf-about">Présentation</label><textarea id="pf-about" rows="3" maxlength="300">${esc(p?p.about:'')}</textarea></div>
+    ${S.err?`<p class="err">${esc(S.err)}</p>`:''}
+    <button class="btn" type="submit">Enregistrer</button>
+    ${p&&!p.verified?`<div class="stack-s"><p class="notice">Dans la vraie app, la vérification passe par la pièce d'identité, un selfie et le numéro d'entreprise. Ici, tu peux la simuler.</p><button class="btn ghost" type="button" data-a="verify">Vérifier mon compte (test)</button></div>`:''}
+    ${p&&p.verified?'<p class="small verified">Compte vérifié : tu peux recevoir de l\'argent.</p>':''}
+  </form>`;
+}
+
+function vAccount(){
+  const r=vr(S.me.reviews);
+  return `<form class="stack" data-f="account">
+    <button class="link" type="button" data-a="home">Retour</button>
+    <h1>Mon compte</h1>
+    <div class="field"><label class="label" for="ac-name">Nom</label><input id="ac-name" required maxlength="60" value="${esc(S.me.name)}"></div>
+    <div class="field"><label class="label" for="ac-phone">Téléphone (WhatsApp)</label><input id="ac-phone" required maxlength="25" value="${esc(S.me.phone)}"></div>
+    <div class="field"><label class="label" for="ac-ville">Ville</label><input id="ac-ville" required maxlength="40" value="${esc(S.me.ville)}"></div>
+    <button class="btn" type="submit">Enregistrer</button>
+    <p class="small muted" style="margin:0">Connecté avec ${esc(S.email||'')}</p>
+    <button class="btn ghost" type="button" data-a="logout">Se déconnecter</button>
+    <div class="stack-s"><span class="label">Avis des pros sur toi${r.length?' · '+avg(r).toFixed(1).replace('.',',')+'/5':''}</span>
+    ${reviewsList(S.me.reviews)}</div>
+  </form>`;
+}
+
+/* ---------- avis à la Airbnb ---------- */
+function rvForm(kind,v,x,title,who){
+  const key=(kind+'_'+v+'_'+x).replace(/[^A-Za-z0-9_]/g,'_'), n=S.p['rv_'+key+'n']||0;
+  return `<form class="stack-s" data-f="review" data-kind="${kind}" data-v="${v}" data-x="${x}" data-key="${key}" style="border:1px solid var(--fg);padding:16px">
+    <span class="label">${t('Laisser un avis')} · ${esc(who)}</span><span class="small">${esc(title)}</span>
+    <div class="stars">${[1,2,3,4,5].map(k=>`<button type="button" aria-pressed="${k===n}" aria-label="${k} sur 5" data-a="star" data-k="rv_${key}" data-v="${k}">${k}</button>`).join('')}</div>
+    <div class="field"><label class="label" for="rvt-${key}">Comment ça s'est passé ?</label><textarea id="rvt-${key}" rows="2" maxlength="300"></textarea></div>
+    <p class="meta" style="margin:0">Comme sur Airbnb, ton avis reste caché jusqu'à ce que l'autre personne ait noté aussi, ou 14 jours au maximum. Ensuite il devient public et ne peut plus être modifié ni supprimé.</p>
+    <button class="btn sm" type="submit"${n?'':' disabled'}>Publier l'avis</button></form>`;
+}
+function reviewsList(all){
+  const r=vr(all), pend=(all||[]).length-r.length;
+  const note=pend?`<p class="meta" style="margin:0">${pend} avis en attente : ${pend>1?'ils seront visibles':'il sera visible'} quand les deux personnes auront noté, ou après 14 jours.</p>`:'';
+  return note+(r&&r.length?`<div class="list">${r.slice().reverse().map(x=>`<div class="item"><div><div class="t">${x.note}/5 · ${esc(x.name||'')}</div>${x.about?`<div class="meta">${esc(x.about)}</div>`:''}${x.text?`<div class="small">${esc(x.text)}</div>`:''}</div><span class="meta">${fdate(x.at)}</span></div>`).join('')}</div>`:(pend?'':'<p class="small muted" style="margin:0">Pas encore d\'avis.</p>'));
+}
+function vClient(){
+  const c=S.p.data;
+  if(!c) return `<div class="stack"><button class="link" data-a="home">${t('Retour')}</button><p class="muted">Profil introuvable.</p></div>`;
+  const r=vr(c.reviews);
+  return `<div class="stack"><button class="link" data-a="back">${t('Retour')}</button>
+    <div class="stack-s"><span class="label">${t('Profil du client')} · ${esc(c.ville)}, ${esc(c.pays)}</span><h1>${esc(c.name)}</h1>
+    <span class="small muted">Membre depuis le ${fdate(c.createdAt)}${r.length?' · '+avg(r).toFixed(1).replace('.',',')+'/5 · '+r.length+' avis':''}</span></div>
+    <div class="stack-s"><span class="label">${t('Avis')} des professionnels</span>${reviewsList(c.reviews)}</div></div>`;
+}
+
+/* ---------- badges ---------- */
+function badges(p){
+  if(!p) return [];
+  const r=vr(p.reviews), st=p.stats||{}, out=[];
+  if(p.verified) out.push(t('Vérifié'));
+  if(r.length>=3&&avg(r)>=4.5) out.push(t('Bien noté'));
+  if((st.paid||0)>=5&&!(st.lost||0)) out.push(t('Fiable')+' · '+st.paid+' étapes');
+  else if((st.paid||0)>0) out.push(st.paid+' étape'+(st.paid>1?'s':'')+' payée'+(st.paid>1?'s':''));
+  if(!r.length&&!(st.paid||0)) out.push(t('Nouveau'));
+  return out;
+}
+function badgesHtml(p,small){const b=badges(p);return b.length?`<div class="badges"${small?' style="margin-top:4px"':''}>${b.map(x=>`<span class="badge">${esc(x)}</span>`).join('')}</div>`:'';}
+async function bumpPro(id,k){const pr=proById(id);if(!pr)return;const st=Object.assign({paid:0,lost:0},pr.stats||{});st[k]=(st[k]||0)+1;await S.db.doc('pros/'+id).update({stats:st});}
+
+/* ---------- marché des matériaux ---------- */
+function vMarket(){
+  const cat=S.p.cat||'Tous', ville=(S.p.mville||'').toLowerCase();
+  const list=S.products.filter(x=>(cat==='Tous'||x.cat===cat)&&(!ville||(x.ville||'').toLowerCase().includes(ville))).sort((a,b)=>a.price-b.price);
+  const sel=S.p.buy?S.products.find(x=>x.id===S.p.buy):null;
+  return `<div class="stack">
+    <button class="link" data-a="home">${t('Retour')}</button>
+    <h1>${t('Marché des matériaux')}</h1>
+    <p class="small muted" style="margin:0">Les vendeurs publient leurs prix. Tu commandes, l'argent est bloqué, et le vendeur est payé quand tu confirmes la livraison, photo à l'appui.</p>
+    <div class="chips">${['Tous',...CATS].map(c=>`<button aria-pressed="${c===cat}" data-a="cat" data-v="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+    <div class="field"><label class="label" for="mk-ville">Ville</label><input id="mk-ville" data-a="mville" data-fresh="1" value="${esc(S.p.mville||'')}" placeholder="Kinshasa"></div>
+    ${!S.productsOn||(!S.products.length&&S.productsOn&&S.p.loading)?'<p class="small muted">Chargement…</p>':''}
+    ${list.length?`<div class="list">${list.map(x=>`<div class="item"><div><div class="t">${esc(x.name)}</div><div class="small muted">${esc(x.sellerName)} · ${esc(x.ville)}</div>${badgesHtml(proById(x.sellerProId),true)}</div>
+      <div class="stack-s" style="align-items:flex-end;flex-shrink:0"><span class="money">${eur(x.price)}</span><span class="meta">/ ${esc(x.unit)}</span><button class="btn sm" data-a="buy" data-v="${x.id}">${t('Commander')}</button></div></div>
+      ${sel&&sel.id===x.id?orderForm(x):''}`).join('')}</div>`
+    :`<div class="empty">Aucun produit pour l'instant. Les fournisseurs de matériaux publient leurs produits depuis leur espace pro.</div>`}
+  </div>`;
+}
+function orderForm(x){
+  const q=Math.max(1,parseInt(S.p.qty||'1',10)||1);
+  return `<form class="stack-s" data-f="order" data-v="${x.id}" style="border:1px solid var(--fg);padding:14px">
+    <div class="field"><label class="label" for="or-qty">Quantité (${esc(x.unit)})</label><input id="or-qty" data-a="qty" inputmode="numeric" maxlength="6" value="${q}" data-fresh="1"></div>
+    <div class="field"><label class="label" for="or-addr">Adresse de livraison du chantier</label><input id="or-addr" maxlength="80" required></div>
+    <div class="between"><span>Total</span><span class="money">${eur(q*x.price)}</span></div>
+    <button class="btn" type="submit">Commander et bloquer ${eur(q*x.price)}</button></form>`;
+}
+function orderRow(o,side){
+  let act='', info='';
+  if(o.status==='bloque'){info=side==='seller'?'L\'argent est bloqué pour toi. Livre, puis prends la photo de la livraison.':'Argent bloqué. En attente de la livraison.';
+    if(side==='seller') act=`<label class="btn sm" style="display:flex;align-items:center;justify-content:center" for="dl-${o.id}">Livré : prendre la photo</label><input id="dl-${o.id}" class="dl-file" data-v="${o.id}" type="file" accept="image/*" capture="environment" hidden>`;}
+  if(o.status==='livre'){info=side==='seller'?`Livré. Sans réponse du client, payé automatiquement le ${fdate(o.deliveredAt+7*DAY)}.`:`Livré le ${fdate(o.deliveredAt)}. Vérifie la photo. Sans réponse, le vendeur est payé le ${fdate(o.deliveredAt+7*DAY)}.`;
+    if(side==='client') act=`<div class="row"><button class="btn sm" data-a="o-pay" data-v="${o.id}">Confirmer et payer</button><button class="btn ghost sm" data-a="o-dispute" data-v="${o.id}">Problème</button></div>`;}
+  if(o.status==='litige'){info='Litige : l\'argent reste bloqué en attendant la décision.';
+    if(S.admin) act=`<div class="row"><button class="btn ghost sm" data-a="o-decide" data-v="${o.id}" data-d="pay">Payer le vendeur</button><button class="btn ghost sm" data-a="o-decide" data-v="${o.id}" data-d="refund">Rembourser</button></div>`;}
+  if(o.status==='paye'){info=`Payé le ${fdate(o.paidAt)}${o.auto?' (automatiquement après 7 jours)':''}.`;
+    if(side==='client'&&!o.rvClient) act=rvForm('ord-c',o.id,0,'Commande : '+o.qty+' × '+o.productName,o.sellerName);
+    if(side==='seller'&&!o.rvSeller) act=rvForm('ord-s',o.id,0,'Commande : '+o.qty+' × '+o.productName,o.clientName);}
+  if(o.status==='rembourse') info=`Remboursé le ${fdate(o.paidAt)}.`;
+  return `<div class="step"><div class="between"><div style="min-width:0"><div class="t" style="font-weight:500">${esc(o.qty)} × ${esc(o.productName)}</div><div class="small muted">${side==='seller'?'Client : '+esc(o.clientName):esc(o.sellerName)} · ${esc(o.addr||'')}</div>${side!=='client'?`<button class="link" data-a="cprof" data-v="${o.clientUid}">${t('Profil du client')}</button>`:''}</div><span class="pill s-${o.status}">${ST(o.status)}</span></div>
+    <div class="between"><span class="small muted">${info}</span><span class="money">${eur(o.total)}</span></div>
+    ${o.photo?`<img src="${esc(o.photo)}" loading="lazy" alt="Photo de la livraison" style="width:100%;max-width:100%;aspect-ratio:4/3;object-fit:cover;background:var(--tile)">`:''}${act}</div>`;
+}
+function vOrders(){
+  const list=S.myOrders.slice().sort((a,b)=>b.at-a.at);
+  return `<div class="stack"><button class="link" data-a="home">${t('Retour')}</button><h1>${t('Mes commandes')}</h1>
+    ${S.err?`<p class="err">${esc(S.err)}</p>`:''}
+    ${list.length?list.map(o=>orderRow(o,'client')).join(''):'<div class="empty">Aucune commande.</div>'}
+    <button class="btn ghost" data-a="go" data-v="market">${t('Marché des matériaux')}</button></div>`;
+}
+function sellerBlock(me){
+  const mine=S.products.filter(x=>x.sellerProId===me.id);
+  const ords=S.sellerOrders.slice().sort((a,b)=>b.at-a.at);
+  return `<div class="stack-s"><span class="label">Mes produits</span>
+    ${mine.length?`<div class="list">${mine.map(x=>`<div class="item"><div><div class="t">${esc(x.name)}</div><div class="small muted">${esc(x.cat)}</div></div><div class="row"><span class="money">${eur(x.price)} / ${esc(x.unit)}</span><button class="link" data-a="del-prod" data-v="${x.id}">Retirer</button></div></div>`).join('')}</div>`:'<p class="small muted" style="margin:0">Aucun produit publié.</p>'}
+    <form class="stack-s" data-f="prod" style="border:1px solid var(--line);padding:14px"><span class="label">Publier un produit</span>
+      <div class="field"><label class="label" for="pr-name">Produit</label><input id="pr-name" maxlength="50" required placeholder="Ciment 50 kg"></div>
+      <div class="row"><div class="field" style="flex:1;min-width:0"><label class="label" for="pr-cat">Catégorie</label><select id="pr-cat">${opts(CATS)}</select></div>
+      <div class="field" style="flex:1;min-width:0"><label class="label" for="pr-unit">Unité</label><input id="pr-unit" maxlength="15" value="sac"></div></div>
+      <div class="field"><label class="label" for="pr-price">Prix par unité (€)</label><input id="pr-price" inputmode="decimal" maxlength="8" required></div>
+      <button class="btn sm" type="submit">Publier</button></form></div>
+    <div class="stack-s"><span class="label">Commandes reçues</span>${ords.length?ords.map(o=>orderRow(o,'seller')).join(''):'<p class="small muted" style="margin:0">Aucune commande.</p>'}</div>`;
+}
+function autoReleaseOrders(){
+  [...S.myOrders,...S.sellerOrders].forEach(o=>{
+    if(o.status==='livre'&&o.deliveredAt&&Date.now()-o.deliveredAt>7*DAY) S.db.doc('orders/'+o.id).update({status:'paye',paidAt:Date.now(),auto:true}).catch(()=>{});
+  });
+}
+
+/* ---------- estimateur ---------- */
+const EST_SIZE={'2 chambres':70,'3 chambres':100,'4 chambres':130};
+const EST_ITEMS=[['Blocs et briques','bloc',30],['Ciment','sac de 50 kg',2.2],['Fer à béton','kg',15],['Tôles','tôle',1.3],['Sable et gravier','m³',0.35]];
+function vEstim(){
+  const size=S.p.size||'3 chambres', m2=EST_SIZE[size];
+  const prices=S.p.prices||{};
+  let total=0, missing=false;
+  const rows=EST_ITEMS.map(([cat,unit,perM2])=>{
+    const qty=Math.ceil(m2*perM2);
+    const market=S.products.filter(x=>x.cat===cat);
+    const mp=market.length?market.reduce((a,x)=>a+(+x.price||0),0)/market.length:null;
+    const price=prices[cat]!=null&&prices[cat]!==''?+prices[cat]:mp;
+    if(price==null||isNaN(price)) missing=true; else total+=qty*price;
+    return `<div class="item"><div style="flex:1"><div class="t">${esc(cat)}</div><div class="small muted">${qty.toLocaleString('fr-FR')} ${esc(unit)}${mp!=null?' · prix moyen du marché '+eur(Math.round(mp*100)/100):''}</div></div>
+      <div class="field" style="width:96px"><label class="label" for="es-${cat.replace(/\W/g,'')}">€ / unité</label><input id="es-${cat.replace(/\W/g,'')}" data-a="eprice" data-c="${esc(cat)}" inputmode="decimal" maxlength="8" value="${price!=null&&!isNaN(price)?price:''}"></div></div>`;
+  }).join('');
+  return `<div class="stack">
+    <button class="link" data-a="home">${t('Retour')}</button>
+    <h1>${t('Estimer le prix d\'une maison')}</h1>
+    <div class="chips">${Object.keys(EST_SIZE).map(k=>`<button aria-pressed="${k===size}" data-a="esize" data-v="${k}">${k}</button>`).join('')}</div>
+    <p class="small muted" style="margin:0">Environ ${m2} m² de plain-pied. Matériaux du gros œuvre seulement (sans main-d'œuvre, terrain, finitions ni papiers).</p>
+    <div class="list">${rows}</div>
+    <div class="stack-s"><span class="label">Estimation des matériaux</span><span class="big">${eur(Math.round(total))}</span>
+    ${missing?'<span class="small muted">Il manque des prix : tape-les, ou attends que des vendeurs les publient dans le marché.</span>':''}</div>
+    <p class="notice">Estimation très approximative, basée sur des quantités moyennes. Fais toujours confirmer les quantités par un ingénieur avant d'acheter.</p>
+    <button class="btn" data-a="go" data-v="market">Voir les vendeurs</button>
+  </div>`;
+}
+
+/* ---------- gardien ---------- */
+function guardStats(g){
+  const days=Math.min(30,Math.max(1,Math.ceil((Date.now()-g.startAt)/DAY)));
+  const keys=new Set(S.checkins.filter(c=>c.at>=g.startAt).map(c=>new Date(c.at).toDateString()+c.slot));
+  const present=Math.min(keys.size,days*2);
+  return {days,expected:days*2,present,amount:Math.round(g.salary*present/(days*2))};
+}
+function guardHist(p,r){
+  const h=p.guardHistory||[]; if(!h.length) return '';
+  return `<span class="label">Mois précédents</span><div class="list">${h.map((x,i)=>`<div class="item"><span class="small">${esc(x.proName)} · ${x.present}/${x.expected} pointages</span><span class="money s-paye">${eur(x.amount)}</span></div>
+    ${r==='client'&&!x.rvClient?rvForm('g-c',p.id,i,'Gardiennage · '+p.title,x.proName):''}${r==='guard'&&!x.rvGuard&&S.me.proId===x.proId?rvForm('g-g',p.id,i,'Gardiennage · '+p.title,p.clientName):''}`).join('')}</div>`;
+}
+function tGuard(p,r){
+  const g=p.guard;
+  if(!g){
+    if(r!=='client') return `<div class="stack"><div class="empty">Pas de gardien en ce moment sur ce chantier.</div>${guardHist(p,r)}</div>`;
+    const guards=S.pros.filter(x=>x.metier==='Gardiennage'&&x.verified&&!x.hidden);
+    return `<form class="stack" data-f="hire">
+      <p class="small muted" style="margin:0">Le gardien envoie une photo datée matin et soir. Son salaire est bloqué au début du mois et versé à la fin, moins les pointages manqués.</p>
+      <div class="field"><label class="label" for="gd-pro">Gardien (vérifié)</label><select id="gd-pro" required><option value="">Choisir…</option>${guards.map(x=>`<option value="${x.id}">${esc(x.name)} · ${esc(x.ville)}</option>`).join('')}</select>
+      ${guards.length?'':'<span class="small muted">Aucun gardien vérifié. Pour tester seul, crée une fiche pro avec le métier « Gardiennage ».</span>'}</div>
+      <div class="field"><label class="label" for="gd-sal">Salaire du mois (€)</label><input id="gd-sal" inputmode="numeric" maxlength="5" required></div>
+      ${S.err?`<p class="err">${esc(S.err)}</p>`:''}
+      <button class="btn" type="submit">Engager et bloquer le salaire</button></form>${guardHist(p,r)}`;
+  }
+  const stt=guardStats(g);
+  const today=new Date().toDateString();
+  const did=sl=>S.checkins.some(c=>c.slot===sl&&new Date(c.at).toDateString()===today);
+  const last7=[...Array(7)].map((_,i)=>{const d=new Date(Date.now()-(6-i)*DAY);const ds=d.toDateString();
+    const on=sl=>S.checkins.some(c=>c.slot===sl&&new Date(c.at).toDateString()===ds);
+    return `<div><span>${d.toLocaleDateString('fr-FR',{weekday:'narrow'})}</span><span class="dot${on('matin')?' on':''}" title="Matin"></span><span class="dot${on('soir')?' on':''}" title="Soir"></span></div>`;}).join('');
+  return `<div class="stack">
+    <div class="between"><div><div class="t" style="font-weight:500">${esc(g.proName)}</div><div class="small muted">Depuis le ${fdate(g.startAt)} · ${eur(g.salary)} / mois bloqués</div></div>${badgesHtml(proById(g.proId))}</div>
+    ${!S.checkinsLoaded?'<p class="small muted">Chargement des pointages…</p>':''}
+    <div class="stack-s"><span class="label">7 derniers jours · matin et soir</span><div class="days">${last7}</div></div>
+    <p class="small" style="margin:0">${stt.present} pointages sur ${stt.expected} attendus → <span class="money">${eur(stt.amount)}</span> à verser.</p>
+    ${r==='guard'?`<div class="row">
+      <label class="btn${did('matin')?' ghost':''}" style="display:flex;align-items:center;justify-content:center;flex:1" for="ck-matin">${did('matin')?'Matin pointé':'Pointer le matin'}</label><input id="ck-matin" class="ck-file" data-slot="matin" type="file" accept="image/*" capture="environment" hidden>
+      <label class="btn${did('soir')?' ghost':''}" style="display:flex;align-items:center;justify-content:center;flex:1" for="ck-soir">${did('soir')?'Soir pointé':'Pointer le soir'}</label><input id="ck-soir" class="ck-file" data-slot="soir" type="file" accept="image/*" capture="environment" hidden></div>`:''}
+    ${S.busy?'<p class="small muted">Envoi du pointage…</p>':''}
+    ${r==='client'?`<button class="btn" data-a="g-close">Clôturer le mois et payer ${eur(stt.amount)}</button><p class="small muted" style="margin:0">Le reste (${eur(g.salary-stt.amount)}) te revient. Tu pourras ensuite reprendre le même gardien ou en choisir un autre.</p>`:''}
+    ${S.checkins.length?`<div class="grid3">${S.checkins.slice(0,9).map(c=>`<div class="photo"><img loading="lazy" src="${esc(c.data)}" alt="Pointage ${esc(c.slot)}"><span>${esc(c.slot)} · ${ftime(c.at)}</span></div>`).join('')}</div>`:''}
+    ${guardHist(p,r)}
+  </div>`;
+}
+
+/* ---------- maison qui grandit ---------- */
+function houseCard(p){
+  const n=p.steps.length||1, paid=p.steps.filter(s=>s.status==='paye').length;
+  const lvl=paid===0?0:Math.min(4,Math.max(1,Math.round(paid/n*4)));
+  const msgs=['Le terrain attend sa première pierre.','Les fondations sont posées !','Les murs montent !','Les murs sont debout !','Ta maison est terminée !'];
+  const L='style="fill:none;stroke:var(--fg);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round"';
+  const F=c=>`style="fill:var(${c});stroke:var(--fg);stroke-width:1.6;stroke-linejoin:round"`;
+  let g=`<path d="M4 86H116" ${L}/>`;
+  if(lvl===0) g+=`<path d="M30 86V70 M30 70L44 75L30 80" ${L}/><path d="M60 86l6-5 6 5 M84 86l5-4 5 4" ${L}/>`;
+  if(lvl>=1) g+=`<rect x="24" y="78" width="72" height="8" ${F('--tile')}/>`;
+  if(lvl===2) g+=`<rect x="28" y="62" width="64" height="16" ${F('--tile')}/><path d="M28 70H92 M44 62V70 M60 70V78 M76 62V70" ${L}/>`;
+  if(lvl>=3) g+=`<rect x="28" y="46" width="64" height="32" ${F('--tile')}/><rect x="36" y="54" width="12" height="10" ${F('--bg')}/><rect x="72" y="54" width="12" height="10" ${F('--bg')}/>`;
+  if(lvl===4) g+=`<path d="M20 48L60 20L100 48Z" ${F('--warn')}/><rect x="54" y="62" width="12" height="16" ${F('--bg')}/><circle cx="104" cy="16" r="6" ${F('--warn')}/>`;
+  return `<div class="house"><svg viewBox="0 0 120 96" role="img" aria-label="Avancement de la maison : ${paid} étape(s) sur ${n} payée(s)">${g}</svg>
+    <div class="stack-s" style="min-width:0"><span class="msg">${msgs[lvl]}</span><span class="small muted">${paid} étape${paid>1?'s':''} sur ${n} payée${paid>1?'s':''}</span></div></div>`;
+}
+
+/* ---------- plan de test ---------- */
+const PLAN=[
+  ['Client',[['c1','Créer mon compte'],['c2','Trouver un pro dans l\'annuaire'],['c3','Créer un projet avec 3 étapes'],['c4','Bloquer l\'argent d\'une étape'],['c5','Voir la photo envoyée par le pro'],['c6','Valider et payer une étape'],['c7','Ouvrir un litige'],['c8','Laisser un avis après chaque étape payée'],['c9','Arrêter un contrat'],['c10','Commander des matériaux'],['c11','Estimer le prix d\'une maison'],['c12','Engager un gardien et payer le mois'],['c13','Changer de langue']]],
+  ['Pro',[['p1','Créer ma fiche pro'],['p2','Vérifier mon compte (test)'],['p3','Envoyer une photo du chantier'],['p4','Appuyer sur « Étape terminée »'],['p5','Écrire au client dans Messages'],['p6','Noter le client et voir son profil'],['p10','Vérifier que les avis restent cachés jusqu\'à ce que les deux aient noté'],['p7','Fournisseur : publier un produit'],['p8','Fournisseur : livrer une commande avec photo'],['p9','Gardien : pointer matin et soir']]],
+  ['Admin',[['a1','Voir les comptes et les projets'],['a2','Ajouter un pro à l\'annuaire'],['a3','Décider un litige comme expert'],['a4','Lire les bugs signalés']]]
+];
+const LATER=['Lingala : corriger les traductions dans Admin › Lingala','Traduction complète de tous les textes','Règles d\'utilisation et protection des données','Vrai argent (Mangopay) et vraie vérification d\'identité (Smile ID)','Position GPS sur les photos','Carnet souvenir'];
+function planCount(){const c=(S.me&&S.me.checks)||{};const all=PLAN.flatMap(g=>g[1]);return [all.filter(x=>c[x[0]]).length,all.length];}
+function planCard(){
+  const [d,t]=planCount();
+  return `<button class="item" data-a="go" data-v="plan" style="border:1px solid var(--line);padding:14px"><div class="stack-s" style="gap:6px;flex:1"><span class="t">Plan de test</span><div class="progress" aria-hidden="true"><span style="width:${t?d/t*100:0}%"></span></div><span class="small muted">${d} sur ${t} testés</span></div><span aria-hidden="true">›</span></button>`;
+}
+function vPlan(){
+  const c=S.me.checks||{}, [d,t]=planCount();
+  return `<div class="stack">
+    <button class="link" data-a="home">Retour</button>
+    <div class="stack-s"><span class="label">${d} sur ${t} testés</span><h1>Plan de test</h1></div>
+    <div class="progress" aria-hidden="true"><span style="width:${t?d/t*100:0}%"></span></div>
+    <p class="notice">Pour un test à trois : un pote joue le client, un autre le pro, et toi l'admin qui décide les litiges. Envoie-leur simplement le lien de l'app. Coche chaque ligne quand ça marche, et signale tout ce qui bloque.</p>
+    ${PLAN.map(g=>`<div class="stack-s"><span class="label">${g[0]}</span><div class="list">${g[1].map(x=>`<button class="check" aria-pressed="${!!c[x[0]]}" data-a="check" data-v="${x[0]}"><span class="box" aria-hidden="true">${c[x[0]]?'✓':''}</span><span class="txt">${esc(x[1])}</span></button>`).join('')}</div></div>`).join('')}
+    <form class="stack-s" data-f="bug" style="border:1px solid var(--line);padding:16px">
+      <span class="label">Signaler un bug ou une idée</span>
+      <div class="field"><label class="label" for="bug-text">Qu'est-ce qui ne marche pas ?</label><textarea id="bug-text" rows="3" maxlength="500"></textarea></div>
+      ${S.p.bugSent?'<p class="small verified" style="margin:0">Merci, c\'est envoyé.</p>':''}
+      <button class="btn sm" type="submit">Envoyer</button>
+    </form>
+    <div class="stack-s"><span class="label">Pas encore dans cette version</span><div class="list">${LATER.map(x=>`<div class="item"><span class="small">${esc(x)}</span><span class="pill s-attente">À venir</span></div>`).join('')}</div></div>
+  </div>`;
+}
+
+/* ---------- espace admin ---------- */
+function vAdmin(){
+  const prj=S.allProjects, steps=prj.flatMap(p=>p.steps||[]);
+  const sum=k=>steps.filter(s=>k.includes(s.status)).reduce((a,s)=>a+(+s.amount||0),0);
+  const lit=prj.filter(p=>(p.steps||[]).some(s=>s.status==='litige'));
+  const pros=S.pros.slice().sort((a,b)=>(a.verified?1:0)-(b.verified?1:0)||(b.createdAt||0)-(a.createdAt||0));
+  const tab=S.p.atab||'over';
+  const tabs=[['over','Vue'],['pros','Pros'],['users','Comptes'],['bugs','Bugs'],['tr','Lingala']];
+  let body='';
+  if(tab==='over') body=`<div class="stats">
+      <div class="stat"><span class="label">Comptes</span><b>${S.allProfiles.length}</b></div>
+      <div class="stat"><span class="label">Pros vérifiés</span><b>${S.pros.filter(p=>p.verified).length} / ${S.pros.length}</b></div>
+      <div class="stat"><span class="label">Projets</span><b>${prj.length}</b></div>
+      <div class="stat"><span class="label">Litiges ouverts</span><b class="${lit.length?'s-litige':''}">${lit.length}</b></div>
+      <div class="stat"><span class="label">Argent bloqué</span><b class="s-bloque">${eur(sum(['bloque','fait','litige']))}</b></div>
+      <div class="stat"><span class="label">Payé aux pros</span><b class="s-paye">${eur(sum(['paye']))}</b></div>
+    </div>
+    <p class="small muted" style="margin:0">Ta commission à 4 % sur les paiements validés : <span class="money">${eur(Math.round(sum(['paye'])*0.04))}</span> (fictif).</p>
+    <span class="label">Litiges à décider</span>
+    ${lit.length?`<div class="list">${lit.map(p=>`<button class="item" data-a="open" data-v="${p.id}"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.clientName)} contre ${esc(p.proName)}</div></div><span class="pill s-litige">Décider</span></button>`).join('')}</div>`:'<div class="empty">Aucun litige en cours.</div>'}
+    ${S.adminOrders&&S.adminOrders.filter(o=>o.status==='litige').length?`<span class="label">Commandes en litige</span>${S.adminOrders.filter(o=>o.status==='litige').map(o=>orderRow(o,'admin')).join('')}`:''}
+    <span class="label">Tous les projets</span>
+    ${prj.length?`<div class="list">${prj.sort((a,b)=>b.createdAt-a.createdAt).map(p=>`<button class="item" data-a="open" data-v="${p.id}"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.clientName)} · ${esc(p.proName)} · ${esc(p.ville)}</div></div>${stepSummary(p)}</button>`).join('')}</div>`:'<div class="empty">Pas encore de projet.</div>'}`;
+  if(tab==='pros') body=`<div class="stack-s"><span class="label">Où trouver des pros</span>
+      <a href="https://www.goafricaonline.com/cd/annuaire/batiment-travaux-publics" target="_blank" rel="noopener">GoAfrica : bâtiment et travaux publics (RD Congo)</a>
+      <a href="https://www.goafricaonline.com/cd/annuaire/materiaux-construction" target="_blank" rel="noopener">GoAfrica : matériaux de construction (RD Congo)</a>
+      <a href="https://www.google.com/maps/search/entreprise+construction+Kinshasa" target="_blank" rel="noopener">Google Maps : construction à Kinshasa</a>
+      <a href="https://www.google.com/maps/search/quincaillerie+Kinshasa" target="_blank" rel="noopener">Google Maps : quincailleries à Kinshasa</a>
+      <a href="https://www.google.com/maps/search/constru%C3%A7%C3%A3o+Luanda" target="_blank" rel="noopener">Google Maps : construction à Luanda</a>
+      <a href="https://www.linkedin.com/search/results/people/?keywords=ing%C3%A9nieur%20civil%20Kinshasa" target="_blank" rel="noopener">LinkedIn : ingénieurs civils à Kinshasa</a>
+      <span class="small muted">Ajoute seulement des pros qui affichent déjà publiquement leur activité, et retire ceux qui le demandent.</span></div>
+    <form class="stack-s" data-f="addpro" style="border:1px solid var(--line);padding:16px">
+      <span class="label">Ajouter un pro à l'annuaire (non vérifié)</span>
+      <div class="field"><label class="label" for="ap-name">Nom</label><input id="ap-name" maxlength="60" required></div>
+      <div class="field"><label class="label" for="ap-metier">Métier</label><select id="ap-metier">${opts(METIERS)}</select></div>
+      <div class="row"><div class="field" style="flex:1;min-width:0"><label class="label" for="ap-pays">Pays</label><select id="ap-pays">${opts(PAYS,'RD Congo')}</select></div>
+      <div class="field" style="flex:1;min-width:0"><label class="label" for="ap-ville">Ville</label><input id="ap-ville" maxlength="40" required></div></div>
+      <div class="field"><label class="label" for="ap-phone">Téléphone public</label><input id="ap-phone" maxlength="25"></div>
+      <button class="btn sm" type="submit">Ajouter</button></form>
+    ${pros.length?`<div class="list">${pros.map(p=>`<div class="item"><div><div class="t">${esc(p.name)}${p.hidden?' · masqué':''}</div><div class="small muted">${esc(p.metier)} · ${esc(p.ville)}, ${esc(p.pays)}${p.rccm?' · '+esc(p.rccm):''}</div><div class="small ${p.verified?'verified':'unverified'}">${p.verified?'Vérifié':'Non vérifié'}</div></div>
+      <div class="stack-s" style="flex-shrink:0"><button class="btn ghost sm" data-a="adm-verify" data-v="${p.id}">${p.verified?'Retirer':'Vérifier'}</button><button class="link" data-a="adm-hide" data-v="${p.id}">${p.hidden?'Réafficher':'Masquer'}</button></div></div>`).join('')}</div>`:'<div class="empty">Aucun pro.</div>'}`;
+  if(tab==='users') body=S.allProfiles.length?`<div class="list">${S.allProfiles.sort((a,b)=>b.createdAt-a.createdAt).map(u=>`<div class="item"><div><div class="t">${esc(u.name)}</div><div class="small muted">${esc(u.ville)}, ${esc(u.pays)} · ${esc(u.phone)}</div></div><span class="meta">${fdate(u.createdAt)}${u.proId?' · pro':''}</span></div>`).join('')}</div>`:'<div class="empty">Aucun compte.</div>';
+  if(tab==='tr'){const keys=Object.keys(I18N.ln), cur=(S.tr&&S.tr.ln)||{};
+    body=`<form class="stack" data-f="tr"><p class="small muted" style="margin:0">Ce sont mes propositions de traduction. Corrige-les, puis enregistre : l'app en lingala change pour tout le monde.</p>
+      ${keys.map((k,i)=>`<div class="field"><label class="label" for="tr-${i}" style="text-transform:none;letter-spacing:0">${esc(k)}</label><input id="tr-${i}" data-k="${esc(k)}" value="${esc(cur[k]||I18N.ln[k])}"></div>`).join('')}
+      ${S.p.trSaved?'<p class="small verified" style="margin:0">Enregistré.</p>':''}
+      <button class="btn" type="submit">Enregistrer les traductions</button></form>`;}
+  if(tab==='bugs') body=S.bugs.length?`<div class="list">${S.bugs.map(b=>`<div class="item"><div><div class="small">${esc(b.text)}</div><div class="meta">${esc(b.who)} · ${ftime(b.at)}</div></div></div>`).join('')}</div>`:'<div class="empty">Aucun bug signalé pour l\'instant.</div>';
+  return `<div class="stack">
+    <div class="stack-s"><span class="label">Visible seulement par toi</span><h1>Espace admin</h1></div>
+    ${planCard()}
+    <div class="tabs" role="tablist">${tabs.map(t=>`<button role="tab" aria-selected="${t[0]===tab}" data-a="atab" data-v="${t[0]}">${t[1]}</button>`).join('')}</div>
+    ${body}
+  </div>`;
+}
+
+/* ---------- actions ---------- */
+const val=id=>{const el=document.getElementById(id);return el?el.value.trim():'';};
+async function setSteps(p,i,patch){
+  const steps=p.steps.map((s,k)=>k===i?Object.assign({},s,patch):s);
+  await S.db.doc('projects/'+p.id).update({steps});
+}
+async function sysMsg(pid,text){
+  const ref=S.db.doc('messages/'+pid); const s=await ref.get();
+  const items=(s.exists?(s.data().items||[]):[]).slice(-300);
+  items.push({uid:'system',who:'Maison Mère',text,at:Date.now()});
+  await ref.set({items});
+}
+function myName(p){const r=role(p);return r==='pro'?(p.proName):S.me.name;}
+
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-a]'); if(!b||b.tagName==='INPUT'||b.tagName==='SELECT') return;
+  const a=b.dataset.a, v=b.dataset.v;
+  const p=S.view==='project'?prjById(S.p.id):null;
+  try{
+    if(a==='logout'){await S.auth.signOut();location.reload();return;}
+    if(a==='auth-signup'){S.err='';S.info='';try{await S.auth.createUserWithEmailAndPassword(val('au-email'),document.getElementById('au-pass').value);}catch(er){S.err=AUTH_ERR[er.code]||'Création du compte impossible.';render();}return;}
+    if(a==='auth-reset'){S.err='';S.info='';try{await S.auth.sendPasswordResetEmail(val('au-email'));S.info='Email envoyé : suis le lien pour choisir un nouveau mot de passe.';}catch(er){S.err=AUTH_ERR[er.code]||'Entre ton email d\'abord.';}render();return;}
+    if(a==='home') return go('home');
+    if(a==='go') return go(v);
+    if(a==='mode'){S.mode=v;return go('home');}
+    if(a==='open') return go('project',{id:v,tab:b.dataset.t||'steps'});
+    if(a==='pro') return go('pro',{id:v});
+    if(a==='newwith'){S.mode='client';return go('newp',{proId:v});}
+    if(a==='tab'){S.p.tab=v;S.p.disputeIdx=null;S.err='';watchProject();return render();}
+    if(a==='star'){S.p[b.dataset.k+'n']=+v;return render();}
+    if(a==='dispute'){S.p.disputeIdx=+v;return render();}
+    if(a==='nodispute'){S.p.disputeIdx=null;return render();}
+    if(a==='atab'){S.p.atab=v;return render();}
+    if(a==='cprof'){const d=await S.db.doc('profiles/'+v).get();const back={view:S.view,p:S.p};S.back=back;return go('client',{data:d.exists?d.data():null});}
+    if(a==='back'&&S.back){const bk=S.back;S.back=null;S.view=bk.view;S.p=bk.p;watchProject();return render();}
+    if(a==='cat'){S.p.cat=v;S.p.buy=null;return render();}
+    if(a==='buy'){S.p.buy=S.p.buy===v?null:v;S.p.qty='1';return render();}
+    if(a==='esize'){S.p.size=v;return render();}
+    if(a==='del-prod'){await S.db.doc('products/'+v).delete();return;}
+    if(a==='o-pay'){const o=S.myOrders.find(x=>x.id===v);if(o){await S.db.doc('orders/'+v).update({status:'paye',paidAt:Date.now()});await bumpPro(o.sellerProId,'paid');}return;}
+    if(a==='o-dispute'){await S.db.doc('orders/'+v).update({status:'litige',disputeAt:Date.now()});return;}
+    if(a==='o-decide'&&S.admin){const o=(S.adminOrders||[]).find(x=>x.id===v);await S.db.doc('orders/'+v).update({status:b.dataset.d==='pay'?'paye':'rembourse',paidAt:Date.now()});if(o)await bumpPro(o.sellerProId,b.dataset.d==='pay'?'paid':'lost');return;}
+    if(a==='g-close'&&p&&p.guard){const g=p.guard,stt=guardStats(g);
+      await S.db.doc('projects/'+p.id).update({guard:null,guardHistory:[...(p.guardHistory||[]),{proId:g.proId,proName:g.proName,startAt:g.startAt,endAt:Date.now(),present:stt.present,expected:stt.expected,amount:stt.amount}]});
+      await bumpPro(g.proId,'paid');
+      await sysMsg(p.id,`Gardien ${g.proName} : mois clôturé, ${stt.present}/${stt.expected} pointages, ${eur(stt.amount)} versés, ${eur(g.salary-stt.amount)} rendus au client.`);return;}
+    if(a==='check'){const cur=!!(S.me.checks&&S.me.checks[v]);await S.db.doc('profiles/'+S.uid).update({['checks.'+v]:!cur});return;}
+    if(a==='adm-verify'&&S.admin){const pr=proById(v);if(pr) await S.db.doc('pros/'+v).update({verified:!pr.verified,verifiedAt:Date.now()});return;}
+    if(a==='adm-hide'&&S.admin){const pr=proById(v);if(pr) await S.db.doc('pros/'+v).update({hidden:!pr.hidden});return;}
+    if(a==='stop'){S.p.confirmStop=true;return render();}
+    if(a==='stopno'){S.p.confirmStop=false;return render();}
+    if(!p&&['block','done','pay','expert','stopyes'].includes(a)) return;
+    if(a==='block'){await setSteps(p,+v,{status:'bloque',blockedAt:Date.now()});await sysMsg(p.id,`${p.steps[+v].name} : ${eur(p.steps[+v].amount)} bloqués par le client.`);}
+    if(a==='done'){await setSteps(p,+v,{status:'fait',doneAt:Date.now()});await sysMsg(p.id,`${p.steps[+v].name} : le pro indique que l'étape est terminée.`);}
+    if(a==='pay'){await setSteps(p,+v,{status:'paye',paidAt:Date.now()});await sysMsg(p.id,`${p.steps[+v].name} : validé par le client, ${eur(p.steps[+v].amount)} versés au pro.`);await bumpPro(p.proId,'paid');}
+    if(a==='expert'){
+      const d=b.dataset.d, i=+v, st=p.steps[i];
+      if(d==='ok'){await setSteps(p,i,{status:'paye',paidAt:Date.now(),expert:true});await sysMsg(p.id,`${st.name} : l'expert juge le travail conforme. Le pro est payé, le client paie la visite.`);await bumpPro(p.proId,'paid');}
+      if(d==='redo'){await setSteps(p,i,{status:'bloque',dispute:null});await sysMsg(p.id,`${st.name} : l'expert demande de refaire le travail. L'argent reste bloqué, le pro paie la visite.`);await bumpPro(p.proId,'lost');}
+      if(d==='refund'){await setSteps(p,i,{status:'rembourse',paidAt:Date.now()});await sysMsg(p.id,`${st.name} : l'expert donne raison au client. ${eur(st.amount)} remboursés, le pro paie la visite.`);await bumpPro(p.proId,'lost');}
+    }
+    if(a==='stopyes'){
+      const steps=p.steps.map(s=>['bloque','fait'].includes(s.status)?Object.assign({},s,{status:'rembourse',paidAt:Date.now()}):s);
+      await S.db.doc('projects/'+p.id).update({steps,stopped:{by:S.uid,at:Date.now()}});
+      await sysMsg(p.id,`Contrat arrêté par ${role(p)==='client'?'le client':'le pro'}. L'argent bloqué non validé est remboursé.`);
+      S.p.confirmStop=false;
+    }
+    if(a==='verify'){await S.db.doc('pros/'+S.me.proId).update({verified:true,verifiedAt:Date.now()});}
+  }catch(err){S.err='Action impossible pour le moment. Réessaie dans un instant.';render();}
+});
+
+document.addEventListener('input',e=>{
+  if(e.target.dataset.a==='dirq'){S.p.q=e.target.value;render();}
+  if(e.target.dataset.a==='mville'){S.p.mville=e.target.value;render();}
+  if(e.target.dataset.a==='qty'){S.p.qty=e.target.value.replace(/\D/g,'');render();}
+  if(e.target.dataset.a==='eprice'){S.p.prices=Object.assign({},S.p.prices,{[e.target.dataset.c]:e.target.value.replace(',','.')});render();}
+});
+document.addEventListener('change',async e=>{
+  if(e.target.dataset.a==='dirpays'){S.p.pays=e.target.value;render();}
+  if(e.target.id==='langSel'){LANG=e.target.value;try{localStorage.setItem('mm-lang',LANG);}catch(x){}if(S.me&&S.me.checks&&!S.me.checks.c13&&LANG!=='fr')S.db.doc('profiles/'+S.uid).update({'checks.c13':true}).catch(()=>{});render();}
+  if(e.target.classList.contains('dl-file')&&e.target.files[0]){
+    S.busy=true;render();
+    try{const data=await shrink(e.target.files[0],600,50000);await S.db.doc('orders/'+e.target.dataset.v).update({status:'livre',deliveredAt:Date.now(),photo:data});}
+    catch(err){S.err='La photo n\'a pas pu être envoyée.';}
+    S.busy=false;render();
+  }
+  if(e.target.classList.contains('ck-file')&&e.target.files[0]){
+    const p=prjById(S.p.id); if(!p) return;
+    S.busy=true;render();
+    try{const data=await shrink(e.target.files[0],480,35000);await S.db.collection('checkins').add({projectId:p.id,uid:S.uid,slot:e.target.dataset.slot,data,at:Date.now()});}
+    catch(err){S.err='Le pointage n\'a pas pu être envoyé.';}
+    S.busy=false;render();
+  }
+  if(e.target.id==='ph-file'&&e.target.files[0]){
+    const p=prjById(S.p.id); if(!p) return;
+    S.busy=true;S.err='';render();
+    try{
+      const data=await shrink(e.target.files[0]);
+      await S.db.collection('photos').add({projectId:p.id,step:+val('ph-step')||0,uid:S.uid,who:myName(p),data,at:Date.now()});
+    }catch(err){S.err='La photo n\'a pas pu être envoyée. Essaie une autre image.';}
+    S.busy=false;render();
+  }
+});
+
+function shrink(file,m0,target){
+  return new Promise((res,rej)=>{
+    const url=URL.createObjectURL(file), img=new Image();
+    img.onload=()=>{
+      let w=img.naturalWidth,h=img.naturalHeight; const m=m0||720; if(Math.max(w,h)>m){const k=m/Math.max(w,h);w=Math.round(w*k);h=Math.round(h*k);}
+      const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url);
+      let q=.6,d=c.toDataURL('image/jpeg',q); while(d.length>(target||80000)&&q>.25){q-=.1;d=c.toDataURL('image/jpeg',q);}
+      d.length>140000?rej(new Error('big')):res(d);
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error('img'));};
+    img.src=url;
+  });
+}
+
+document.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const f=e.target.dataset.f; S.err='';
+  if(f==='login'){S.info='';try{await S.auth.signInWithEmailAndPassword(val('au-email'),document.getElementById('au-pass').value);}catch(er){S.err=AUTH_ERR[er.code]||'Connexion impossible.';render();}return;}
+  const p=S.view==='project'?prjById(S.p.id):null;
+  try{
+    if(f==='signup'){
+      if(!val('su-name')||!val('su-phone')||!val('su-ville')){S.err='Remplis tous les champs.';return render();}
+      await S.db.doc('profiles/'+S.uid).set({name:val('su-name'),phone:val('su-phone'),pays:val('su-pays'),ville:val('su-ville'),createdAt:Date.now(),proId:null,reviews:[]});
+    }
+    if(f==='account'){await S.db.doc('profiles/'+S.uid).update({name:val('ac-name'),phone:val('ac-phone'),ville:val('ac-ville')});go('home');}
+    if(f==='newp'){
+      const proId=val('np-pro'), pro=proById(proId);
+      const steps=[0,1,2,3].map(i=>({name:val('np-s'+i),amount:parseInt(val('np-a'+i).replace(/\D/g,''),10)||0})).filter(s=>s.name)
+        .map(s=>({name:s.name,amount:s.amount,status:'attente',blockedAt:null,doneAt:null,paidAt:null}));
+      if(!val('np-title')||!val('np-ville')){S.err='Donne un nom et une ville au projet.';return render();}
+      if(!pro||!pro.verified){S.err='Choisis un professionnel vérifié.';return render();}
+      if(!steps.length||steps.some(s=>!s.amount)){S.err='Ajoute au moins une étape, chacune avec un montant.';return render();}
+      const ref=await S.db.collection('projects').add({title:val('np-title'),pays:val('np-pays'),ville:val('np-ville'),clientUid:S.uid,clientName:S.me.name,proId,proName:pro.name,createdAt:Date.now(),steps,reviewed:false,proReviewed:false,stopped:null});
+      go('project',{id:ref.id,tab:'steps'});
+    }
+    if(f==='fiche'){
+      const data={name:val('pf-name'),metier:val('pf-metier'),pays:val('pf-pays'),ville:val('pf-ville'),phone:val('pf-phone'),rccm:val('pf-rccm'),about:val('pf-about')};
+      if(!data.name||!data.ville||!data.phone){S.err='Remplis le nom, la ville et le téléphone.';return render();}
+      if(S.me.proId){await S.db.doc('pros/'+S.me.proId).update(data);}
+      else{const ref=await S.db.collection('pros').add(Object.assign(data,{ownerUid:S.uid,verified:false,example:false,reviews:[],createdAt:Date.now()}));await S.db.doc('profiles/'+S.uid).update({proId:ref.id});}
+      S.mode='pro';go('home');
+    }
+    if(f==='dispute'&&p){
+      const i=+e.target.dataset.v;
+      await setSteps(p,i,{status:'litige',dispute:{reason:val('dp-reason'),text:val('dp-text'),at:Date.now()}});
+      await sysMsg(p.id,`${p.steps[i].name} : litige ouvert par le client (${val('dp-reason')}). L'argent reste bloqué, un expert va vérifier.`);
+      S.p.disputeIdx=null;render();
+    }
+    if(f==='order'){
+      const x=S.products.find(y=>y.id===e.target.dataset.v); if(!x) return;
+      const qty=Math.max(1,parseInt(val('or-qty'),10)||1);
+      if(!val('or-addr')){S.err='Indique l\'adresse de livraison.';return render();}
+      await S.db.collection('orders').add({productId:x.id,productName:x.name,unit:x.unit,price:x.price,qty,total:Math.round(qty*x.price*100)/100,sellerProId:x.sellerProId,sellerName:x.sellerName,clientUid:S.uid,clientName:S.me.name,addr:val('or-addr'),status:'bloque',at:Date.now()});
+      return go('orders');
+    }
+    if(f==='prod'){
+      const me=proById(S.me.proId); const price=parseFloat(val('pr-price').replace(',','.'));
+      if(!me||!val('pr-name')||!(price>0)){S.err='Donne un nom et un prix.';return render();}
+      await S.db.collection('products').add({sellerProId:me.id,sellerName:me.name,name:val('pr-name'),cat:val('pr-cat'),unit:val('pr-unit')||'pièce',price,pays:me.pays,ville:me.ville,at:Date.now()});
+      ['pr-name','pr-price'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    }
+    if(f==='hire'&&p){
+      const g=proById(val('gd-pro')), sal=parseInt(val('gd-sal').replace(/\D/g,''),10)||0;
+      if(!g||!sal){S.err='Choisis un gardien et un salaire.';return render();}
+      await S.db.doc('projects/'+p.id).update({guard:{proId:g.id,proName:g.name,salary:sal,startAt:Date.now()},guardProId:g.id});
+      await sysMsg(p.id,`Gardien ${g.name} engagé : ${eur(sal)} bloqués pour le mois.`);
+    }
+    if(f==='tr'&&S.admin){
+      const ln={}; e.target.querySelectorAll('input[data-k]').forEach(el=>{if(el.value.trim()) ln[el.dataset.k]=el.value.trim();});
+      await S.db.doc('config/i18n').set(Object.assign({},S.tr||{},{ln}));S.p.trSaved=true;render();
+    }
+    if(f==='review'){
+      const key=e.target.dataset.key, n=S.p['rv_'+key+'n']; if(!n) return;
+      const kind=e.target.dataset.kind, v=e.target.dataset.v, x=e.target.dataset.x, text=val('rvt-'+key);
+      let tx='',other=false,mine='';
+      if(kind==='step-c'||kind==='step-p'){const pr=prjById(v),st=pr.steps[+x];tx='step:'+v+':'+x;other=kind==='step-c'?!!st.rvPro:!!st.rvClient;mine=kind==='step-c'?'profiles/'+pr.clientUid:'pros/'+pr.proId;}
+      if(kind==='ord-c'||kind==='ord-s'){const o=[...S.myOrders,...S.sellerOrders].find(y=>y.id===v);tx='ord:'+v;other=kind==='ord-c'?!!o.rvSeller:!!o.rvClient;mine=kind==='ord-c'?'profiles/'+o.clientUid:'pros/'+o.sellerProId;}
+      if(kind==='g-c'||kind==='g-g'){const pr=prjById(v),h=pr.guardHistory[+x];tx='g:'+v+':'+x;other=kind==='g-c'?!!h.rvGuard:!!h.rvClient;mine=kind==='g-c'?'profiles/'+pr.clientUid:'pros/'+h.proId;}
+      if(other){const ref=S.db.doc(mine);const d=await ref.get();if(d.exists){await ref.update({reviews:(d.data().reviews||[]).map(y=>y.tx===tx?Object.assign({},y,{hidden:false}):y)});}}
+      const add=async(path,about)=>{const ref=S.db.doc(path);const d=await ref.get();if(!d.exists)return;await ref.update({reviews:[...(d.data().reviews||[]),{tx,hidden:!other,uid:S.uid,name:kind==='step-p'?(prjById(v)||{}).proName:kind==='ord-s'?((S.sellerOrders.find(o=>o.id===v)||{}).sellerName):kind==='g-g'?((proById(S.me.proId)||{}).name):S.me.name,note:n,text,about,at:Date.now()}]});};
+      if(kind==='step-c'||kind==='step-p'){const pr=prjById(v);const i=+x;const st=pr.steps[i];
+        await add(kind==='step-c'?'pros/'+pr.proId:'profiles/'+pr.clientUid,st.name+' · '+pr.title);
+        await setSteps(pr,i,kind==='step-c'?{rvClient:true}:{rvPro:true});}
+      if(kind==='ord-c'||kind==='ord-s'){const o=[...S.myOrders,...S.sellerOrders].find(y=>y.id===v);
+        await add(kind==='ord-c'?'pros/'+o.sellerProId:'profiles/'+o.clientUid,'Commande : '+o.qty+' × '+o.productName);
+        await S.db.doc('orders/'+v).update(kind==='ord-c'?{rvClient:true}:{rvSeller:true});}
+      if(kind==='g-c'||kind==='g-g'){const pr=prjById(v);const i=+x;const h=pr.guardHistory[i];
+        await add(kind==='g-c'?'pros/'+h.proId:'profiles/'+pr.clientUid,'Gardiennage · '+pr.title);
+        const hist=pr.guardHistory.map((y,k)=>k===i?Object.assign({},y,kind==='g-c'?{rvClient:true}:{rvGuard:true}):y);
+        await S.db.doc('projects/'+pr.id).update({guardHistory:hist});}
+      delete S.p['rv_'+key+'n'];render();
+    }
+    if(f==='bug'){
+      const text=val('bug-text'); if(!text) return;
+      await S.db.collection('bugs').add({text,who:S.me.name,uid:S.uid,at:Date.now()});
+      document.getElementById('bug-text').value='';S.p.bugSent=true;render();
+    }
+    if(f==='addpro'&&S.admin){
+      const d={name:val('ap-name'),metier:val('ap-metier'),pays:val('ap-pays'),ville:val('ap-ville'),phone:val('ap-phone')};
+      if(!d.name||!d.ville){S.err='Donne au moins un nom et une ville.';return render();}
+      await S.db.collection('pros').add(Object.assign(d,{rccm:'',about:'',ownerUid:null,verified:false,example:false,addedByAdmin:true,reviews:[],createdAt:Date.now()}));
+      ['ap-name','ap-ville','ap-phone'].forEach(id=>{const el=document.getElementById(id);if(el) el.value='';});
+    }
+    if(f==='msg'&&p){
+      const text=val('msg-text'); if(!text) return;
+      const ref=S.db.doc('messages/'+p.id); const s=await ref.get();
+      const items=(s.exists?(s.data().items||[]):[]).slice(-300);
+      items.push({uid:S.uid,who:myName(p),text,at:Date.now()});
+      await ref.set({items});
+      document.getElementById('msg-text').value='';
+    }
+    if((f==='rv'||f==='rc')&&p){
+      const n=S.p[f+'n']; if(!n) return;
+      const text=val(f+'-text');
+      if(f==='rv'){const pro=proById(p.proId);if(pro){await S.db.doc('pros/'+pro.id).update({reviews:[...(pro.reviews||[]),{uid:S.uid,name:S.me.name,note:n,text,at:Date.now()}]});}await S.db.doc('projects/'+p.id).update({reviewed:true});}
+      if(f==='rc'){const ref=S.db.doc('profiles/'+p.clientUid);const s=await ref.get();if(s.exists){await ref.update({reviews:[...(s.data().reviews||[]),{uid:S.uid,name:p.proName,note:n,text,at:Date.now()}]});}await S.db.doc('projects/'+p.id).update({proReviewed:true});}
+    }
+  }catch(err){S.err=err&&err.code==='quota_exceeded'?'La base de test est pleine.':'Enregistrement impossible pour le moment. Réessaie.';render();}
+});
+
+boot();
+})();
+</script>
+</body>
+</html>

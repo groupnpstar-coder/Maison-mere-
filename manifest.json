@@ -1,0 +1,11 @@
+{
+  "name": "Maison Mère",
+  "short_name": "Maison Mère",
+  "description": "Ton argent ne bouge pas sans ton accord.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#121211",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}
