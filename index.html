@@ -440,8 +440,8 @@ function vNewProject(){
       ${ver.length?'':'<button class="link" type="button" data-a="mkpro">Pour tester seul : créer une fiche pro de test</button>'}</div>
     <span class="label">Étapes et montants</span>
     ${[0,1,2,3].map(i=>`<div class="row"><div class="field" style="flex:2;min-width:0"><label class="label" for="np-s${i}">Étape ${i+1}</label><input id="np-s${i}" maxlength="40" value="${['Fondations','Murs','Toit',''][i]}"></div>
-      <div class="field" style="flex:1;min-width:0"><label class="label" for="np-a${i}">Montant €</label><input id="np-a${i}" inputmode="numeric" maxlength="7"></div></div>`).join('')}
-    <p class="small muted">Laisse une étape vide si tu n'en as pas besoin. Tu bloqueras l'argent une étape à la fois, à ton rythme.</p>
+      <div class="field" style="flex:1;min-width:0"><label class="label" for="np-a${i}">Montant €</label><input id="np-a${i}" inputmode="numeric" maxlength="7" placeholder="facultatif"></div></div>`).join('')}
+    <p class="small muted">Laisse une étape vide si tu n'en as pas besoin. Les montants peuvent être ajoutés plus tard. Tu bloqueras l'argent une étape à la fois, à ton rythme.</p>
     ${S.err?`<p class="err">${esc(S.err)}</p>`:''}
     <button class="btn" type="submit">Créer le projet</button>
   </form>`;
@@ -465,6 +465,7 @@ function vProject(){
   </div>`;
 }
 
+function amtForm(i,cur){return `<form class="row" data-f="amt" data-v="${i}"><div class="field" style="flex:1;min-width:0"><label class="label" for="amt-${i}">Montant de l'étape (€)</label><input id="amt-${i}" inputmode="numeric" maxlength="7" value="${cur||''}" placeholder="Ex. 1000"></div><button class="btn sm" type="submit" style="align-self:flex-end">OK</button></form>`;}
 function canBlock(p,i){return !p.stopped&&p.steps.slice(0,i).every(s=>s.status==='paye'||s.status==='rembourse');}
 
 function choosePro(p){
@@ -482,7 +483,8 @@ function tSteps(p,r){
   const steps=p.steps.map((st,i)=>{
     let actions='', info='';
     if(st.status==='attente'){
-      if(r==='client'&&canBlock(p,i)) actions=`<button class="btn" data-a="block" data-v="${i}">Bloquer ${eur(st.amount)}</button>`;
+      if(r==='client'&&canBlock(p,i)) actions=st.amount?`<button class="btn" data-a="block" data-v="${i}">Bloquer ${eur(st.amount)}</button><button class="link" data-a="editamt" data-v="${i}">Changer le montant</button>`:amtForm(i);
+      if(r==='client'&&S.p.editAmt===i&&st.amount) actions=amtForm(i,st.amount);
       info=r==='pro'?'Le client n\'a pas encore bloqué l\'argent. Ne commence pas avant.':(canBlock(p,i)?'Bloque l\'argent pour que le travail commence.':'Disponible quand l\'étape précédente est payée.');
     }
     if(st.status==='bloque'){
@@ -944,7 +946,8 @@ document.addEventListener('click',async e=>{
     if(a==='stop'){S.p.confirmStop=true;return render();}
     if(a==='stopno'){S.p.confirmStop=false;return render();}
     if(!p&&['block','done','pay','expert','stopyes'].includes(a)) return;
-    if(a==='block'){await setSteps(p,+v,{status:'bloque',blockedAt:Date.now()});await sysMsg(p.id,`${p.steps[+v].name} : ${eur(p.steps[+v].amount)} bloqués par le client.`);}
+    if(a==='editamt'){S.p.editAmt=+v;return render();}
+    if(a==='block'){if(!p.steps[+v].amount)return;await setSteps(p,+v,{status:'bloque',blockedAt:Date.now()});await sysMsg(p.id,`${p.steps[+v].name} : ${eur(p.steps[+v].amount)} bloqués par le client.`);}
     if(a==='done'){await setSteps(p,+v,{status:'fait',doneAt:Date.now()});await sysMsg(p.id,`${p.steps[+v].name} : le pro indique que l'étape est terminée.`);}
     if(a==='pay'){await setSteps(p,+v,{status:'paye',paidAt:Date.now()});await sysMsg(p.id,`${p.steps[+v].name} : validé par le client, ${eur(p.steps[+v].amount)} versés au pro.`);await bumpPro(p.proId,'paid');}
     if(a==='expert'){
@@ -1031,7 +1034,7 @@ document.addEventListener('submit',async e=>{
         .map(s=>({name:s.name,amount:s.amount,status:'attente',blockedAt:null,doneAt:null,paidAt:null}));
       if(!val('np-title')||!val('np-ville')){S.err='Donne un nom et une ville au projet.';return render();}
       if(proId&&!OK(pro)){S.err='Ce professionnel n\'est pas vérifié.';return render();}
-      if(!steps.length||steps.some(s=>!s.amount)){S.err='Ajoute au moins une étape, chacune avec un montant.';return render();}
+      if(!steps.length){S.err='Ajoute au moins une étape, par exemple « Fondations ».';return render();}
       const ref=await S.db.collection('projects').add({title:val('np-title'),pays:val('np-pays'),ville:val('np-ville'),clientUid:S.uid,clientName:S.me.name,proId:proId||null,proName:pro?pro.name:'',createdAt:Date.now(),steps,reviewed:false,proReviewed:false,stopped:null});
       go('project',{id:ref.id,tab:'steps'});
     }
@@ -1091,6 +1094,11 @@ document.addEventListener('submit',async e=>{
         const hist=pr.guardHistory.map((y,k)=>k===i?Object.assign({},y,kind==='g-c'?{rvClient:true}:{rvGuard:true}):y);
         await S.db.doc('projects/'+pr.id).update({guardHistory:hist});}
       delete S.p['rv_'+key+'n'];render();
+    }
+    if(f==='amt'&&p){
+      const i=+e.target.dataset.v, n=parseInt(val('amt-'+i).replace(/\D/g,''),10)||0;
+      if(!n){S.err='Indique un montant.';return render();}
+      await setSteps(p,i,{amount:n});S.p.editAmt=null;render();
     }
     if(f==='setpro'&&p){
       const pr=proById(val('sp-pro')); if(!OK(pr)){S.err='Choisis un pro dans la liste.';return render();}
