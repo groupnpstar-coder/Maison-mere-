@@ -348,7 +348,7 @@ function vSignup(){
     <h1>Ton argent ne bouge pas sans ton accord.</h1>
     <p class="muted">Crée ton compte. Un seul compte par personne.</p>
     <div class="field"><label class="label" for="su-name">Nom et prénom</label><input id="su-name" required maxlength="60" autocomplete="name"></div>
-    <div class="field"><label class="label" for="su-phone">Téléphone (WhatsApp)</label><input id="su-phone" required maxlength="25" inputmode="tel" placeholder="+32 …"></div>
+    <div class="field"><label class="label" for="su-phone">Téléphone WhatsApp, avec l'indicatif (+32, +243…)</label><input id="su-phone" required maxlength="25" inputmode="tel" placeholder="+32 …"></div>
     <div class="field"><label class="label" for="su-pays">Pays où tu vis</label><select id="su-pays">${opts(PAYS,'Belgique')}</select></div>
     <div class="field"><label class="label" for="su-ville">Ville</label><input id="su-ville" required maxlength="40"></div>
     <div class="stack-s"><span class="label">Tu viens pour…</span>
@@ -469,6 +469,7 @@ function vProject(){
     <div class="stack-s"><span class="label">${esc(p.ville)}, ${esc(p.pays)} · ${r==='client'?'pro : '+esc(p.proName||'à choisir'):'client : '+esc(p.clientName)}</span><h1>${esc(p.title)}</h1>
     ${p.stopped?`<span class="pill s-rembourse" style="align-self:flex-start">Contrat arrêté le ${fdate(p.stopped.at)}</span>`:''}</div>
     ${r!=='client'?`<button class="link" data-a="cprof" data-v="${p.clientUid}">${t('Profil du client')} : ${esc(p.clientName)}</button>`:''}
+    ${waCall(p,r)}
     ${houseCard(p)}
     <div class="tabs" role="tablist">${tabs.map(x=>`<button role="tab" aria-selected="${x[0]===tab}" data-a="tab" data-v="${x[0]}">${t(x[1])}</button>`).join('')}</div>
     ${body}
@@ -476,6 +477,19 @@ function vProject(){
 }
 
 function amtForm(i,cur){return `<form class="row" data-f="amt" data-v="${i}"><div class="field" style="flex:1;min-width:0"><label class="label" for="amt-${i}">Montant de l'étape (€)</label><input id="amt-${i}" inputmode="numeric" maxlength="7" value="${cur||''}" placeholder="Ex. 1000"></div><button class="btn sm" type="submit" style="align-self:flex-end">OK</button></form>`;}
+function waNum(x){let d=String(x||'').replace(/[^\d+]/g,'');if(d.startsWith('+'))return d.slice(1);if(d.startsWith('00'))return d.slice(2);return d.length>=11?d:'';}
+function waCall(p,r){
+  if(r!=='client'&&r!=='pro'&&r!=='guard') return '';
+  let phone='', who='';
+  if(r==='client'){const pr=proById(p.proId);if(!pr)return '';phone=pr.phone;who=pr.name;}
+  else{if(S.p.cphone===undefined){S.p.cphone=null;S.db.doc('profiles/'+p.clientUid).get().then(d=>{S.p.cphone=d.exists?(d.data().phone||''):'';render();}).catch(()=>{S.p.cphone='';});}phone=S.p.cphone||'';who=p.clientName;}
+  const n=waNum(phone);
+  const msg=r==='client'?`Bonjour, c'est ${S.me.name} (Maison Mère). Peux-tu m'appeler en vidéo pour me montrer le chantier « ${p.title} » ? Code du jour : ${dayCode(p.id)}`:`Bonjour, c'est ${myName(p)} (Maison Mère). Je peux t'appeler en vidéo pour te montrer le chantier « ${p.title} » ? Code du jour : ${dayCode(p.id)}`;
+  const ico='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="12" height="10"></rect><path d="M15 11l6-3v8l-6-3"></path></svg>';
+  if(!n) return `<div class="small muted" style="display:flex;gap:10px;align-items:center">${ico}<span>Appel vidéo WhatsApp : le numéro de ${esc(who)} n'a pas l'indicatif du pays (ex. +243…). Il peut le corriger dans son compte.</span></div>`;
+  return `<a class="btn ghost" href="https://wa.me/${n}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener" data-a="wacall" style="display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none">${ico}Appel vidéo WhatsApp</a>
+    <p class="small muted" style="margin:-8px 0 0">Avec ${esc(who)}. WhatsApp s'ouvre avec un message prêt, puis appuie sur la caméra. Numéro : <span style="user-select:all">+${n}</span></p>`;
+}
 function canBlock(p,i){return !p.stopped&&p.steps.slice(0,i).every(s=>s.status==='paye'||s.status==='rembourse');}
 
 function choosePro(p){
@@ -618,7 +632,7 @@ function vMyFiche(){
     <div class="field"><label class="label" for="pf-metier">Métier</label><select id="pf-metier">${opts(METIERS,p&&p.metier)}</select></div>
     <div class="field"><label class="label" for="pf-pays">Pays</label><select id="pf-pays">${opts(PAYS,p?p.pays:'RD Congo')}</select></div>
     <div class="field"><label class="label" for="pf-ville">Ville</label><input id="pf-ville" required maxlength="40" value="${esc(p?p.ville:'')}"></div>
-    <div class="field"><label class="label" for="pf-phone">Téléphone (WhatsApp)</label><input id="pf-phone" required maxlength="25" value="${esc(p?p.phone:S.me.phone)}"></div>
+    <div class="field"><label class="label" for="pf-phone">Téléphone WhatsApp, avec l'indicatif (+243…)</label><input id="pf-phone" required maxlength="25" value="${esc(p?p.phone:S.me.phone)}"></div>
     <div class="field"><label class="label" for="pf-rccm">Numéro d'entreprise (RCCM ou autre)</label><input id="pf-rccm" maxlength="40" value="${esc(p?p.rccm:'')}"></div>
     <div class="field"><label class="label" for="pf-about">Présentation</label><textarea id="pf-about" rows="3" maxlength="300">${esc(p?p.about:'')}</textarea></div>
     ${S.err?`<p class="err">${esc(S.err)}</p>`:''}
@@ -634,7 +648,7 @@ function vAccount(){
     <button class="link" type="button" data-a="home">Retour</button>
     <h1>Mon compte</h1>
     <div class="field"><label class="label" for="ac-name">Nom</label><input id="ac-name" required maxlength="60" value="${esc(S.me.name)}"></div>
-    <div class="field"><label class="label" for="ac-phone">Téléphone (WhatsApp)</label><input id="ac-phone" required maxlength="25" value="${esc(S.me.phone)}"></div>
+    <div class="field"><label class="label" for="ac-phone">Téléphone WhatsApp, avec l'indicatif (+32, +243…)</label><input id="ac-phone" required maxlength="25" value="${esc(S.me.phone)}"></div>
     <div class="field"><label class="label" for="ac-ville">Ville</label><input id="ac-ville" required maxlength="40" value="${esc(S.me.ville)}"></div>
     <button class="btn" type="submit">Enregistrer</button>
     <p class="small muted" style="margin:0">Connecté avec ${esc(S.email||'')}</p>
@@ -1009,6 +1023,7 @@ document.addEventListener('click',async e=>{
     if(a==='home') return go('home');
     if(a==='go') return go(v);
     if(a==='role'){S.p.role=v;return render();}
+    if(a==='wacall'){const pp=prjById(S.p.id);if(pp)sysMsg(pp.id,`${role(pp)==='client'?S.me.name:myName(pp)} a demandé un appel vidéo WhatsApp (code du jour : ${dayCode(pp.id)}).`).catch(()=>{});return;}
     if(a==='phkind'){S.p.phKind=v;return render();}
     if(a==='hideintro'){const h=hiddenIntros();h[v]=1;try{localStorage.setItem('mm-intro',JSON.stringify(h));}catch(x){}return render();}
     if(a==='showintros'){try{localStorage.removeItem('mm-intro');}catch(x){}return render();}
