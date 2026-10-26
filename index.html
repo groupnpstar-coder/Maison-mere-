@@ -216,7 +216,7 @@ const nv=x=>x&&!x.verified?' (non vérifié)':'';
 const avg=r0=>{const r=vr(r0);return r.length?(r.reduce((a,b)=>a+b.note,0)/r.length):0;};
 
 let viewUnsubs=[];
-function go(view,p){viewUnsubs.forEach(u=>u());viewUnsubs=[];S.view=view;S.p=p||{};S.err='';if(view==='req')watchReq();window.scrollTo(0,0);if(['market','estim','myfiche','home'].includes(view)&&(view!=='home'||S.mode==='pro'))ensureProducts();watchProject();render();}
+function go(view,p){viewUnsubs.forEach(u=>u());viewUnsubs=[];S.view=view;S.p=p||{};S.err='';if(view==='req')watchReq();window.scrollTo(0,0);if(['market','estim','myfiche','home','store','mystore'].includes(view)&&(view!=='home'||S.mode==='pro'))ensureProducts();if(['market','store','mystore'].includes(view)||(view==='home'&&S.mode==='pro'))ensureStores();watchProject();render();}
 function ensureProducts(){if(S.productsOn||!S.db)return;S.productsOn=true;S.db.collection('products').onSnapshot(q=>{S.products=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});}
 
 /* ---------- boot ---------- */
@@ -257,6 +257,7 @@ function start(u){
   db.collection('pros').onSnapshot(q=>{S.pros=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});
   db.collection('orders').where('clientUid','==',S.uid).onSnapshot(q=>{S.myOrders=q.docs.map(d=>Object.assign({id:d.id},d.data()));autoReleaseOrders();render();},()=>{});
   db.collection('offers').where('clientUid','==',S.uid).onSnapshot(q=>{S.clientOffers=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});
+  db.collection('orders').where('sellerUid','==',S.uid).onSnapshot(q=>{S.sellerOrdersU=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});
   db.collection('requests').where('clientUid','==',S.uid).onSnapshot(q=>{S.myReqs=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});
   db.collection('projects').where('clientUid','==',S.uid).onSnapshot(q=>{S.myProjects=q.docs.map(d=>Object.assign({id:d.id},d.data()));autoRelease();render();},()=>{});
 }
@@ -351,17 +352,19 @@ function render(){
   else if(!S.me.photo&&!TEST) html=vPhotoGate();
   else if(!S.chosen) html=vChoose();
   else {
-    const v={home:vHome,dir:vDir,pro:vProFiche,newp:vNewProject,project:vProject,myfiche:vMyFiche,account:vAccount,plan:vPlan,market:vMarket,estim:vEstim,orders:vOrders,client:vClient,reqnew:vReqNew,reqs:vReqs,req:vReq,myclients:vMyClients,visits:vVisits}[S.view]||vHome;
+    const v={home:vHome,dir:vDir,pro:vProFiche,newp:vNewProject,project:vProject,myfiche:vMyFiche,account:vAccount,plan:vPlan,market:vMarket,estim:vEstim,orders:vOrders,client:vClient,reqnew:vReqNew,reqs:vReqs,req:vReq,myclients:vMyClients,visits:vVisits,store:vStore,mystore:vMyStore}[S.view]||vHome;
     html=v();
   }
   const ih=introHtml();
   if(ih){const m=html.match(/<\/h1>(\s*<\/div>)?/);html=m?html.slice(0,m.index+m[0].length)+ih+html.slice(m.index+m[0].length):ih+html;}
   $main.innerHTML=html;
+  if(S.hashStore&&S.me&&S.chosen){const id=S.hashStore;S.hashStore=null;try{history.replaceState(null,'',location.pathname);}catch(e){}setTimeout(()=>go('store',{id}),0);}
   Object.keys(keep).forEach(id=>{const el=document.getElementById(id);if(el&&el.dataset.fresh!=='1') el.value=keep[id];});
   if(ae){const el=document.getElementById(ae);if(el){el.focus();try{const n=el.value.length;el.setSelectionRange(n,n);}catch(x){}}}
   const box=document.getElementById('chat');if(box) box.scrollTop=box.scrollHeight;
 }
 
+S.hashStore=(location.hash.match(/magasin=([\w-]+)/)||[])[1]||null;
 function vChoose(){
   const first=(S.me.name||'').split(' ')[0];
   const card=(v,title,sub,icon)=>`<button class="item" data-a="choose" data-v="${v}" style="border:1px solid var(--line);padding:18px 16px;align-items:center">
@@ -421,7 +424,7 @@ function vHome(){
       ${me&&me.inspector?(()=>{const n=allProjects().filter(p=>myVisit(p)).length;return box('visits','Visites de contrôle',n?n+' à faire':'Aucune visite pour l\'instant',n);})():''}
       ${box('myfiche','Ma fiche',me?esc(me.metier)+' · '+esc(me.ville)+(me.verified?' · Vérifié':' · Pas encore vérifié'):'À compléter',0)}
       </div>
-      ${me&&me.metier==='Fournisseur de matériaux'?sellerBlock(me):''}
+      ${me&&(me.metier==='Fournisseur de matériaux'||myStores().length)?(()=>{ensureStores();if(me.metier==='Fournisseur de matériaux')ensureMyStore();const st=myStores()[0];const ps=st?S.products.filter(x=>prodStore(x)===st):[];const sl=ps.filter(isStale).length;return `<div class="stack-s">${box('mystore','Mon magasin',st?`${ps.length} produit${ps.length>1?'s':''}${sl?' · '+sl+' prix à confirmer':''} · ${(st.views||0)} vue${(st.views||0)>1?'s':''}`:'Création…',sl)}</div>`;})():''}
       <span class="label">${t('Mes chantiers')}</span>
       ${list.length?`<div class="list">${list.map(p=>`<button class="item" data-a="open" data-v="${p.id}"${unreadOf(p)?' data-t="msgs"':''}><div><div class="t">${tnb(esc(p.title),unreadOf(p))}</div><div class="small muted">${esc(p.ville)} · client : ${esc(p.clientName)}</div></div>${stepSummary(p)}</button>`).join('')}</div>`
       :`<div class="empty">Aucun chantier pour l'instant. Quand un client te choisit, son projet apparaît ici.</div>`}
@@ -766,6 +769,7 @@ function vAccount(){
     <div class="stack-s"><span class="label">Changer d'espace</span><div class="list">
       ${[['client','Client','Je fais construire ou réparer',true],['pro','Professionnel','Je propose mon travail',true],['expert','Expert','Je tranche les litiges',true],['admin','Administration','Visible seulement par toi',S.admin]].filter(x=>x[3]).map(x=>`<button type="button" class="item" data-a="mode" data-v="${x[0]}"><div><div class="t">${x[1]}</div><div class="small muted">${x[2]}</div></div>${S.mode===x[0]?'<span class="pill s-paye">Actuel</span>':'<span aria-hidden="true">›</span>'}</button>`).join('')}
     </div></div>
+    ${myStores().length?`<button type="button" class="item" data-a="go" data-v="mystore"><div><div class="t">Mon magasin</div><div class="small muted">${esc(myStores()[0].name)}</div></div><span aria-hidden="true">›</span></button>`:''}
     <button type="button" class="item" data-a="go" data-v="plan"><div><div class="t">Plan de test</div><div class="small muted">${planCount()[0]} sur ${planCount()[1]} testés</div></div><span aria-hidden="true">›</span></button>
     <button class="link" type="button" data-a="showintros">Réafficher les explications</button>
     <button class="btn ghost" type="button" data-a="logout">Se déconnecter</button>
@@ -970,30 +974,207 @@ function badgesHtml(p,small){const b=badges(p);return b.length?`<div class="badg
 async function bumpPro(id,k){const pr=proById(id);if(!pr)return;const st=Object.assign({paid:0,lost:0},pr.stats||{});st[k]=(st[k]||0)+1;await S.db.doc('pros/'+id).update({stats:st});}
 
 /* ---------- marché des matériaux ---------- */
+/* ---------- marché : quincailleries, prix datés, comparaison ---------- */
+const CURS=['EUR','USD','CDF','AOA','XAF'];
+const RATES0={EUR:1,USD:0.86,CDF:0.0003,AOA:0.00094,XAF:0.001524};
+const rates=()=>Object.assign({},RATES0,(S.rates&&S.rates.r)||{});
+const PAYS_CUR={'RD Congo':'CDF','Angola':'AOA','Congo-Brazzaville':'XAF','Cameroun':'XAF','Gabon':'XAF','Belgique':'EUR','France':'EUR','Luxembourg':'EUR','Portugal':'EUR','Italie':'EUR'};
+const toEur=(n,c)=>(Number(n)||0)*(rates()[c||'EUR']||1);
+const fmtP=(n,c)=>{c=c||'EUR';const v=Number(n)||0;return c==='EUR'?eur(v):v.toLocaleString('fr-FR')+' '+({USD:'$',CDF:'FC',AOA:'Kz',XAF:'FCFA'}[c]||c);};
+const approx=(n,c)=>!c||c==='EUR'?'':`≈ ${eur(Math.round(toEur(n,c)*100)/100)}`;
+const STALE=30*DAY;
+const pDate=x=>x.confirmedAt||x.at||0;
+const isStale=x=>Date.now()-pDate(x)>STALE;
+const REFS=['Ciment 50 kg','Fer à béton 8 mm (barre)','Fer à béton 10 mm (barre)','Fer à béton 12 mm (barre)','Tôle ondulée','Bloc ciment 15 cm','Bloc ciment 20 cm','Sable (m³)','Gravier (m³)','Carreau de sol (m²)','Peinture 20 L','Tuyau PVC 100 mm','Câble électrique 2,5 mm² (100 m)','Planche / chevron','Autre'];
+const STOCK={dispo:'Disponible',limite:'Stock limité',rupture:'Rupture'};
+const SSTAT={suggeree:['Suggérée par un utilisateur','s-attente'],a_verifier:['Existence à vérifier','s-attente'],verifiee:['Vérifiée','s-paye'],partenaire:['Partenaire actif','s-paye'],suspendue:['Suspendue','s-litige']};
+const storeById=id=>(S.stores||[]).find(x=>x.id===id);
+const prodStore=x=>x.storeId?storeById(x.storeId):(S.stores||[]).find(s=>s.proId&&s.proId===x.sellerProId);
+const myStores=()=>(S.stores||[]).filter(s=>s.ownerUid===S.uid);
+function ensureStores(){if(S.storesOn||!S.db)return;S.storesOn=true;S.db.collection('stores').onSnapshot(q=>{S.stores=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});S.db.doc('config/rates').onSnapshot(d=>{S.rates=d.exists?d.data():null;render();},()=>{});}
+function sPill(s){const x=SSTAT[(s&&s.status)||'a_verifier']||SSTAT.a_verifier;return `<span class="pill ${x[1]}">${x[0]}</span>`;}
+function checked(s){const v=(s&&s.verified)||{};return `<div class="stack-s" style="gap:4px">
+  <div class="small ${v.exists?'verified':'muted'}">${v.exists?'✓':'○'} Le magasin existe vraiment${v.exists?' (vérifié le '+fdate(v.existsAt)+')':' : pas encore vérifié'}</div>
+  <div class="small ${v.identity?'verified':'muted'}">${v.identity?'✓':'○'} Identité du responsable${v.identity?' vérifiée':' : pas encore vérifiée'}</div>
+  <div class="small muted">Ces vérifications ne garantissent pas la qualité du service. Regarde aussi les avis et les commandes réalisées.</div></div>`;}
+function priceTag(x){
+  const st=isStale(x);
+  return `<div class="stack-s" style="align-items:flex-end;gap:2px;flex-shrink:0;text-align:right">
+    <span class="money">${fmtP(x.price,x.cur)}</span><span class="meta">/ ${esc(x.unit)}${x.cur&&x.cur!=='EUR'?' · '+approx(x.price,x.cur):''}</span>
+    <span class="small ${st?'unverified':'muted'}" style="font-size:11px">${st?'Prix à confirmer':'Prix confirmé le '+fdate(pDate(x))}</span></div>`;
+}
+function prodLine(x,withStore){
+  const s=prodStore(x);
+  const act=(s&&s.status==='suspendue')||x.stock==='rupture'?'':isStale(x)?'<span class="small muted">Le magasin doit confirmer ce prix avant toute commande.</span>':`<button class="btn ghost sm" data-a="buy" data-v="${x.id}">${S.p.buy===x.id?'Fermer':t('Commander')}</button>`;
+  return `<div class="item" style="flex-direction:column;align-items:stretch;gap:8px">
+   <div class="between" style="align-items:flex-start"><div style="min-width:0">
+    <div class="t">${esc(x.name)}</div>
+    <div class="small muted">${[x.brand,x.ref&&x.ref!=='Autre'?x.ref:''].filter(Boolean).map(esc).join(' · ')}</div>
+    ${withStore?`<button class="link" data-a="store" data-v="${s?s.id:''}" style="padding:2px 0;text-transform:none;letter-spacing:0;font-size:13px;text-align:left">${esc(s?s.name:x.sellerName)} · ${esc(x.ville||'')}${x.quartier?', '+esc(x.quartier):''}</button>`:''}
+    <div class="small ${x.stock==='rupture'?'unverified':'muted'}">${STOCK[x.stock||'dispo']}${s&&s.delivery&&s.delivery.fee!==''&&s.delivery.fee!=null?' · livraison '+fmtP(s.delivery.fee,s.delivery.cur||x.cur):''}</div>
+   </div>${priceTag(x)}</div>
+   ${act?`<div style="display:flex;justify-content:flex-end">${act}</div>`:''}
+   ${S.p.buy===x.id?orderForm(x):''}
+  </div>`;
+}
+const visibleProds=()=>S.products.filter(x=>{const s=prodStore(x);return !(s&&s.status==='suspendue');});
+
 function vMarket(){
-  const cat=S.p.cat||'Tous', ville=(S.p.mville||'').toLowerCase();
-  const list=S.products.filter(x=>(cat==='Tous'||x.cat===cat)&&(!ville||(x.ville||'').toLowerCase().includes(ville))).sort((a,b)=>a.price-b.price);
-  const sel=S.p.buy?S.products.find(x=>x.id===S.p.buy):null;
+  ensureStores();
+  const tab=S.p.mtab||'prod', ville=(S.p.mville||'').toLowerCase();
+  const inCity=x=>!ville||((x.ville||'')+' '+(x.quartier||'')).toLowerCase().includes(ville);
+  let body='';
+  if(tab==='prod'){
+    const cat=S.p.cat||'Tous';
+    const list=visibleProds().filter(x=>(cat==='Tous'||x.cat===cat)&&inCity(x)).sort((a,b)=>isStale(a)-isStale(b)||toEur(a.price,a.cur)-toEur(b.price,b.cur));
+    body=`<div class="chips">${['Tous',...CATS].map(c=>`<button aria-pressed="${c===cat}" data-a="cat" data-v="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+    ${list.length?`<div class="list">${list.map(x=>prodLine(x,true)).join('')}</div>`:`<div class="empty">Aucun produit ici pour l'instant. Regarde l'onglet Magasins, ou propose une quincaillerie que tu connais.</div>`}`;
+  }
+  if(tab==='cmp'){
+    const ref=S.p.ref||'Ciment 50 kg';
+    const list=visibleProds().filter(x=>x.ref===ref&&inCity(x)).sort((a,b)=>isStale(a)-isStale(b)||toEur(a.price,a.cur)-toEur(b.price,b.cur));
+    const fresh=list.filter(x=>!isStale(x)), lo=fresh.length?Math.min(...fresh.map(x=>toEur(x.price,x.cur))):0;
+    body=`<div class="field"><label class="label" for="cmp-ref">Produit à comparer</label><select id="cmp-ref" data-a="cmpref">${opts(REFS.filter(r=>r!=='Autre'),ref)}</select></div>
+    ${fresh.length>1?`<p class="small" style="margin:0">${fresh.length} magasins · du moins cher au plus cher. Écart : ${eur(Math.round((Math.max(...fresh.map(x=>toEur(x.price,x.cur)))-lo)*100)/100)} par unité.</p>`:''}
+    ${list.length?`<div class="list">${list.map((x,i)=>`${i===0&&!isStale(x)&&fresh.length>1?'<span class="label" style="margin-top:8px">Le moins cher</span>':''}${prodLine(x,true)}`).join('')}</div>`:`<div class="empty">Aucun magasin n'a encore publié « ${esc(ref)} »${ville?' dans cette ville':''}.</div>`}
+    <p class="small muted" style="margin:0">Le classement se fait seulement par prix, jamais par publicité. Les prix non confirmés depuis 30 jours passent à la fin. Les conversions en euros sont indicatives.</p>`;
+  }
+  if(tab==='stores'){
+    const list=(S.stores||[]).filter(s=>s.status!=='suspendue'&&inCity(s)).sort((a,b)=>(['partenaire','verifiee','a_verifier','suggeree'].indexOf(a.status))-(['partenaire','verifiee','a_verifier','suggeree'].indexOf(b.status)));
+    body=`${list.length?`<div class="list">${list.map(s=>{const n=S.products.filter(x=>prodStore(x)===s).length;return `<button class="item" data-a="store" data-v="${s.id}"><div style="min-width:0"><div class="t">${esc(s.name)}</div><div class="small muted">${esc(s.ville)}${s.quartier?', '+esc(s.quartier):''} · ${esc(s.pays)} · ${n?n+' produit'+(n>1?'s':''):'pas encore de prix'}</div></div>${sPill(s)}</button>`;}).join('')}</div>`:'<div class="empty">Aucune quincaillerie ici pour l\'instant.</div>'}
+    ${S.p.suggest?suggestForm():`<button class="btn ghost" data-a="sg-open">Proposer une quincaillerie</button>`}`;
+  }
   return `<div class="stack">
     <button class="link" data-a="home">${t('Retour')}</button>
     <h1>${t('Marché des matériaux')}</h1>
-    <p class="small muted" style="margin:0">Les vendeurs publient leurs prix. Tu commandes, l'argent est bloqué, et le vendeur est payé quand tu confirmes la livraison, photo à l'appui.</p>
-    <div class="chips">${['Tous',...CATS].map(c=>`<button aria-pressed="${c===cat}" data-a="cat" data-v="${esc(c)}">${esc(c)}</button>`).join('')}</div>
-    <div class="field"><label class="label" for="mk-ville">Ville</label><input id="mk-ville" data-a="mville" data-fresh="1" value="${esc(S.p.mville||'')}" placeholder="Kinshasa"></div>
-    ${!S.productsOn||(!S.products.length&&S.productsOn&&S.p.loading)?'<p class="small muted">Chargement…</p>':''}
-    ${list.length?`<div class="list">${list.map(x=>`<div class="item"><div><div class="t">${esc(x.name)}</div><div class="small muted">${esc(x.sellerName)} · ${esc(x.ville)}</div>${badgesHtml(proById(x.sellerProId),true)}</div>
-      <div class="stack-s" style="align-items:flex-end;flex-shrink:0"><span class="money">${eur(x.price)}</span><span class="meta">/ ${esc(x.unit)}</span><button class="btn sm" data-a="buy" data-v="${x.id}">${t('Commander')}</button></div></div>
-      ${sel&&sel.id===x.id?orderForm(x):''}`).join('')}</div>`
-    :`<div class="empty">Aucun produit pour l'instant. Les fournisseurs de matériaux publient leurs produits depuis leur espace pro. Pour tester : en mode Pro, choisis le métier « Fournisseur de matériaux » dans ta fiche.</div>`}
+    <div class="tabs" role="tablist">${[['prod','Produits'],['cmp','Comparer les prix'],['stores','Magasins']].map(x=>`<button role="tab" aria-selected="${x[0]===tab}" data-a="mtab" data-v="${x[0]}">${x[1]}</button>`).join('')}</div>
+    <div class="field"><label class="label" for="mk-ville">Ville ou quartier</label><input id="mk-ville" data-a="mville" data-fresh="1" value="${esc(S.p.mville||'')}" placeholder="Kinshasa, Gombe…"></div>
+    ${S.err?`<p class="err" style="margin:0">${esc(S.err)}</p>`:''}${S.info?`<p class="small verified" style="margin:0">${esc(S.info)}</p>`:''}
+    ${body}
   </div>`;
 }
+function suggestForm(){
+  return `<form class="stack-s" data-f="suggest" style="border:1px solid var(--fg);padding:16px">
+    <span class="label">Proposer une quincaillerie</span>
+    <p class="small muted" style="margin:0">Tu connais un magasin de matériaux ? Ajoute-le. Il apparaîtra comme « Suggérée » jusqu'à ce qu'il soit vérifié.</p>
+    <div class="field"><label class="label" for="sg-name">Nom du magasin</label><input id="sg-name" required maxlength="60"></div>
+    <div class="row"><div class="field" style="flex:1;min-width:0"><label class="label" for="sg-pays">Pays</label><select id="sg-pays">${opts(PAYS,'RD Congo')}</select></div>
+    <div class="field" style="flex:1;min-width:0"><label class="label" for="sg-ville">Ville</label><input id="sg-ville" required maxlength="40"></div></div>
+    <div class="field"><label class="label" for="sg-quartier">Quartier ou adresse</label><input id="sg-quartier" maxlength="80"></div>
+    <div class="field"><label class="label" for="sg-phone">Téléphone du magasin, si tu l'as</label><input id="sg-phone" maxlength="25" inputmode="tel"></div>
+    <div class="row"><button class="btn sm" type="submit">Ajouter</button><button class="btn ghost sm" type="button" data-a="sg-close">Annuler</button></div></form>`;
+}
+function storeLink(s){return location.origin+location.pathname+'#magasin='+s.id;}
+function claimText(s){return `Bonjour, votre magasin « ${s.name} » est référencé sur Maison Mère, l'app qui aide la diaspora à construire au pays. Inscrivez-vous gratuitement pour publier vos prix et recevoir des commandes : ${storeLink(s)}`;}
+function vStore(){
+  ensureStores();
+  const s=storeById(S.p.id);
+  if(!s) return `<div class="stack"><button class="link" data-a="go" data-v="market">${t('Retour')}</button><p class="muted">${S.stores?'Magasin introuvable.':'Chargement…'}</p></div>`;
+  if(!S.p.viewed&&s.ownerUid!==S.uid){S.p.viewed=1;S.db.doc('stores/'+s.id).update({views:(s.views||0)+1}).catch(()=>{});}
+  const prods=S.products.filter(x=>prodStore(x)===s).sort((a,b)=>a.cat.localeCompare(b.cat));
+  const mine=s.ownerUid===S.uid, pend=s.claim&&s.claim.status==='attente';
+  const pr=s.proId?proById(s.proId):null;
+  return `<div class="stack">
+    <button class="link" data-a="go" data-v="market">${t('Retour')}</button>
+    <div class="stack-s"><span class="label">${esc(s.ville)}${s.quartier?', '+esc(s.quartier):''} · ${esc(s.pays)}</span><h1>${esc(s.name)}</h1>${sPill(s)}</div>
+    ${s.status==='suspendue'?'<p class="small unverified" style="margin:0">Ce magasin est suspendu : ses prix ne sont plus affichés.</p>':''}
+    ${checked(s)}
+    ${s.status==='suggeree'&&s.suggestedByName?`<p class="small muted" style="margin:0">Ajouté par ${esc(s.suggestedByName)} le ${fdate(s.at)}. Ce n'est pas un partenaire officiel.</p>`:''}
+    ${s.phone?`<div class="stack-s"><span class="label">Téléphone</span><span class="money" style="user-select:all">${esc(s.phone)}</span></div>`:''}
+    ${s.delivery&&(s.delivery.fee!==''||s.delivery.delay)?`<div class="stack-s"><span class="label">Livraison</span><span class="small">${s.delivery.fee!==''&&s.delivery.fee!=null?'Frais : '+fmtP(s.delivery.fee,s.delivery.cur||PAYS_CUR[s.pays]||'EUR')+' · ':''}${esc(s.delivery.delay||'')}${s.delivery.zone?' · '+esc(s.delivery.zone):''}</span></div>`:''}
+    ${pr?`<button class="link" data-a="pro" data-v="${pr.id}" style="align-self:flex-start">Voir les avis du vendeur</button>`:''}
+    <span class="label">Produits et prix</span>
+    ${prods.length?`<div class="list">${prods.map(x=>prodLine(x,false)).join('')}</div>`:'<div class="empty">Ce magasin n\'a pas encore publié de prix.</div>'}
+    <div class="stack-s" style="border-top:1px solid var(--line);padding-top:16px">
+      ${!s.ownerUid&&!pend?`<span class="label">C'est ton magasin ?</span><button class="btn" data-a="claim" data-v="${s.id}">C'est mon magasin</button>`:''}
+      ${pend&&s.claim.uid===S.uid?'<p class="small" style="margin:0">Ta demande est envoyée. L\'administration va la vérifier.</p>':''}
+      ${mine?`<button class="btn" data-a="go" data-v="mystore">Gérer mon magasin</button>`:''}
+      <span class="label" style="margin-top:8px">Partager ce magasin</span>
+      <div class="row">${!s.ownerUid&&waNum(s.phone)?`<a class="btn ghost sm" target="_blank" rel="noopener" href="https://wa.me/${waNum(s.phone)}?text=${encodeURIComponent(claimText(s))}">Inviter le magasin sur WhatsApp</a>`:''}<a class="btn ghost sm" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(s.name+' sur Maison Mère : '+storeLink(s))}">Envoyer le lien</a><button class="btn ghost sm" data-a="qr" data-v="${s.id}">QR code</button></div>
+      <div id="qrbox" style="align-self:flex-start;background:#fff;padding:10px;${S.p.qr?'':'display:none'}"></div>
+      ${mine||S.admin?`<p class="small muted" style="margin:0">${s.views||0} vue${(s.views||0)>1?'s':''} de cette fiche.</p>`:''}
+    </div>
+  </div>`;
+}
+function showQR(s){
+  const box=document.getElementById('qrbox');if(!box)return;box.style.display='';box.innerHTML='';
+  const draw=()=>{try{new QRCode(box,{text:storeLink(s),width:180,height:180});}catch(e){box.textContent=storeLink(s);}};
+  if(window.QRCode) return draw();
+  const sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';sc.onload=draw;sc.onerror=()=>{box.style.background='none';box.innerHTML='<span class="small muted">QR code indisponible hors connexion. Lien : '+esc(storeLink(s))+'</span>';};document.head.appendChild(sc);
+}
+async function ensureMyStore(){
+  const me=S.me.proId&&proById(S.me.proId);
+  if(!me||me.metier!=='Fournisseur de matériaux'||!S.stores) return;
+  if((S.stores||[]).some(s=>s.proId===me.id)||S._mkStore) return; S._mkStore=1;
+  await S.db.collection('stores').add({name:me.name,pays:me.pays,ville:me.ville,quartier:'',phone:me.phone||'',status:me.verified?'verifiee':'a_verifier',verified:{},ownerUid:S.uid,proId:me.id,at:Date.now(),views:0});
+}
+function vMyStore(){
+  ensureStores(); ensureMyStore();
+  const list=myStores();
+  if(!list.length) return `<div class="stack"><button class="link" data-a="home">${t('Retour')}</button><h1>Mon magasin</h1>
+    <p style="margin:0">Tu n'as pas encore de magasin. Si ton magasin est déjà dans l'app, ouvre sa fiche dans Marché › Magasins et touche « C'est mon magasin ». Sinon, choisis le métier « Fournisseur de matériaux » dans ta fiche pro : ton magasin sera créé.</p>
+    <button class="btn ghost" data-a="go" data-v="myfiche">Ouvrir ma fiche pro</button></div>`;
+  const s=list.find(x=>x.id===S.p.sid)||list[0];
+  const cur=PAYS_CUR[s.pays]||'EUR', d=s.delivery||{};
+  const prods=S.products.filter(x=>prodStore(x)===s);
+  const stale=prods.filter(isStale);
+  const om=new Map();[...(S.sellerOrders||[]),...(S.sellerOrdersU||[])].forEach(o=>om.set(o.id,o));const ords=[...om.values()].filter(o=>!o.storeId||o.storeId===s.id).sort((a,b)=>b.at-a.at);
+  return `<div class="stack">
+    <button class="link" data-a="home">${t('Retour')}</button>
+    <div class="stack-s"><span class="label">${esc(s.ville)} · ${esc(s.pays)}</span><h1>${esc(s.name)}</h1>${sPill(s)}</div>
+    ${list.length>1?`<div class="chips">${list.map(x=>`<button aria-pressed="${x.id===s.id}" data-a="sid" data-v="${x.id}">${esc(x.name)}</button>`).join('')}</div>`:''}
+    <p class="small muted" style="margin:0">${s.views||0} vue${(s.views||0)>1?'s':''} de ta fiche · ${ords.length} commande${ords.length>1?'s':''} reçue${ords.length>1?'s':''}</p>
+    ${stale.length?`<div class="step" style="border-color:var(--warn)"><span class="label" style="color:var(--warn)">${stale.length} prix à confirmer</span><p class="small" style="margin:0">Un prix non confirmé depuis 30 jours n'est plus commandable. Confirme-le ou change-le.</p></div>`:''}
+    <span class="label">Mes produits</span>
+    ${prods.length?`<div class="list">${prods.map(x=>`<div class="item" style="align-items:flex-start"><div style="min-width:0"><div class="t">${esc(x.name)}</div><div class="small muted">${[x.brand,x.ref].filter(Boolean).map(esc).join(' · ')} · ${STOCK[x.stock||'dispo']}</div></div>${priceTag(x)}</div>
+      ${S.p.editp===x.id?`<form class="row" data-f="pupd" data-v="${x.id}" style="align-items:flex-end"><div class="field" style="flex:1;min-width:0"><label class="label" for="pu-price">Nouveau prix (${x.cur||'EUR'})</label><input id="pu-price" inputmode="decimal" maxlength="10" value="${x.price}"></div><div class="field" style="flex:1;min-width:0"><label class="label" for="pu-stock">Stock</label><select id="pu-stock">${Object.keys(STOCK).map(k=>`<option value="${k}"${(x.stock||'dispo')===k?' selected':''}>${STOCK[k]}</option>`).join('')}</select></div><button class="btn sm" type="submit">OK</button></form>`
+      :`<div class="row" style="justify-content:flex-end;margin-top:-6px"><button class="btn ghost sm" data-a="pconf" data-v="${x.id}">Le prix n'a pas changé</button><button class="btn ghost sm" data-a="pedit" data-v="${x.id}">Modifier</button><button class="link" data-a="del-prod" data-v="${x.id}">Retirer</button></div>`}
+      ${(x.history||[]).length>1?`<div class="small muted" style="margin-top:-4px">Historique : ${(x.history||[]).slice(-4).map(h=>fmtP(h.price,h.cur)+' ('+fdate(h.at)+')').join(' → ')}</div>`:''}`).join('')}</div>`:'<p class="small muted" style="margin:0">Aucun produit publié.</p>'}
+    <form class="stack-s" data-f="prod" data-v="${s.id}" style="border:1px solid var(--line);padding:14px"><span class="label">Publier un produit</span>
+      <div class="field"><label class="label" for="pr-ref">Produit (pour la comparaison des prix)</label><select id="pr-ref">${opts(REFS,'Ciment 50 kg')}</select></div>
+      <div class="field"><label class="label" for="pr-name">Nom affiché</label><input id="pr-name" maxlength="50" required placeholder="Ciment CPJ 42,5 · 50 kg"></div>
+      <div class="row"><div class="field" style="flex:1;min-width:0"><label class="label" for="pr-brand">Marque</label><input id="pr-brand" maxlength="30" placeholder="Cilu, Dangote…"></div>
+      <div class="field" style="flex:1;min-width:0"><label class="label" for="pr-cat">Catégorie</label><select id="pr-cat">${opts(CATS)}</select></div></div>
+      <div class="row"><div class="field" style="flex:1;min-width:0"><label class="label" for="pr-unit">Vendu par</label><input id="pr-unit" maxlength="15" value="sac"></div>
+      <div class="field" style="flex:1;min-width:0"><label class="label" for="pr-stock">Stock</label><select id="pr-stock">${Object.keys(STOCK).map(k=>`<option value="${k}">${STOCK[k]}</option>`).join('')}</select></div></div>
+      <div class="row"><div class="field" style="flex:2;min-width:0"><label class="label" for="pr-price">Prix par unité</label><input id="pr-price" inputmode="decimal" maxlength="10" required></div>
+      <div class="field" style="flex:1;min-width:0"><label class="label" for="pr-cur">Devise</label><select id="pr-cur">${opts(CURS,cur)}</select></div></div>
+      ${S.err?`<p class="err" style="margin:0">${esc(S.err)}</p>`:''}
+      <button class="btn sm" type="submit">Publier</button></form>
+    <form class="stack-s" data-f="sinfo" data-v="${s.id}" style="border:1px solid var(--line);padding:14px"><span class="label">Infos du magasin</span>
+      <div class="field"><label class="label" for="si-quartier">Quartier ou adresse</label><input id="si-quartier" maxlength="80" value="${esc(s.quartier||'')}"></div>
+      <div class="field"><label class="label" for="si-phone">Téléphone</label><input id="si-phone" maxlength="25" value="${esc(s.phone||'')}"></div>
+      <div class="row"><div class="field" style="flex:1;min-width:0"><label class="label" for="si-fee">Frais de livraison (${cur})</label><input id="si-fee" inputmode="decimal" maxlength="10" value="${d.fee==null?'':d.fee}"></div>
+      <div class="field" style="flex:1;min-width:0"><label class="label" for="si-delay">Délai</label><input id="si-delay" maxlength="30" value="${esc(d.delay||'')}" placeholder="24 à 48 h"></div></div>
+      <div class="field"><label class="label" for="si-zone">Zone de livraison</label><input id="si-zone" maxlength="60" value="${esc(d.zone||'')}" placeholder="Toute la ville de Kinshasa"></div>
+      <button class="btn ghost sm" type="submit">Enregistrer</button></form>
+    <button class="link" data-a="store" data-v="${s.id}" style="align-self:flex-start">Voir ma fiche publique et mon QR code</button>
+    <div class="stack-s"><span class="label">Commandes reçues</span>${ords.length?ords.map(o=>orderRow(o,'seller')).join(''):'<p class="small muted" style="margin:0">Aucune commande.</p>'}</div>
+  </div>`;
+}
+function adminStores(){
+  ensureStores();
+  const list=(S.stores||[]).slice().sort((a,b)=>(b.claim&&b.claim.status==='attente')-(a.claim&&a.claim.status==='attente')||(b.at||0)-(a.at||0));
+  return `<div class="stack-s"><p class="small muted" style="margin:0">Statuts : suggérée → existence à vérifier → vérifiée → partenaire actif. « Vérifiée » ne veut pas dire « fiable » : coche seulement ce que tu as réellement contrôlé.</p>
+  <div class="field"><label class="label" for="rt-cdf">Taux indicatifs : 1 € = … (CDF / AOA / USD)</label><div class="row"><input id="rt-cdf" style="flex:1;min-width:0" inputmode="decimal" value="${Math.round(1/rates().CDF)}"><input id="rt-aoa" style="flex:1;min-width:0" inputmode="decimal" value="${Math.round(1/rates().AOA)}"><input id="rt-usd" style="flex:1;min-width:0" inputmode="decimal" value="${(1/rates().USD).toFixed(2)}"><button class="btn ghost sm" data-a="adm-rates">OK</button></div></div>
+  ${list.length?`<div class="list">${list.map(s=>{const v=s.verified||{};return `<div class="item" style="flex-direction:column;align-items:stretch;gap:8px">
+    <div class="between"><div style="min-width:0"><div class="t">${esc(s.name)}</div><div class="small muted">${esc(s.ville)}, ${esc(s.pays)}${s.phone?' · '+esc(s.phone):''}${s.suggestedByName?' · proposé par '+esc(s.suggestedByName):''}</div></div>${sPill(s)}</div>
+    ${s.claim&&s.claim.status==='attente'?`<div class="row" style="align-items:center"><span class="small" style="color:var(--warn)">${esc(s.claim.name)} dit que c'est son magasin (${esc(s.claim.phone||'')})</span><button class="btn sm" data-a="adm-claim" data-v="${s.id}" data-d="ok">Accepter</button><button class="link" data-a="adm-claim" data-v="${s.id}" data-d="no">Refuser</button></div>`:''}
+    <div class="row" style="align-items:flex-end"><div class="field" style="flex:1;min-width:0"><label class="label" for="ss-${s.id}">Statut</label><select id="ss-${s.id}" data-a="sstatsel" data-v="${s.id}" data-fresh="1">${Object.keys(SSTAT).map(k=>`<option value="${k}"${s.status===k?' selected':''}>${SSTAT[k][0]}</option>`).join('')}</select></div></div>
+    <div class="row"><button class="btn ghost sm" data-a="adm-sver" data-v="${s.id}" data-d="exists">${v.exists?'✓ Existence vérifiée':'Marquer : existence vérifiée'}</button><button class="btn ghost sm" data-a="adm-sver" data-v="${s.id}" data-d="identity">${v.identity?'✓ Identité vérifiée':'Marquer : identité vérifiée'}</button></div></div>`;}).join('')}</div>`:'<div class="empty">Aucun magasin.</div>'}</div>`;
+}
+
 function orderForm(x){
-  const q=Math.max(1,parseInt(S.p.qty||'1',10)||1);
+  const q=Math.max(1,parseInt(S.p.qty||'1',10)||1), st=prodStore(x), d=(st&&st.delivery)||{};
+  const fee=d.fee!==''&&d.fee!=null&&(d.cur||x.cur||'EUR')===(x.cur||'EUR')?Number(d.fee)||0:0;
+  const tot=Math.round((q*x.price+fee)*100)/100;
   return `<form class="stack-s" data-f="order" data-v="${x.id}" style="border:1px solid var(--fg);padding:14px">
     <div class="field"><label class="label" for="or-qty">Quantité (${esc(x.unit)})</label><input id="or-qty" data-a="qty" inputmode="numeric" maxlength="6" value="${q}" data-fresh="1"></div>
     <div class="field"><label class="label" for="or-addr">Adresse de livraison du chantier</label><input id="or-addr" maxlength="80" required></div>
-    <div class="between"><span>Total</span><span class="money">${eur(q*x.price)}</span></div>
-    <button class="btn" type="submit">Commander et bloquer ${eur(q*x.price)}</button></form>`;
+    <div class="between small"><span>${q} × ${fmtP(x.price,x.cur)}</span><span>${fmtP(q*x.price,x.cur)}</span></div>
+    ${fee?`<div class="between small"><span>Livraison${d.delay?' ('+esc(d.delay)+')':''}</span><span>${fmtP(fee,x.cur)}</span></div>`:`<div class="small muted">${d.delay||d.fee?'Livraison : '+esc(d.delay||'')+(d.fee!==''&&d.fee!=null&&!fee?' · frais à confirmer avec le magasin':''):'Frais de livraison non indiqués : à confirmer avec le magasin.'}</div>`}
+    <div class="between"><span>Total estimé</span><span class="money">${fmtP(tot,x.cur)} ${approx(tot,x.cur)}</span></div>
+    <button class="btn" type="submit">Commander et bloquer ${fmtP(tot,x.cur)}</button></form>`;
 }
 function orderRow(o,side){
   let act='', info='';
@@ -1008,7 +1189,7 @@ function orderRow(o,side){
     if(side==='seller'&&!o.rvSeller) act=rvForm('ord-s',o.id,0,'Commande : '+o.qty+' × '+o.productName,o.clientName);}
   if(o.status==='rembourse') info=`Remboursé le ${fdate(o.paidAt)}.`;
   return `<div class="step"><div class="between"><div style="min-width:0"><div class="t" style="font-weight:500">${esc(o.qty)} × ${esc(o.productName)}</div><div class="small muted">${side==='seller'?'Client : '+esc(o.clientName):esc(o.sellerName)} · ${esc(o.addr||'')}</div>${side!=='client'?`<button class="link" data-a="cprof" data-v="${o.clientUid}">${t('Profil du client')}</button>`:''}</div><span class="pill s-${o.status}">${ST(o.status)}</span></div>
-    <div class="between"><span class="small muted">${info}</span><span class="money">${eur(o.total)}</span></div>
+    <div class="between"><span class="small muted">${info}</span><span class="money">${fmtP(o.total,o.cur)}</span></div>
     ${o.photo?`<img src="${esc(o.photo)}" loading="lazy" alt="Photo de la livraison" style="width:100%;max-width:100%;aspect-ratio:4/3;object-fit:cover;background:var(--tile)">`:''}${act}</div>`;
 }
 function vOrders(){
@@ -1032,7 +1213,7 @@ function sellerBlock(me){
     <div class="stack-s"><span class="label">Commandes reçues</span>${ords.length?ords.map(o=>orderRow(o,'seller')).join(''):'<p class="small muted" style="margin:0">Aucune commande.</p>'}</div>`;
 }
 function autoReleaseOrders(){
-  [...S.myOrders,...S.sellerOrders].forEach(o=>{
+  [...S.myOrders,...S.sellerOrders,...(S.sellerOrdersU||[])].forEach(o=>{
     if(o.status==='livre'&&o.deliveredAt&&Date.now()-o.deliveredAt>7*DAY) S.db.doc('orders/'+o.id).update({status:'paye',paidAt:Date.now(),auto:true}).catch(()=>{});
   });
 }
@@ -1320,6 +1501,7 @@ const INTRO={
  'newp':['steps','<b>Nouveau projet.</b> Donne-lui un nom et découpe-le en étapes. Les montants et le pro peuvent être ajoutés plus tard.'],
  'project-steps':['lock','<b>Comment ça marche :</b> 1. tu bloques l\'argent de l\'étape, 2. le pro travaille et envoie des photos, 3. tu valides et il est payé.'],
  'project-photos':['photo','<b>Les photos du chantier.</b> Prends une photo « Avant » et une « Après » de chaque étape. Le pro écrit le code du jour à la main sur un papier visible dans la photo : ça prouve qu\'elle est d\'aujourd\'hui.'],
+ 'home-market':['search','<b>Marché.</b> Compare les prix des quincailleries de ta ville. Un prix non confirmé depuis 30 jours est marqué « à confirmer » et ne peut pas être commandé.'],
  'project-watch':['shield','<b>Tu es proche de confiance.</b> Passe sur le chantier et envoie des photos : le code du jour s\'ajoute tout seul. Le client les voit tout de suite.'],
  'project-ctrl':['shield','<b>Contrôle sur place.</b> Commande une visite surprise : un pro vérifié de ta ville, tiré au sort, passe sur ton chantier un jour que personne ne connaît à l\'avance.'],
  'project-visit':['search','<b>Ta visite.</b> Va sur place, prends tes photos avec l\'app et réponds aux 3 questions. Tu es payé quand ton rapport est envoyé.'],
@@ -1369,8 +1551,8 @@ function houseCard(p){
 
 /* ---------- plan de test ---------- */
 const PLAN=[
-  ['Client',[['c1','Créer mon compte'],['c2','Trouver un pro dans l\'annuaire'],['c3','Créer un projet avec 3 étapes'],['c4','Bloquer l\'argent d\'une étape'],['c5','Voir la photo envoyée par le pro'],['c6','Valider et payer une étape'],['c7','Ouvrir un litige'],['c8','Laisser un avis après chaque étape payée'],['c9','Arrêter un contrat'],['c10','Commander des matériaux'],['c11','Estimer le prix d\'une maison'],['c12','Ajouter un proche de confiance'],['c16','Commander une visite de contrôle'],['c13','Changer de langue'],['c14','Publier une demande de devis'],['c15','Discuter avec un pro et accepter sa proposition']]],
-  ['Pro',[['p1','Créer ma fiche pro'],['p2','Vérifier mon compte (test)'],['p3','Envoyer une photo du chantier'],['p4','Appuyer sur « Étape terminée »'],['p5','Écrire au client dans Messages'],['p6','Noter le client et voir son profil'],['p11','Envoyer une proposition à une demande'],['p10','Vérifier que les avis restent cachés jusqu\'à ce que les deux aient noté'],['p7','Fournisseur : publier un produit'],['p8','Fournisseur : livrer une commande avec photo'],['p9','Faire une visite de contrôle']]],
+  ['Client',[['c1','Créer mon compte'],['c2','Trouver un pro dans l\'annuaire'],['c3','Créer un projet avec 3 étapes'],['c4','Bloquer l\'argent d\'une étape'],['c5','Voir la photo envoyée par le pro'],['c6','Valider et payer une étape'],['c7','Ouvrir un litige'],['c8','Laisser un avis après chaque étape payée'],['c9','Arrêter un contrat'],['c10','Commander des matériaux'],['c11','Estimer le prix d\'une maison'],['c12','Ajouter un proche de confiance'],['c16','Commander une visite de contrôle'],['c17','Comparer le prix du ciment entre magasins'],['c18','Proposer une quincaillerie'],['c13','Changer de langue'],['c14','Publier une demande de devis'],['c15','Discuter avec un pro et accepter sa proposition']]],
+  ['Pro',[['p1','Créer ma fiche pro'],['p2','Vérifier mon compte (test)'],['p3','Envoyer une photo du chantier'],['p4','Appuyer sur « Étape terminée »'],['p5','Écrire au client dans Messages'],['p6','Noter le client et voir son profil'],['p11','Envoyer une proposition à une demande'],['p10','Vérifier que les avis restent cachés jusqu\'à ce que les deux aient noté'],['p7','Fournisseur : publier un produit'],['p8','Fournisseur : livrer une commande avec photo'],['p9','Faire une visite de contrôle'],['p12','Réclamer un magasin, publier un prix en francs congolais, le confirmer']]],
   ['Admin',[['a1','Voir les comptes et les projets'],['a2','Ajouter un pro à l\'annuaire'],['a3','Valider un expert'],['e1','Expert : trancher un litige avec un rapport'],['a4','Lire les bugs signalés']]]
 ];
 const LATER=['Lingala : corriger les traductions dans Admin › Lingala','Traduction complète de tous les textes','Règles d\'utilisation et protection des données','Vrai argent (Mangopay) et vraie vérification d\'identité (Smile ID)','Position GPS sur les photos','Carnet souvenir'];
@@ -1404,7 +1586,7 @@ function vAdmin(){
   const lit=prj.filter(p=>(p.steps||[]).some(s=>s.status==='litige'));
   const pros=S.pros.slice().sort((a,b)=>(a.verified?1:0)-(b.verified?1:0)||(b.createdAt||0)-(a.createdAt||0));
   const tab=S.p.atab||'over';
-  const tabs=[['over','Vue'],['pros','Pros'],['users','Comptes'],['bugs','Bugs'],['tr','Lingala']];
+  const tabs=[['over','Vue'],['pros','Pros'],['stores','Magasins'],['users','Comptes'],['bugs','Bugs'],['tr','Lingala']];
   let body='';
   if(tab==='over') body=`<div class="stats">
       <div class="stat"><span class="label">Comptes</span><b>${S.allProfiles.length}</b></div>
@@ -1445,6 +1627,7 @@ function vAdmin(){
       ${keys.map((k,i)=>`<div class="field"><label class="label" for="tr-${i}" style="text-transform:none;letter-spacing:0">${esc(k)}</label><input id="tr-${i}" data-k="${esc(k)}" value="${esc(cur[k]||I18N.ln[k])}"></div>`).join('')}
       ${S.p.trSaved?'<p class="small verified" style="margin:0">Enregistré.</p>':''}
       <button class="btn" type="submit">Enregistrer les traductions</button></form>`;}
+  if(tab==='stores') body=adminStores();
   if(tab==='bugs') body=S.bugs.length?`<div class="list">${S.bugs.map(b=>`<div class="item"><div><div class="small">${esc(b.text)}</div><div class="meta">${esc(b.who)} · ${ftime(b.at)}</div></div></div>`).join('')}</div>`:'<div class="empty">Aucun bug signalé pour l\'instant.</div>';
   return `<div class="stack">
     <div class="stack-s"><span class="label">Visible seulement par toi</span><h1>Espace admin</h1></div>
@@ -1537,6 +1720,21 @@ document.addEventListener('click',async e=>{
     if(a==='cprof'){const d=await S.db.doc('profiles/'+v).get();const back={view:S.view,p:S.p};S.back=back;return go('client',{data:d.exists?d.data():null});}
     if(a==='back'&&S.back){const bk=S.back;S.back=null;S.view=bk.view;S.p=bk.p;watchProject();return render();}
     if(a==='cat'){S.p.cat=v;S.p.buy=null;return render();}
+    if(a==='mtab'){S.p.mtab=v;S.p.buy=null;S.err='';S.info='';return render();}
+    if(a==='store'){if(!v)return;return go('store',{id:v});}
+    if(a==='sg-open'){S.p.suggest=true;return render();}
+    if(a==='sg-close'){S.p.suggest=false;return render();}
+    if(a==='sid'){S.p.sid=v;return render();}
+    if(a==='pedit'){S.p.editp=v;return render();}
+    if(a==='pconf'){const x=S.products.find(y=>y.id===v);if(!x)return;const now=Date.now();await S.db.doc('products/'+v).update({confirmedAt:now,history:[...(x.history||[{price:x.price,cur:x.cur||'EUR',at:x.at}]),{price:x.price,cur:x.cur||'EUR',at:now}].slice(-20)});return;}
+    if(a==='qr'){const st=storeById(v);S.p.qr=1;render();if(st)setTimeout(()=>showQR(st),0);return;}
+    if(a==='claim'){const st=storeById(v);if(!st||st.ownerUid)return;
+      if(TEST){await S.db.doc('stores/'+v).update({ownerUid:S.uid,claim:{uid:S.uid,name:S.me.name,phone:S.me.phone||'',at:Date.now(),status:'ok'},status:st.status==='suggeree'?'a_verifier':st.status});return go('mystore',{sid:v});}
+      await S.db.doc('stores/'+v).update({claim:{uid:S.uid,name:S.me.name,phone:S.me.phone||'',at:Date.now(),status:'attente'}});return;}
+    if(a==='adm-claim'&&S.admin){const st=storeById(v);if(!st||!st.claim)return;if(b.dataset.d==='ok')await S.db.doc('stores/'+v).update({ownerUid:st.claim.uid,claim:Object.assign({},st.claim,{status:'ok'}),status:st.status==='suggeree'?'a_verifier':st.status});else await S.db.doc('stores/'+v).update({claim:null});return;}
+    if(a==='adm-sstat'&&S.admin){await S.db.doc('stores/'+v).update({status:b.dataset.d});return;}
+    if(a==='adm-sver'&&S.admin){const st=storeById(v);if(!st)return;const k=b.dataset.d,ver=Object.assign({},st.verified||{});ver[k]=!ver[k];ver[k+'At']=Date.now();await S.db.doc('stores/'+v).update({verified:ver});return;}
+    if(a==='adm-rates'&&S.admin){const n=id=>parseFloat((val(id)||'').replace(',','.'))||0;const c=n('rt-cdf'),o=n('rt-aoa'),u=n('rt-usd');if(!c||!o||!u)return;await S.db.doc('config/rates').set({r:{CDF:1/c,AOA:1/o,USD:1/u},at:Date.now()});return;}
     if(a==='buy'){S.p.buy=S.p.buy===v?null:v;S.p.qty='1';return render();}
     if(a==='esize'){S.p.size=v;return render();}
     if(a==='del-prod'){await S.db.doc('products/'+v).delete();return;}
@@ -1578,6 +1776,8 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',async e=>{
   if(e.target.dataset.a==='dirpays'){S.p.pays=e.target.value;render();}
+  if(e.target.dataset.a==='sstatsel'&&S.admin){S.db.doc('stores/'+e.target.dataset.v).update({status:e.target.value}).catch(()=>{});}
+  if(e.target.dataset.a==='cmpref'){S.p.ref=e.target.value;S.p.buy=null;render();}
   if(e.target.id==='langSel'){LANG=e.target.value;try{localStorage.setItem('mm-lang',LANG);}catch(x){}if(S.me&&S.me.checks&&!S.me.checks.c13&&LANG!=='fr')S.db.doc('profiles/'+S.uid).update({'checks.c13':true}).catch(()=>{});render();}
   if(e.target.type==='file'&&e.target.files&&e.target.files[0]){const f=e.target.files[0];e.target.value='';return handleFile(e.target,f,null);}
 });
@@ -1831,14 +2031,38 @@ document.addEventListener('submit',async e=>{
       const x=S.products.find(y=>y.id===e.target.dataset.v); if(!x) return;
       const qty=Math.max(1,parseInt(val('or-qty'),10)||1);
       if(!val('or-addr')){S.err='Indique l\'adresse de livraison.';return render();}
-      await S.db.collection('orders').add({productId:x.id,productName:x.name,unit:x.unit,price:x.price,qty,total:Math.round(qty*x.price*100)/100,sellerProId:x.sellerProId,sellerName:x.sellerName,clientUid:S.uid,clientName:S.me.name,addr:val('or-addr'),status:'bloque',at:Date.now()});
+      if(isStale(x)){S.err='Ce prix doit d\'abord être confirmé par le magasin.';return render();}
+      const st=prodStore(x), d=(st&&st.delivery)||{}, fee=d.fee!==''&&d.fee!=null&&(d.cur||x.cur||'EUR')===(x.cur||'EUR')?Number(d.fee)||0:0;
+      await S.db.collection('orders').add({productId:x.id,productName:x.name,unit:x.unit,price:x.price,cur:x.cur||'EUR',qty,fee,total:Math.round((qty*x.price+fee)*100)/100,priceDate:pDate(x),sellerProId:x.sellerProId||null,sellerUid:x.sellerUid||(st&&st.ownerUid)||null,storeId:st?st.id:null,sellerName:x.sellerName,clientUid:S.uid,clientName:S.me.name,addr:val('or-addr'),status:'bloque',at:Date.now()});
       return go('orders');
     }
     if(f==='prod'){
-      const me=proById(S.me.proId); const price=parseFloat(val('pr-price').replace(',','.'));
-      if(!me||!val('pr-name')||!(price>0)){S.err='Donne un nom et un prix.';return render();}
-      await S.db.collection('products').add({sellerProId:me.id,sellerName:me.name,name:val('pr-name'),cat:val('pr-cat'),unit:val('pr-unit')||'pièce',price,pays:me.pays,ville:me.ville,at:Date.now()});
-      ['pr-name','pr-price'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+      const st=storeById(e.target.dataset.v); const price=parseFloat(val('pr-price').replace(/\s/g,'').replace(',','.'));
+      if(!st||!val('pr-name')||!(price>0)){S.err='Donne un nom et un prix.';return render();}
+      const now=Date.now(), cur=val('pr-cur')||'EUR';
+      await S.db.collection('products').add({storeId:st.id,sellerProId:st.proId||null,sellerUid:st.ownerUid||S.uid,sellerName:st.name,name:val('pr-name'),ref:val('pr-ref'),brand:val('pr-brand'),cat:val('pr-cat'),unit:val('pr-unit')||'pièce',stock:val('pr-stock')||'dispo',price,cur,pays:st.pays,ville:st.ville,quartier:st.quartier||'',at:now,confirmedAt:now,history:[{price,cur,at:now}]});
+      ['pr-name','pr-price','pr-brand'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});render();
+    }
+    if(f==='pupd'){
+      const x=S.products.find(y=>y.id===e.target.dataset.v); if(!x) return;
+      const price=parseFloat(val('pu-price').replace(/\s/g,'').replace(',','.')); if(!(price>0)){S.err='Prix invalide.';return render();}
+      const now=Date.now();
+      await S.db.doc('products/'+x.id).update({price,stock:val('pu-stock'),confirmedAt:now,history:[...(x.history||[{price:x.price,cur:x.cur||'EUR',at:x.at}]),{price,cur:x.cur||'EUR',at:now}].slice(-20)});
+      S.p.editp=null;render();
+    }
+    if(f==='suggest'){
+      const name=val('sg-name'), ville=val('sg-ville');
+      if(!name||!ville){S.err='Donne au moins le nom et la ville.';return render();}
+      const dup=(S.stores||[]).find(x=>x.name.trim().toLowerCase()===name.trim().toLowerCase()&&(x.ville||'').trim().toLowerCase()===ville.trim().toLowerCase());
+      if(dup){S.err='Ce magasin est déjà dans l\'app.';S.p.suggest=false;return go('store',{id:dup.id});}
+      const ref=await S.db.collection('stores').add({name,pays:val('sg-pays'),ville,quartier:val('sg-quartier'),phone:val('sg-phone'),status:'suggeree',verified:{},suggestedBy:S.uid,suggestedByName:S.me.name,at:Date.now(),views:0});
+      S.info='Merci ! Le magasin est ajouté. Tu peux l\'inviter à confirmer sa fiche.';return go('store',{id:ref.id});
+    }
+    if(f==='sinfo'){
+      const st=storeById(e.target.dataset.v); if(!st) return;
+      const fee=val('si-fee').trim();
+      await S.db.doc('stores/'+st.id).update({quartier:val('si-quartier'),phone:val('si-phone'),delivery:{fee:fee===''?'':parseFloat(fee.replace(',','.'))||0,cur:PAYS_CUR[st.pays]||'EUR',delay:val('si-delay'),zone:val('si-zone')}});
+      S.info='Enregistré.';render();
     }
     if(f==='hire'&&p){
       const g=proById(val('gd-pro')), sal=parseInt(val('gd-sal').replace(/\D/g,''),10)||0;
