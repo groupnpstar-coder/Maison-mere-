@@ -409,7 +409,7 @@ function vHome(){
       <button class="link" data-a="go" data-v="myfiche">Voir et modifier ma fiche</button>
       ${badgesHtml(me)}
       ${me&&me.metier==='Fournisseur de matériaux'?sellerBlock(me):''}
-      ${S.guardProjects.length?`<span class="label">${t('Gardien')}</span><div class="list">${S.guardProjects.map(p=>`<button class="item" data-a="open" data-v="${p.id}" data-t="guard"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)} · ${eur(p.guard?p.guard.salary:0)} / mois</div></div><span class="pill s-bloque">${t('Gardien')}</span></button>`).join('')}</div>`:''}
+      ${S.guardProjects.length?`<span class="label">${t('Gardien')}</span><div class="list">${S.guardProjects.map(p=>`<button class="item" data-a="open" data-v="${p.id}" data-t="guard"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)} · client : ${esc(p.clientName)} · ${eur(p.guard?p.guard.salary:0)} / mois</div></div><span class="pill s-bloque">${t('Gardien')}</span></button>`).join('')}</div>`:''}
       ${(()=>{const n=proReqs(me).length,n2=otherReqs(me).length;return `<button class="item" data-a="go" data-v="reqs" style="border:1px solid var(--fg);padding:16px"><div><div class="t">Demandes de travaux</div><div class="small muted">${n||n2?(n?n+' pour ton métier':'0 pour ton métier')+' · '+n2+' autre'+(n2>1?'s':''):'Aucune demande pour l\'instant'}</div></div><span aria-hidden="true">›</span></button>`;})()}
       ${(()=>{const n=myClients().length;return `<button class="item" data-a="go" data-v="myclients" style="border:1px solid var(--line);padding:16px"><div><div class="t">Mes clients</div><div class="small muted">${n?n+' client'+(n>1?'s':''):'Pas encore de client'}</div></div><span aria-hidden="true">›</span></button>`;})()}
       <span class="label">${t('Mes chantiers')}</span>
@@ -497,7 +497,7 @@ function vProject(){
     <button class="link" data-a="home">Retour</button>
     <div class="stack-s"><span class="label">${esc(p.ville)}, ${esc(p.pays)} · ${r==='client'?'pro : '+esc(p.proName||'à choisir'):'client : '+esc(p.clientName)}</span><h1>${esc(p.title)}</h1>
     ${p.stopped?`<span class="pill s-rembourse" style="align-self:flex-start">Contrat arrêté le ${fdate(p.stopped.at)}</span>`:''}</div>
-    ${r!=='client'?`<button class="link" data-a="cprof" data-v="${p.clientUid}">${t('Profil du client')} : ${esc(p.clientName)}</button>`:''}
+    ${r!=='client'?clientCard(p.clientUid,p.clientName):''}
     ${waCall(p,r)}
     ${houseCard(p)}
     <div class="tabs" role="tablist">${tabs.map(x=>`<button role="tab" aria-selected="${x[0]===tab}" data-a="tab" data-v="${x[0]}">${t(x[1])}</button>`).join('')}</div>
@@ -790,6 +790,7 @@ function chatBox(o){
   </div>`;
 }
 function offerSteps(o){return (o.steps&&o.steps.length?o.steps:[{name:'Travaux',amount:o.price}]);}
+function clientCard(uid,name){return `<div class="between" style="border:1px solid var(--line);padding:12px 14px"><div style="min-width:0"><span class="label">Client</span><div class="t" style="font-weight:500;margin-top:2px">${esc(name||'Client')}</div></div><button class="btn ghost sm" data-a="cprof" data-v="${uid}">Voir son profil</button></div>`;}
 function vReq(){
   const x=S.p.req;
   if(x===null||S.p.offers===null) return `<div class="stack"><button class="link" data-a="back2">${t('Retour')}</button><p class="muted">Chargement…</p></div>`;
@@ -798,7 +799,8 @@ function vReq(){
   const head=`<button class="link" data-a="back2">${t('Retour')}</button>
     <div class="stack-s"><span class="label">${esc(x.metier)} · ${esc(x.ville)}, ${esc(x.pays)}</span><h1>${esc(x.title)}</h1>
     <span class="small muted">Publiée le ${fdate(x.at)}${x.budget?' · budget approximatif '+eur(x.budget):''} · ${x.status==='ouverte'?'ouverte':'attribuée'}</span></div>
-    ${x.desc?`<p style="margin:0;white-space:pre-line">${esc(x.desc)}</p>`:''}`;
+    ${x.clientUid!==S.uid||S.mode==='pro'?clientCard(x.clientUid,x.clientName):''}
+    ${x.desc?`<p style="margin:0;white-space:pre-line">${esc(String(x.desc).replace(/\\([.,;:!?()\-*_#])/g,'$1'))}</p>`:''}`;
   if(isClient){
     const open=S.p.openOffer;
     return `<div class="stack">${head}
