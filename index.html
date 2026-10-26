@@ -220,7 +220,7 @@ function start(u){
     const before=S.me&&S.me.proId;
     const first=S.me===undefined;
     S.me=s.exists?Object.assign({id:s.id},s.data()):null;
-    if(first&&S.me){let m=null;try{m=localStorage.getItem('mm-mode-'+S.uid);}catch(e){}S.mode=m&&(m!=='admin'||S.admin)?m:(S.me.role==='pro'?'pro':'client');}
+    if(first&&S.me){try{S.chosen=sessionStorage.getItem('mm-chosen-'+S.uid)==='1';}catch(e){S.chosen=false;}let m=null;try{m=localStorage.getItem('mm-mode-'+S.uid);}catch(e){}S.mode=m&&(m!=='admin'||S.admin)?m:(S.me.role==='pro'?'pro':'client');}
     if(S.me&&S.me.proId!==before) watchProProjects();
     render();
   },()=>{});
@@ -302,13 +302,14 @@ function render(){
   $main.querySelectorAll('input[id],textarea[id],select[id]').forEach(el=>{if(el.type!=='file') keep[el.id]=el.value;});
   const ae=document.activeElement&&document.activeElement.id;
   document.getElementById('acctBtn').hidden=!S.me;
-  document.getElementById('modeTag').textContent=S.me&&S.mode!=='client'?(S.mode==='pro'?'Pro':'Admin'):'';
+  document.getElementById('modeTag').textContent=S.me&&S.chosen?({client:'Client',pro:'Pro',admin:'Admin'}[S.mode]||''):'';
   document.getElementById('langSel').value=LANG;
   document.getElementById('testBanner').textContent=t('Version de test : l\'argent est fictif, rien n\'est réellement payé.');
   document.getElementById('footRule').textContent=t('Chacun peut noter l\'autre et arrêter le contrat si l\'accord n\'est pas respecté.');
   let html;
   if(!S.uid) html=vAuth();
   else if(!S.me) html=vSignup();
+  else if(!S.chosen) html=vChoose();
   else {
     const v={home:vHome,dir:vDir,pro:vProFiche,newp:vNewProject,project:vProject,myfiche:vMyFiche,account:vAccount,plan:vPlan,market:vMarket,estim:vEstim,orders:vOrders,client:vClient}[S.view]||vHome;
     html=v();
@@ -319,6 +320,19 @@ function render(){
   const box=document.getElementById('chat');if(box) box.scrollTop=box.scrollHeight;
 }
 
+function vChoose(){
+  const first=(S.me.name||'').split(' ')[0];
+  const card=(v,title,sub,icon)=>`<button class="item" data-a="choose" data-v="${v}" style="border:1px solid var(--fg);padding:20px;align-items:center">
+    <span style="display:flex;gap:16px;align-items:center;min-width:0"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0">${icon}</svg>
+    <span style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font-family:var(--display);font-size:22px">${title}</span><span class="small muted">${sub}</span></span></span><span aria-hidden="true" style="font-size:22px">›</span></button>`;
+  return `<div class="stack">
+    <div class="stack-s"><span class="label">Bonjour ${esc(first)}</span><h1>Où veux-tu aller ?</h1></div>
+    ${card('client','Espace client','Faire faire des travaux, suivre mes chantiers','<path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path><path d="M10 20v-6h4v6"></path>')}
+    ${card('pro',S.me.proId?'Espace pro':'Espace pro','Proposer mes services, mes chantiers, mes produits','<path d="M14 7l3-3 3 3-3 3"></path><path d="M17 4L8 13"></path><path d="M4 20l5-5 3 3-5 5H4z"></path>')}
+    ${S.admin?card('admin','Espace admin','Gérer l\'app : pros, litiges, comptes, bugs','<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path><path d="M9 12l2 2 4-4"></path>'):''}
+    <p class="small muted" style="margin:0">Tu pourras changer d'espace à tout moment avec l'icône en haut à droite.</p>
+  </div>`;
+}
 function vSignup(){
   return `<form class="stack" data-f="signup">
     <h1>Ton argent ne bouge pas sans ton accord.</h1>
@@ -900,6 +914,7 @@ document.addEventListener('click',async e=>{
     if(a==='home') return go('home');
     if(a==='go') return go(v);
     if(a==='role'){S.p.role=v;return render();}
+    if(a==='choose'){if(v==='admin'&&!S.admin)return;S.chosen=true;try{sessionStorage.setItem('mm-chosen-'+S.uid,'1');localStorage.setItem('mm-mode-'+S.uid,v);}catch(e){}S.mode=v;if(v==='pro'&&!S.me.proId)return go('myfiche');return go('home');}
     if(a==='mode'){if(v==='admin'&&!S.admin)return;S.mode=v;try{localStorage.setItem('mm-mode-'+S.uid,v);}catch(e){}if(v==='pro'&&!S.me.proId)return go('myfiche');return go('home');}
     if(a==='open') return go('project',{id:v,tab:b.dataset.t||'steps'});
     if(a==='pro') return go('pro',{id:v});
@@ -1006,7 +1021,7 @@ document.addEventListener('submit',async e=>{
       if(!val('su-name')||!val('su-phone')||!val('su-ville')){S.err='Remplis tous les champs.';return render();}
       const role=S.p.role==='pro'?'pro':'client';
       await S.db.doc('profiles/'+S.uid).set({name:val('su-name'),phone:val('su-phone'),pays:val('su-pays'),ville:val('su-ville'),role,createdAt:Date.now(),proId:null,reviews:[]});
-      S.mode=role;try{localStorage.setItem('mm-mode-'+S.uid,role);}catch(e){}
+      S.mode=role;S.chosen=true;try{localStorage.setItem('mm-mode-'+S.uid,role);sessionStorage.setItem('mm-chosen-'+S.uid,'1');}catch(e){}
       if(role==='pro') return go('myfiche');
     }
     if(f==='account'){await S.db.doc('profiles/'+S.uid).update({name:val('ac-name'),phone:val('ac-phone'),ville:val('ac-ville')});go('home');}
