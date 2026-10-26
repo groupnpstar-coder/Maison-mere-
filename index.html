@@ -345,7 +345,7 @@ function render(){
   let html;
   if(!S.uid) html=vAuth();
   else if(!S.me) html=vSignup();
-  else if(!S.me.photo) html=vPhotoGate();
+  else if(!S.me.photo&&!TEST) html=vPhotoGate();
   else if(!S.chosen) html=vChoose();
   else {
     const v={home:vHome,dir:vDir,pro:vProFiche,newp:vNewProject,project:vProject,myfiche:vMyFiche,account:vAccount,plan:vPlan,market:vMarket,estim:vEstim,orders:vOrders,client:vClient,reqnew:vReqNew,reqs:vReqs,req:vReq,myclients:vMyClients}[S.view]||vHome;
@@ -719,7 +719,8 @@ function vAccount(){
   return `<form class="stack" data-f="account">
     <button class="link" type="button" data-a="home">Retour</button>
     <h1>Mon compte</h1>
-    <div class="who">${avatar(S.me.photo,S.me.name,72)}<input type="file" id="av-file" accept="image/*" hidden><button class="btn ghost sm" type="button" data-a="avpick">${S.busy?'Envoi…':'Changer ma photo'}</button></div>
+    ${!S.me.photo?'<p class="small muted" style="margin:0">Ajoute ta photo de profil. Elle sera obligatoire quand l\'app sera lancée.</p>':''}
+    <div class="who">${avatar(S.me.photo,S.me.name,72)}<input type="file" id="av-file" accept="image/*" hidden><button class="btn ghost sm" type="button" data-a="avpick">${S.busy?'Envoi…':S.me.photo?'Changer ma photo':'Ajouter ma photo'}</button></div>
     <div class="field"><label class="label" for="ac-name">Nom</label><input id="ac-name" required maxlength="60" value="${esc(S.me.name)}"></div>
     <div class="field"><label class="label" for="ac-phone">Téléphone WhatsApp, avec l'indicatif (+32, +243…)</label><input id="ac-phone" required maxlength="25" value="${esc(S.me.phone)}"></div>
     <div class="field"><label class="label" for="ac-ville">Ville</label><input id="ac-ville" required maxlength="40" value="${esc(S.me.ville)}"></div>
