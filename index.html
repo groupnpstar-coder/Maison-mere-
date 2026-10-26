@@ -53,7 +53,10 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .seg{display:flex;border:1px solid var(--fg)}
 .seg button{border:none;background:var(--bg);padding:8px 12px;font-size:11px;letter-spacing:.1em;font-weight:500;min-height:36px}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--on-ink)}
-.test{font-size:12px;color:var(--warn);border:1px solid var(--warn);padding:8px 10px;margin-top:12px}
+.test{font-size:11px;letter-spacing:.04em;color:var(--warn);margin:8px 0 0;text-align:center}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tile{border:1px solid var(--line);background:var(--bg);padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;font-size:12px;line-height:1.3;min-height:96px;justify-content:center}
+.tile svg{width:24px;height:24px}
 main{flex:1;padding-block:22px}
 .btn{min-height:50px;border:none;background:var(--ink);color:var(--on-ink);font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:500;padding:0 18px;width:100%}
 .btn.ghost{background:var(--bg);color:var(--fg);border:1px solid var(--fg)}
@@ -70,7 +73,7 @@ main{flex:1;padding-block:22px}
 .pill{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;padding:4px 7px;border:1px solid currentColor;white-space:nowrap}
 .s-attente{color:var(--muted)} .s-bloque{color:var(--held)} .s-fait{color:var(--warn)} .s-paye{color:var(--ok)} .s-litige{color:var(--bad)} .s-rembourse{color:var(--muted)}
 .verified{color:var(--ok)} .unverified{color:var(--muted)}
-.tabs{display:flex;gap:20px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs{display:flex;gap:16px;border-bottom:1px solid var(--line);overflow-x:auto}
 .tabs button{border:none;background:none;padding:12px 0 10px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;border-bottom:2px solid transparent;white-space:nowrap}
 .tabs button[aria-selected="true"]{border-bottom-color:var(--fg);font-weight:600}
 .step{border:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:10px}
@@ -93,7 +96,7 @@ main{flex:1;padding-block:22px}
 .notice{border-left:2px solid var(--fg);padding:4px 0 4px 12px;font-size:13px;color:var(--muted)}
 footer{font-size:11px;color:var(--muted);text-align:center;padding-top:20px;border-top:1px solid var(--line)}
 .err{color:var(--bad);font-size:13px}
-.intro{display:flex;gap:12px;align-items:flex-start;background:var(--tile);padding:14px 12px 14px 14px;margin-bottom:18px}
+.intro{display:flex;gap:12px;align-items:flex-start;background:var(--tile);padding:14px 12px 14px 14px}
 .intro .ic{width:36px;height:36px;border-radius:18px;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .intro p{margin:0;font-size:14px;line-height:1.5;flex:1;min-width:0}
 .intro p b{font-weight:600}
@@ -319,7 +322,9 @@ function render(){
     const v={home:vHome,dir:vDir,pro:vProFiche,newp:vNewProject,project:vProject,myfiche:vMyFiche,account:vAccount,plan:vPlan,market:vMarket,estim:vEstim,orders:vOrders,client:vClient}[S.view]||vHome;
     html=v();
   }
-  $main.innerHTML=introHtml()+html;
+  const ih=introHtml();
+  if(ih){const m=html.match(/<\/h1>(\s*<\/div>)?/);html=m?html.slice(0,m.index+m[0].length)+ih+html.slice(m.index+m[0].length):ih+html;}
+  $main.innerHTML=html;
   Object.keys(keep).forEach(id=>{const el=document.getElementById(id);if(el&&el.dataset.fresh!=='1') el.value=keep[id];});
   if(ae){const el=document.getElementById(ae);if(el){el.focus();try{const n=el.value.length;el.setSelectionRange(n,n);}catch(x){}}}
   const box=document.getElementById('chat');if(box) box.scrollTop=box.scrollHeight;
@@ -374,9 +379,8 @@ function vHome(){
     const list=S.proProjects.sort((a,b)=>b.createdAt-a.createdAt);
     return `<div class="stack">
       <div class="stack-s"><span class="label">${me?esc(me.metier)+' · '+esc(me.ville):''}</span><h1>${me?esc(me.name):'Ma fiche'}</h1>
-      <span class="small ${me&&me.verified?'verified':'unverified'}">${me&&me.verified?'Vérifié':'Non vérifié : tu ne peux pas encore recevoir d\'argent'}</span></div>
+      ${me&&!me.verified?'<span class="small unverified">Non vérifié : la vérification sera demandée avant de recevoir de l\'argent.</span>':''}</div>
       <button class="link" data-a="go" data-v="myfiche">Voir et modifier ma fiche</button>
-      ${planCard()}
       ${badgesHtml(me)}
       ${me&&me.metier==='Fournisseur de matériaux'?sellerBlock(me):''}
       ${S.guardProjects.length?`<span class="label">${t('Gardien')}</span><div class="list">${S.guardProjects.map(p=>`<button class="item" data-a="open" data-v="${p.id}" data-t="guard"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)} · ${eur(p.guard?p.guard.salary:0)} / mois</div></div><span class="pill s-bloque">${t('Gardien')}</span></button>`).join('')}</div>`:''}
@@ -388,14 +392,15 @@ function vHome(){
   const list=S.myProjects.sort((a,b)=>b.createdAt-a.createdAt);
   return `<div class="stack">
     <div class="stack-s"><span class="label">Bonjour ${esc(S.me.name.split(' ')[0])}</span><h1>${t('Mes projets')}</h1></div>
-    ${planCard()}
     <button class="btn" data-a="go" data-v="newp">${t('Nouveau projet')}</button>
     ${list.length?`<div class="list">${list.map(p=>`<button class="item" data-a="open" data-v="${p.id}"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)}, ${esc(p.pays)} · ${esc(p.proName||'Pro à choisir')}</div></div>${stepSummary(p)}</button>`).join('')}</div>`
     :`<div class="empty">Pas encore de projet. Crée ton premier : choisis un pro vérifié, découpe le travail en étapes et bloque l'argent étape par étape.</div>`}
-    <button class="btn ghost" data-a="go" data-v="dir">${t('Trouver un professionnel')}</button>
-    <div class="row"><button class="btn ghost" data-a="go" data-v="market">${t('Marché des matériaux')}</button><button class="btn ghost" data-a="go" data-v="estim">${t('Estimer le prix d\'une maison')}</button></div>
+    <div class="tiles">
+      <button class="tile" data-a="go" data-v="dir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">${IC.search}</svg>Trouver un pro</button>
+      <button class="tile" data-a="go" data-v="market"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC.cart}</svg>Matériaux</button>
+      <button class="tile" data-a="go" data-v="estim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">${IC.calc}</svg>Estimer un prix</button>
+    </div>
     ${S.myOrders.length?`<button class="item" data-a="go" data-v="orders"><span class="t">${t('Mes commandes')}</span><span class="small muted">${S.myOrders.length} · ${S.myOrders.filter(o=>o.status==='livre').length} ${t('À valider').toLowerCase()}</span></button>`:''}
-    <button class="link" data-a="go" data-v="account">${t('Mon compte')}</button>
   </div>`;
 }
 
@@ -409,7 +414,7 @@ function vDir(){
     <div class="field"><label class="label" for="dir-q">Métier, nom ou ville</label><input id="dir-q" data-a="dirq" value="${esc(S.p.q||'')}" data-fresh="1"></div>
     <div class="field"><label class="label" for="dir-pays">Pays</label><select id="dir-pays" data-a="dirpays" data-fresh="1">${opts(['Tous',...PAYS],c)}</select></div>
     ${list.length?`<div class="list">${list.map(p=>`<button class="item" data-a="pro" data-v="${p.id}"><div><div class="t">${esc(p.name)}</div><div class="small muted">${esc(p.metier)} · ${esc(p.ville)}, ${esc(p.pays)}</div>
-      <div class="small ${p.verified?'verified':'unverified'}">${p.verified?'Vérifié':'Non vérifié'}${vr(p.reviews).length?' · '+avg(p.reviews).toFixed(1).replace('.',',')+'/5 · '+vr(p.reviews).length+' avis':''}${p.example?' · exemple':''}</div>${badgesHtml(p,true)}</div></button>`).join('')}</div>`
+      ${vr(p.reviews).length?`<div class="small">★ ${avg(p.reviews).toFixed(1).replace('.',',')}/5 · ${vr(p.reviews).length} avis</div>`:''}${badgesHtml(p,true)}</div></button>`).join('')}</div>`
     :`<div class="empty">Aucun professionnel trouvé. Essaie un autre pays ou un autre mot.</div>`}
   </div>`;
 }
@@ -483,7 +488,7 @@ function choosePro(p){
   </form>`;
 }
 function tSteps(p,r){
-  if(!p.proId) return r==='client'?`<div class="stack">${choosePro(p)}${p.steps.map((st,i)=>`<div class="step"><div class="between"><span class="t" style="font-weight:500">${i+1}. ${esc(st.name)}</span><span class="money small">${eur(st.amount)}</span></div></div>`).join('')}</div>`:'<div class="empty">Pas encore de professionnel sur ce projet.</div>';
+  if(!p.proId) return r==='client'?`<div class="stack">${choosePro(p)}${p.steps.map((st,i)=>`<div class="step"><div class="between"><span class="t" style="font-weight:500">${i+1}. ${esc(st.name)}</span><span class="money small">${st.amount?eur(st.amount):'Montant à définir'}</span></div></div>`).join('')}</div>`:'<div class="empty">Pas encore de professionnel sur ce projet.</div>';
   const curIdx=p.steps.findIndex(s=>s.status!=='paye'&&s.status!=='rembourse');
   const steps=p.steps.map((st,i)=>{
     let actions='', info='';
@@ -514,7 +519,7 @@ function tSteps(p,r){
         <div class="field"><label class="label" for="dp-text">Explique ce qui ne va pas</label><textarea id="dp-text" rows="3" maxlength="400"></textarea></div>
         <div class="row"><button class="btn sm" type="submit">Ouvrir le litige</button><button class="btn ghost sm" type="button" data-a="nodispute">Annuler</button></div></form>`;
     }
-    return `<div class="step${i===curIdx?' current':''}"><div class="between"><div class="stack-s" style="gap:2px;min-width:0"><span class="t" style="font-weight:500">${i+1}. ${esc(st.name)}</span><span class="money small">${eur(st.amount)}</span></div><span class="pill s-${st.status}">${ST(st.status)}</span></div>
+    return `<div class="step${i===curIdx?' current':''}"><div class="between"><div class="stack-s" style="gap:2px;min-width:0"><span class="t" style="font-weight:500">${i+1}. ${esc(st.name)}</span><span class="money small">${st.amount?eur(st.amount):'Montant à définir'}</span></div><span class="pill s-${st.status}">${ST(st.status)}</span></div>
       ${info?`<p class="small muted" style="margin:0">${info}</p>`:''}${actions?`<div class="stack-s">${actions}</div>`:''}</div>`;
   }).join('');
   let review='';
@@ -605,6 +610,7 @@ function vAccount(){
     <div class="stack-s"><span class="label">Changer d'espace</span><div class="list">
       ${[['client','Espace client','Faire faire des travaux',true],['pro',S.me.proId?'Espace pro':'Proposer aussi mes services','Ma fiche, mes chantiers, mes produits',true],['admin','Espace admin','Visible seulement par toi',S.admin]].filter(x=>x[3]).map(x=>`<button type="button" class="item" data-a="mode" data-v="${x[0]}"><div><div class="t">${x[1]}</div><div class="small muted">${x[2]}</div></div>${S.mode===x[0]?'<span class="pill s-paye">Actuel</span>':'<span aria-hidden="true">›</span>'}</button>`).join('')}
     </div></div>
+    <button type="button" class="item" data-a="go" data-v="plan"><div><div class="t">Plan de test</div><div class="small muted">${planCount()[0]} sur ${planCount()[1]} testés</div></div><span aria-hidden="true">›</span></button>
     <button class="link" type="button" data-a="showintros">Réafficher les explications</button>
     <button class="btn ghost" type="button" data-a="logout">Se déconnecter</button>
     <div class="stack-s"><span class="label">Avis des pros sur toi${r.length?' · '+avg(r).toFixed(1).replace('.',',')+'/5':''}</span>
@@ -641,7 +647,7 @@ function vClient(){
 function badges(p){
   if(!p) return [];
   const r=vr(p.reviews), st=p.stats||{}, out=[];
-  if(p.verified) out.push(t('Vérifié'));
+  out.push(p.verified?t('Vérifié'):t('Non vérifié'));
   if(r.length>=3&&avg(r)>=4.5) out.push(t('Bien noté'));
   if((st.paid||0)>=5&&!(st.lost||0)) out.push(t('Fiable')+' · '+st.paid+' étapes');
   else if((st.paid||0)>0) out.push(st.paid+' étape'+(st.paid>1?'s':'')+' payée'+(st.paid>1?'s':''));
