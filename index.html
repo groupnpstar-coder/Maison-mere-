@@ -667,6 +667,7 @@ function tPhotos(p,r){
     return `<div class="stack-s"><span class="label">${esc(st.name)} · avant / après</span><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">${cell(av,'Avant')}${cell(ap,'Après')}</div></div>`;
   }).join('');
   return `<div class="stack">
+    ${r==='client'?'':`
     <div style="border:1px solid var(--fg);padding:14px;display:flex;justify-content:space-between;align-items:center;gap:12px">
       <div style="min-width:0"><span class="label">Code du jour</span><div class="small muted" style="margin-top:4px">${r==='watcher'?'Passe sur le chantier et prends tes photos avec l\'app. Le client les voit tout de suite.':r==='client'?'Toi aussi, envoie tes photos : le terrain avant les travaux, un problème, ce que tu vois sur place. Le pro les voit tout de suite.':'Écris ce code à la main sur un papier (ou un carton) et tiens-le bien visible quand tu prends la photo. Ça prouve au client que la photo est d\'aujourd\'hui.'}<br>L\'app ajoute aussi le code, la date et l\'heure en bas de chaque photo.</div></div>
       <span style="font-family:var(--display);font-size:30px;letter-spacing:.04em;white-space:nowrap">${code}</span>
@@ -675,13 +676,15 @@ function tPhotos(p,r){
     <div class="field"><label class="label" for="ph-step">Étape concernée</label><select id="ph-step">${p.steps.map((st,i)=>`<option value="${i}">${esc(st.name)}</option>`).join('')}</select></div>
     <label class="btn" style="display:flex;align-items:center;justify-content:center" for="ph-file">Prendre une photo « ${KIND[kind]} »</label>
     <input id="ph-file" type="file" accept="image/*" capture="environment" hidden>
+    `}
     ${S.busy?'<p class="small muted" style="margin:0">Envoi de la photo…</p>':''}${S.err?`<p class="err" style="margin:0">${esc(S.err)}</p>`:''}
     ${!S.photosLoaded?'<p class="small muted" style="margin:0">Chargement des photos…</p>':''}
-    ${photoReqs(p,r)}
+    ${r==='client'?'':photoReqs(p,r)}
     ${pairs}
     ${S.photos.length?`<span class="label">Toutes les photos</span><div class="grid3">${S.photos.map(ph=>phCard(ph,p)).join('')}</div>`
-    :S.photosLoaded?`<div class="empty">Aucune photo pour l'instant. Commence par une photo « Avant » de chaque étape.</div>`:''}
-    <p class="small muted" style="margin:0">Photos compressées (environ 60 Ko) pour économiser la connexion. Dans la vraie app, la position GPS sera ajoutée.</p>
+    :S.photosLoaded?`<div class="empty">${r==='client'?'Pas encore de photo. Le pro envoie ses photos ici, avec le code du jour collé dessus.':'Aucune photo pour l\'instant. Commence par une photo « Avant » de chaque étape.'}</div>`:''}
+    ${r==='client'?photoReqs(p,r):''}
+    ${r==='client'?'':'<p class="small muted" style="margin:0">Photos compressées (environ 60 Ko) pour économiser la connexion.</p>'}
   </div>`;
 }
 function tMsgs(p,r){
@@ -1152,15 +1155,6 @@ function tCtrl(p,r){
   const ws=p.watchers||[], vs=(p.visits||[]).slice().reverse();
   const busy=vs.some(x=>x.status==='assignee'||x.status==='ouverte');
   return `<div class="stack">
-   <div class="stack-s"><span class="label">Proche de confiance · gratuit</span>
-    <p class="small muted" style="margin:0">Quelqu'un de ta famille ou un ami qui vit sur place. Il peut seulement envoyer des photos du chantier. Il ne voit ni l'argent ni les messages.</p>
-    ${ws.length?`<div class="list">${ws.map((w,i)=>`<div class="item"><div class="who">${avatar('',w.name,40)}<div style="min-width:0"><div class="t">${esc(w.name)}</div><div class="small muted">${esc(w.phone)}</div></div></div><span class="row" style="gap:14px;flex-shrink:0">${waNum(w.phone)?`<a class="link" target="_blank" rel="noopener" href="https://wa.me/${waNum(w.phone)}?text=${encodeURIComponent(inviteText(p,w.name))}">Prévenir</a>`:''}<button class="link" data-a="w-del" data-v="${i}">Retirer</button></span></div>`).join('')}</div>`:''}
-    ${ws.length<3?`<form class="stack-s" data-f="watcher" style="border:1px solid var(--line);padding:14px 16px">
-      <div class="field"><label class="label" for="w-name">Son prénom et son nom</label><input id="w-name" required maxlength="50"></div>
-      <div class="field"><label class="label" for="w-phone">Son numéro WhatsApp, avec l'indicatif (+243…)</label><input id="w-phone" required maxlength="25" inputmode="tel" placeholder="+243 …"></div>
-      <button class="btn sm" type="submit">Ajouter ce proche</button>
-      <p class="small muted" style="margin:0">Il s'inscrit sur Maison Mère avec ce même numéro, et le chantier apparaît chez lui.</p>
-    </form>`:''}</div>
    <div class="stack-s"><span class="label">Visite de contrôle surprise · ${eur(VISIT_PRICE)}</span>
     <p class="small muted" style="margin:0">Un pro vérifié de ta ville, tiré au sort, passe sur ton chantier un jour choisi au hasard. Ton pro ne sait pas quand. Le visiteur prend des photos avec le code du jour et répond à 3 questions.</p>
     ${vs.map(x=>visitCard(p,x,r)).join('')}
@@ -1327,7 +1321,7 @@ const INTRO={
  'project-steps':['lock','<b>Comment ça marche :</b> 1. tu bloques l\'argent de l\'étape, 2. le pro travaille et envoie des photos, 3. tu valides et il est payé.'],
  'project-photos':['photo','<b>Les photos du chantier.</b> Prends une photo « Avant » et une « Après » de chaque étape. Le pro écrit le code du jour à la main sur un papier visible dans la photo : ça prouve qu\'elle est d\'aujourd\'hui.'],
  'project-watch':['shield','<b>Tu es proche de confiance.</b> Passe sur le chantier et envoie des photos : le code du jour s\'ajoute tout seul. Le client les voit tout de suite.'],
- 'project-ctrl':['shield','<b>Tes yeux sur place.</b> Ajoute un proche de confiance (gratuit) ou commande une visite surprise faite par un pro vérifié tiré au sort.'],
+ 'project-ctrl':['shield','<b>Contrôle sur place.</b> Commande une visite surprise : un pro vérifié de ta ville, tiré au sort, passe sur ton chantier un jour que personne ne connaît à l\'avance.'],
  'project-visit':['search','<b>Ta visite.</b> Va sur place, prends tes photos avec l\'app et réponds aux 3 questions. Tu es payé quand ton rapport est envoyé.'],
  'project-expert':['shield','<b>Le dossier.</b> Regarde les photos et les messages, va sur place, puis décide. Ta décision fait partir l\'argent.'],
  'home-expert':['shield','<b>Espace expert.</b> Tu tranches les litiges de ta ville. Tu es tiré au sort, tu vas sur place, tu décides et tu écris un rapport.'],
