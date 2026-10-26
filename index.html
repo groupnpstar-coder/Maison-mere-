@@ -126,6 +126,7 @@ footer{font-size:11px;color:var(--muted);text-align:center;padding-top:20px;bord
 .chips button{flex-shrink:0;min-height:38px;padding:0 14px;border:1px solid var(--fg);background:var(--bg);font-size:12px;letter-spacing:.06em}
 .chips button[aria-pressed="true"]{background:var(--ink);color:var(--on-ink)}
 .badges{display:flex;flex-wrap:wrap;gap:6px}
+.nb{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#FFD400;color:#111;font-size:11px;font-weight:700;letter-spacing:0;line-height:1;vertical-align:middle;margin-left:8px;border:none}
 .av{border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--tile);display:inline-flex;align-items:center;justify-content:center;font-weight:600;color:var(--fg);overflow:hidden}
 .who{display:flex;gap:12px;align-items:center;min-width:0}
 .badge{font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;padding:3px 7px;background:var(--tile);color:var(--fg)}
@@ -140,7 +141,7 @@ footer{font-size:11px;color:var(--muted);text-align:center;padding-top:20px;bord
 <body>
 <div id="app">
   <div class="top">
-    <div class="row" style="gap:10px;min-width:0;position:relative"><button class="brand" data-a="home">Maison Mère</button><button id="modeTag" class="label" data-a="spacemenu" aria-haspopup="true" aria-expanded="false" hidden></button></div>
+    <div class="row" style="gap:10px;min-width:0;position:relative"><button class="brand" data-a="home">Maison Mère</button><button id="modeTag" class="label" data-a="spacemenu" aria-haspopup="true" aria-expanded="false" hidden></button><button id="msgDot" class="nb" data-a="home" hidden style="margin-left:0;height:22px;min-width:22px"></button></div>
     <div id="spaceMenu" role="menu" hidden></div>
     <div class="row" style="gap:8px">
     <label for="langSel" class="label" style="position:absolute;left:-9999px">Langue</label>
@@ -255,6 +256,7 @@ function start(u){
   db.doc('config/i18n').onSnapshot(s=>{S.tr=s.exists?s.data():null;render();},()=>{});
   db.collection('pros').onSnapshot(q=>{S.pros=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});
   db.collection('orders').where('clientUid','==',S.uid).onSnapshot(q=>{S.myOrders=q.docs.map(d=>Object.assign({id:d.id},d.data()));autoReleaseOrders();render();},()=>{});
+  db.collection('offers').where('clientUid','==',S.uid).onSnapshot(q=>{S.clientOffers=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});
   db.collection('requests').where('clientUid','==',S.uid).onSnapshot(q=>{S.myReqs=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});
   db.collection('projects').where('clientUid','==',S.uid).onSnapshot(q=>{S.myProjects=q.docs.map(d=>Object.assign({id:d.id},d.data()));autoRelease();render();},()=>{});
 }
@@ -334,6 +336,7 @@ function render(){
   const keep={};
   $main.querySelectorAll('input[id],textarea[id],select[id]').forEach(el=>{if(el.type!=='file') keep[el.id]=el.value;});
   const ae=document.activeElement&&document.activeElement.id;
+  const md=document.getElementById('msgDot'),tu=S.me&&S.chosen?totalUnread():0;md.hidden=!tu;md.textContent=tu>9?'9+':String(tu);md.setAttribute('aria-label',tu+' message'+(tu>1?'s':'')+' non lu'+(tu>1?'s':''));
   const ab=document.getElementById('acctBtn');ab.hidden=!S.me;if(S.me&&S.me.photo&&ab.dataset.ph!==S.me.photo.length+''){ab.dataset.ph=S.me.photo.length+'';ab.innerHTML=avatar(S.me.photo,S.me.name,32);}
   const mt=document.getElementById('modeTag'), sm=document.getElementById('spaceMenu');
   mt.hidden=!(S.me&&S.chosen); mt.textContent=({client:'Client',pro:'Pro',expert:'Expert',admin:'Admin'}[S.mode]||'Client');
@@ -413,14 +416,14 @@ function vHome(){
     return `<div class="stack">
       <div class="stack-s"><div class="who">${avatar(proPhoto(me)||S.me.photo,me?me.name:S.me.name,48)}<span class="label">Bonjour ${esc(S.me.name.split(' ')[0])}</span></div><h1>Mon espace pro</h1></div>
       <div class="stack-s">
-      ${box('reqs','Demandes de travaux',nR||nO?`${nR} pour ton métier · ${nO} autre${nO>1?'s':''}`:'Aucune demande pour l\'instant',nR)}
+      ${(()=>{const um=(S.myOffers||[]).reduce((a,o)=>a+unreadOf(o),0);return box('reqs','Demandes de travaux',(um?`${um} message${um>1?'s':''} non lu${um>1?'s':''} · `:'')+(nR||nO?`${nR} pour ton métier · ${nO} autre${nO>1?'s':''}`:'Aucune demande pour l\'instant'),nR+um);})()}
       ${box('myclients','Mes clients',nC?nC+' client'+(nC>1?'s':''):'Pas encore de client',0)}
       ${me&&me.inspector?(()=>{const n=allProjects().filter(p=>myVisit(p)).length;return box('visits','Visites de contrôle',n?n+' à faire':'Aucune visite pour l\'instant',n);})():''}
       ${box('myfiche','Ma fiche',me?esc(me.metier)+' · '+esc(me.ville)+(me.verified?' · Vérifié':' · Pas encore vérifié'):'À compléter',0)}
       </div>
       ${me&&me.metier==='Fournisseur de matériaux'?sellerBlock(me):''}
       <span class="label">${t('Mes chantiers')}</span>
-      ${list.length?`<div class="list">${list.map(p=>`<button class="item" data-a="open" data-v="${p.id}"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)} · client : ${esc(p.clientName)}</div></div>${stepSummary(p)}</button>`).join('')}</div>`
+      ${list.length?`<div class="list">${list.map(p=>`<button class="item" data-a="open" data-v="${p.id}"${unreadOf(p)?' data-t="msgs"':''}><div><div class="t">${tnb(esc(p.title),unreadOf(p))}</div><div class="small muted">${esc(p.ville)} · client : ${esc(p.clientName)}</div></div>${stepSummary(p)}</button>`).join('')}</div>`
       :`<div class="empty">Aucun chantier pour l'instant. Quand un client te choisit, son projet apparaît ici.</div>`}
     </div>`;
   }
@@ -428,8 +431,8 @@ function vHome(){
   return `<div class="stack">
     <div class="stack-s"><span class="label">Bonjour ${esc(S.me.name.split(' ')[0])}</span><h1>${t('Mes projets')}</h1></div>
     <div class="row"><button class="btn" data-a="go" data-v="reqnew" style="flex:1">Demander des devis</button><button class="btn ghost" data-a="go" data-v="newp" style="flex:1">${t('Nouveau projet')}</button></div>
-    ${(S.myReqs||[]).filter(x=>x.status==='ouverte').length?`<span class="label">Mes demandes en cours</span><div class="list">${(S.myReqs||[]).filter(x=>x.status==='ouverte').sort((a,b)=>b.at-a.at).map(x=>`<button class="item" data-a="openreq" data-v="${x.id}"><div><div class="t">${esc(x.title)}</div><div class="small muted">${esc(x.metier)} · ${esc(x.ville)}</div></div><span class="pill s-fait">${x.offerCount||0} proposition${(x.offerCount||0)>1?'s':''}</span></button>`).join('')}</div>`:''}
-    ${list.length?`<div class="list">${list.map(p=>`<button class="item" data-a="open" data-v="${p.id}"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)}, ${esc(p.pays)} · ${esc(p.proName||'Pro à choisir')}</div></div>${stepSummary(p)}</button>`).join('')}</div>`
+    ${(S.myReqs||[]).filter(x=>x.status==='ouverte').length?`<span class="label">Mes demandes en cours</span><div class="list">${(S.myReqs||[]).filter(x=>x.status==='ouverte').sort((a,b)=>b.at-a.at).map(x=>`<button class="item" data-a="openreq" data-v="${x.id}"><div><div class="t">${tnb(esc(x.title),reqUnread(x.id))}</div><div class="small muted">${esc(x.metier)} · ${esc(x.ville)}</div></div><span class="pill s-fait">${x.offerCount||0} proposition${(x.offerCount||0)>1?'s':''}</span></button>`).join('')}</div>`:''}
+    ${list.length?`<div class="list">${list.map(p=>`<button class="item" data-a="open" data-v="${p.id}"${unreadOf(p)?' data-t="msgs"':''}><div><div class="t">${tnb(esc(p.title),unreadOf(p))}</div><div class="small muted">${esc(p.ville)}, ${esc(p.pays)} · ${esc(p.proName||'Pro à choisir')}</div></div>${stepSummary(p)}</button>`).join('')}</div>`
     :`<div class="empty">Pas encore de projet. Crée ton premier : choisis un pro vérifié, découpe le travail en étapes et bloque l'argent étape par étape.</div>`}
     ${(S.watchProjects||[]).filter(p=>p.clientUid!==S.uid).length?`<span class="label">Chantiers que je surveille</span><div class="list">${S.watchProjects.filter(p=>p.clientUid!==S.uid).map(p=>`<button class="item" data-a="open" data-v="${p.id}" data-t="photos"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)} · pour ${esc(p.clientName)}</div></div><span class="pill">Envoyer des photos</span></button>`).join('')}</div>`:''}
     <div class="tiles">
@@ -522,7 +525,7 @@ function vProject(){
     <button class="link" data-a="home">Retour</button>
     <div class="stack-s"><span class="label">${esc(p.ville)}, ${esc(p.pays)} · ${r==='client'?'pro : '+esc(p.proName||'à choisir'):r==='watcher'?'tu es proche de confiance':r==='inspector'?'visite de contrôle':r==='expert'?'dossier d\'expert':'client : '+esc(p.clientName)}</span><h1>${esc(p.title)}</h1>
     ${p.stopped?`<span class="pill s-rembourse" style="align-self:flex-start">Contrat arrêté le ${fdate(p.stopped.at)}</span>`:''}</div>
-    <div class="tabs" role="tablist">${tabs.map(x=>`<button role="tab" aria-selected="${x[0]===tab}" data-a="tab" data-v="${x[0]}">${t(x[1])}</button>`).join('')}</div>
+    <div class="tabs" role="tablist">${tabs.map(x=>`<button role="tab" aria-selected="${x[0]===tab}" data-a="tab" data-v="${x[0]}">${t(x[1])}${x[0]==='msgs'&&tab!=='msgs'?nb(unreadOf(p)):''}</button>`).join('')}</div>
     ${body}
     <div class="stack" style="border-top:1px solid var(--line);padding-top:20px;margin-top:8px">
     ${r!=='client'?clientCard(p.clientUid,p.clientName):''}
@@ -682,6 +685,7 @@ function tPhotos(p,r){
   </div>`;
 }
 function tMsgs(p,r){
+  markRead(p.id,S.msgs.length);
   return `<div class="stack">
     <p class="small muted">Les messages sont gardés comme preuve et ne peuvent pas être effacés.</p>
     <div id="chat" class="stack-s" style="max-height:52vh;overflow-y:auto">
@@ -804,7 +808,8 @@ function otherReqs(me){
   return (S.openReqs||[]).filter(x=>(TEST||x.clientUid!==S.uid)&&x.metier!==me.metier).sort((a,b)=>(b.pays===me.pays)-(a.pays===me.pays)||b.at-a.at);
 }
 function reqRow(x,mine){
-  return `<button class="item" data-a="openreq" data-v="${x.id}"><div><div class="t">${esc(x.title)}</div><div class="small muted">${esc(x.metier)} · ${esc(x.ville)}, ${esc(x.pays)} · ${fdate(x.at)}${x.budget?' · budget ~'+eur(x.budget):''}</div><div class="meta">Par ${esc(x.clientName||'')}</div></div>${mine.has(x.id)?'<span class="pill s-paye">Proposé</span>':`<span class="pill s-attente">${x.offerCount||0} offre${(x.offerCount||0)>1?'s':''}</span>`}</button>`;
+  const myo=(S.myOffers||[]).find(o=>o.requestId===x.id);
+  return `<button class="item" data-a="openreq" data-v="${x.id}"><div><div class="t">${tnb(esc(x.title),unreadOf(myo))}</div><div class="small muted">${esc(x.metier)} · ${esc(x.ville)}, ${esc(x.pays)} · ${fdate(x.at)}${x.budget?' · budget ~'+eur(x.budget):''}</div><div class="meta">Par ${esc(x.clientName||'')}</div></div>${mine.has(x.id)?'<span class="pill s-paye">Proposé</span>':`<span class="pill s-attente">${x.offerCount||0} offre${(x.offerCount||0)>1?'s':''}</span>`}</button>`;
 }
 function vReqs(){
   const me=proById(S.me.proId); const list=proReqs(me), others=otherReqs(me);
@@ -821,7 +826,7 @@ function vReqs(){
 }
 function chatBox(o){
   watchChat(o.id);
-  const items=S.p.chat||[];
+  const items=S.p.chat||[]; if(S.p.chatId===o.id) markRead(o.id,items.length);
   return `<div class="stack-s" style="border-top:1px solid var(--line);padding-top:12px">
     <span class="label">Discussion</span>
     <div class="stack-s" style="max-height:40vh;overflow-y:auto">${items.length?items.map(m=>`<div class="stack-s" style="gap:2px;${m.uid===S.uid?'align-items:flex-end':''}"><div class="bubble${m.uid===S.uid?' me':''}">${esc(m.text)}</div><span class="meta">${esc(m.who)} · ${ftime(m.at)}</span></div>`).join(''):'<p class="small muted" style="margin:0">Pose tes questions ou négocie le prix ici.</p>'}</div>
@@ -849,7 +854,7 @@ function vReq(){
         <div style="text-align:right;flex-shrink:0"><div class="big" style="font-size:26px">${eur(o.price)}</div><div class="small muted">${esc(o.delay||'')}</div></div></div>
         ${o.note?`<p class="small" style="margin:0;white-space:pre-line">${esc(o.note)}</p>`:''}
         <div class="small muted">${offerSteps(o).map(st=>esc(st.name)+' : '+eur(st.amount)).join(' · ')}</div>
-        ${x.status==='ouverte'?`<div class="row"><button class="btn sm" data-a="accept" data-v="${o.id}">Accepter</button><button class="btn ghost sm" data-a="talk" data-v="${o.id}">${open===o.id?'Fermer':'Discuter'}</button><button class="link" data-a="pro" data-v="${o.proId}">Voir la fiche</button></div>`:acc?'<span class="pill s-paye" style="align-self:flex-start">Proposition acceptée</span>':''}
+        ${x.status==='ouverte'?`<div class="row"><button class="btn sm" data-a="accept" data-v="${o.id}">Accepter</button><button class="btn ghost sm" data-a="talk" data-v="${o.id}">${open===o.id?'Fermer':'Discuter'}${open===o.id?'':nb(unreadOf(o))}</button><button class="link" data-a="pro" data-v="${o.proId}">Voir la fiche</button></div>`:acc?'<span class="pill s-paye" style="align-self:flex-start">Proposition acceptée</span>':''}
         ${open===o.id||acc?chatBox(o):''}
       </div>`;}).join(''):'<div class="empty">Pas encore de proposition. Les pros de ce métier voient ta demande et vont te répondre.</div>'}
       ${x.status==='ouverte'?'<button class="link" data-a="closereq">Retirer ma demande</button>':''}
@@ -1116,6 +1121,13 @@ const myVisit=p=>(p.visits||[]).find(x=>x.inspectorUid===S.uid&&x.status==='assi
 const isExpertOn=p=>(p.expertUids||[]).includes(S.uid);
 const expertOk=()=>!!(S.me&&S.me.expert&&S.me.expert.status==='ok');
 const rid=()=>Math.random().toString(36).slice(2,10);
+const unreadOf=d=>{if(!d||!S.me||d.lastMsgBy===S.uid)return 0;return Math.max(0,(d.msgN||0)-((S.me.reads||{})[d.id]||0));};
+const tnb=(title,n)=>n?`<span style="display:flex;align-items:center;gap:8px"><span style="min-width:0">${title}</span>${nb(n).replace('class="nb"','class="nb" style="margin-left:0;flex-shrink:0"')}</span>`:title;
+const nb=n=>n?`<span class="nb" aria-label="${n} nouveau${n>1?'x':''} message${n>1?'s':''}">${n>9?'9+':n}</span>`:'';
+async function noteMsg(col,id,n){try{await S.db.doc(col+'/'+id).update({msgN:n,lastMsgAt:Date.now(),lastMsgBy:S.uid});await S.db.doc('profiles/'+S.uid).update({['reads.'+id]:n});}catch(e){}}
+function markRead(id,n){if(!S.me||!n)return;if(((S.me.reads||{})[id]||0)>=n||S._rd===id+':'+n)return;S._rd=id+':'+n;S.db.doc('profiles/'+S.uid).update({['reads.'+id]:n}).catch(()=>{});}
+function totalUnread(){const seen=new Set();let t=0;[...(S.myProjects||[]),...(S.proProjects||[]),...(S.myOffers||[]),...(S.clientOffers||[])].forEach(d=>{if(seen.has(d.id))return;seen.add(d.id);t+=unreadOf(d);});return t;}
+const reqUnread=rid0=>(S.clientOffers||[]).filter(o=>o.requestId===rid0).reduce((a,o)=>a+unreadOf(o),0);
 const sameCity=(a,b)=>{const n=x=>String(x||'').toLowerCase().split(/[ ,]/)[0];return !!n(a)&&n(a)===n(b);};
 const pick=arr=>arr[Math.floor(Math.random()*arr.length)];
 const yn=(v,l)=>`<div class="between small"><span>${l}</span><b style="font-weight:600" class="${v==='oui'?'verified':'unverified'}">${v==='oui'?'Oui':'Non'}</b></div>`;
@@ -1459,6 +1471,7 @@ async function sysMsg(pid,text){
   const items=(s.exists?(s.data().items||[]):[]).slice(-300);
   items.push({uid:'system',who:'Maison Mère',text,at:Date.now()});
   await ref.set({items});
+  await noteMsg('projects',pid,items.length);
 }
 function myName(p){const r=role(p);return r==='pro'?(p.proName):S.me.name;}
 
@@ -1615,7 +1628,7 @@ async function handleFile(el,file,camShot){
       const mref=S.db.doc('messages/'+p.id); const ms=await mref.get();
       const items=(ms.exists?(ms.data().items||[]):[]).slice(-300);
       items.push({uid:S.uid,who:myName(p),photoId:ref.id,text:'',at:Date.now()});
-      await mref.set({items});
+      await mref.set({items}); await noteMsg('projects',p.id,items.length);
     }catch(err){S.err='La photo n\'a pas pu être envoyée. Essaie une autre image.';}
     S.busy=false;render();
   }
@@ -1911,7 +1924,7 @@ document.addEventListener('submit',async e=>{
       const items=(d.exists?(d.data().items||[]):[]).slice(-300);
       const o=(S.p.offers||[]).find(y=>y.id===oid);
       items.push({uid:S.uid,who:o&&o.proUid===S.uid?o.proName:S.me.name,text,at:Date.now()});
-      await ref.set({items}); const el=document.getElementById('oc-text'); if(el) el.value='';
+      await ref.set({items}); await noteMsg('offers',oid,items.length); const el=document.getElementById('oc-text'); if(el) el.value='';
     }
     if(f==='bug'){
       const text=val('bug-text'); if(!text) return;
@@ -1929,7 +1942,7 @@ document.addEventListener('submit',async e=>{
       const ref=S.db.doc('messages/'+p.id); const s=await ref.get();
       const items=(s.exists?(s.data().items||[]):[]).slice(-300);
       items.push({uid:S.uid,who:myName(p),text,at:Date.now()});
-      await ref.set({items});
+      await ref.set({items}); await noteMsg('projects',p.id,items.length);
       document.getElementById('msg-text').value='';
     }
     if((f==='rv'||f==='rc')&&p){
