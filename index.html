@@ -270,7 +270,7 @@ function watchProProjects(){
 }
 function watchProject(){
   const pid=S.view==='project'?S.p.id:null;
-  const ph=pid&&S.p.tab==='photos'?pid:null;
+  const ph=pid&&(S.p.tab==='photos'||S.p.tab==='msgs')?pid:null;
   if(ph!==watchedPhotos){
     if(unsubPhotos){unsubPhotos();unsubPhotos=null;}
     S.photos=[];S.photosLoaded=false;watchedPhotos=ph;
@@ -553,9 +553,15 @@ function tMsgs(p,r){
   return `<div class="stack">
     <p class="small muted">Les messages sont gardés comme preuve et ne peuvent pas être effacés.</p>
     <div id="chat" class="stack-s" style="max-height:52vh;overflow-y:auto">
-      ${S.msgs.length?S.msgs.map(m=>`<div class="stack-s" style="gap:2px;${m.uid===S.uid?'align-items:flex-end':''}"><div class="bubble${m.uid===S.uid?' me':''}">${esc(m.text)}</div><span class="meta">${esc(m.who)} · ${ftime(m.at)}</span></div>`).join(''):'<div class="empty">Aucun message. Écris au '+(r==='client'?'pro':'client')+'.</div>'}
+      ${S.msgs.length?S.msgs.map(m=>{const ph=m.photoId?S.photos.find(x=>x.id===m.photoId):null;
+        const body=m.photoId?(ph?`<img src="${esc(ph.data)}" alt="Photo envoyée" loading="lazy" style="display:block;width:220px;max-width:100%;aspect-ratio:4/3;object-fit:cover;background:var(--tile)">`:'<div class="bubble">Photo…</div>'):`<div class="bubble${m.uid===S.uid?' me':''}">${esc(m.text)}</div>`;
+        return `<div class="stack-s" style="gap:2px;${m.uid===S.uid?'align-items:flex-end':''}">${body}<span class="meta">${esc(m.who)} · ${ftime(m.at)}</span></div>`;}).join(''):'<div class="empty">Aucun message. Écris au '+(r==='client'?'pro':'client')+'.</div>'}
     </div>
-    <form class="row" data-f="msg"><div class="field" style="flex:1;min-width:0"><label class="label" for="msg-text">Message</label><input id="msg-text" maxlength="500" autocomplete="off"></div><button class="btn sm" type="submit" style="align-self:flex-end">Envoyer</button></form>
+    ${S.busy?'<p class="small muted" style="margin:0">Envoi de la photo…</p>':''}${S.err?`<p class="err" style="margin:0">${esc(S.err)}</p>`:''}
+    <form class="row" data-f="msg">
+      <label for="msg-photo" aria-label="Envoyer une photo" style="width:44px;height:44px;border:1px solid var(--fg);display:flex;align-items:center;justify-content:center;align-self:flex-end;flex-shrink:0;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true">${IC.photo}</svg></label>
+      <input id="msg-photo" type="file" accept="image/*" hidden>
+      <div class="field" style="flex:1;min-width:0"><label class="label" for="msg-text">Message</label><input id="msg-text" maxlength="500" autocomplete="off"></div><button class="btn sm" type="submit" style="align-self:flex-end">Envoyer</button></form>
   </div>`;
 }
 
@@ -829,7 +835,7 @@ const INTRO={
  'project-steps':['lock','<b>Comment ça marche :</b> 1. tu bloques l\'argent de l\'étape, 2. le pro travaille et envoie des photos, 3. tu valides et il est payé.'],
  'project-photos':['photo','<b>Les photos du chantier.</b> Chaque photo garde sa date et son auteur. Ce sont tes preuves.'],
  'project-guard':['shield','<b>Le gardien.</b> Il pointe matin et soir avec une photo. Il est payé en fin de mois, selon ses pointages.'],
- 'project-msgs':['chat','<b>Les messages.</b> Parle avec l\'autre ici. Tout est gardé comme preuve et ne peut pas être effacé.'],
+ 'project-msgs':['chat','<b>Les messages.</b> Écris ou envoie une photo avec l\'appareil 📷. Tout est gardé comme preuve et ne peut pas être effacé.'],
  'project-pay':['coin','<b>Ton argent.</b> Ce qui est payé, ce qui est bloqué et ce qui reste à bloquer.'],
  'market':['cart','<b>Le marché.</b> Achète tes matériaux. L\'argent est bloqué jusqu\'à ce que la livraison soit photographiée et que tu confirmes.'],
  'estim':['calc','<b>L\'estimateur.</b> Une idée du coût des matériaux pour ta maison. C\'est approximatif : fais toujours confirmer par un ingénieur.'],
@@ -1050,6 +1056,19 @@ document.addEventListener('change',async e=>{
     S.busy=true;render();
     try{const data=await shrink(e.target.files[0],480,35000);await S.db.collection('checkins').add({projectId:p.id,uid:S.uid,slot:e.target.dataset.slot,data,at:Date.now()});}
     catch(err){S.err='Le pointage n\'a pas pu être envoyé.';}
+    S.busy=false;render();
+  }
+  if(e.target.id==='msg-photo'&&e.target.files[0]){
+    const p=prjById(S.p.id); if(!p) return;
+    S.busy=true;S.err='';render();
+    try{
+      const data=await shrink(e.target.files[0]);
+      const ref=await S.db.collection('photos').add({projectId:p.id,step:Math.max(0,p.steps.findIndex(x=>x.status!=='paye'&&x.status!=='rembourse')),uid:S.uid,who:myName(p),data,at:Date.now(),fromChat:true});
+      const mref=S.db.doc('messages/'+p.id); const ms=await mref.get();
+      const items=(ms.exists?(ms.data().items||[]):[]).slice(-300);
+      items.push({uid:S.uid,who:myName(p),photoId:ref.id,text:'',at:Date.now()});
+      await mref.set({items});
+    }catch(err){S.err='La photo n\'a pas pu être envoyée. Essaie une autre image.';}
     S.busy=false;render();
   }
   if(e.target.id==='ph-file'&&e.target.files[0]){
