@@ -245,8 +245,8 @@ function vAuth(){
     <div class="field"><label class="label" for="au-email">Email</label><input id="au-email" type="email" autocomplete="email" required maxlength="80"></div>
     <div class="field"><label class="label" for="au-pass">Mot de passe (6 caractères minimum)</label><input id="au-pass" type="password" autocomplete="current-password" required maxlength="60"></div>
     ${S.err?`<p class="err">${esc(S.err)}</p>`:''}${S.info?`<p class="small verified">${esc(S.info)}</p>`:''}
-    <button class="btn" type="submit">Se connecter</button>
-    <button class="btn ghost" type="button" data-a="auth-signup">Créer un compte</button>
+    <button class="btn" type="submit"${S.busyAuth?' disabled':''}>Se connecter</button>
+    <button class="btn ghost" type="button" data-a="auth-signup"${S.busyAuth?' disabled':''}>Créer un compte</button>
     <button class="link" type="button" data-a="auth-reset">Mot de passe oublié</button>
   </form>`;
 }
@@ -878,7 +878,7 @@ document.addEventListener('click',async e=>{
   const p=S.view==='project'?prjById(S.p.id):null;
   try{
     if(a==='logout'){await S.auth.signOut();location.reload();return;}
-    if(a==='auth-signup'){S.err='';S.info='';try{await S.auth.createUserWithEmailAndPassword(val('au-email'),document.getElementById('au-pass').value);}catch(er){S.err=AUTH_ERR[er.code]||'Création du compte impossible.';render();}return;}
+    if(a==='auth-signup'){if(S.busyAuth)return;S.err='';S.info='Création du compte en cours…';S.busyAuth=true;render();try{await S.auth.createUserWithEmailAndPassword(val('au-email'),document.getElementById('au-pass').value);}catch(er){S.info='';S.err=(AUTH_ERR[er.code]||'Création du compte impossible.')+' ['+(er.code||'erreur')+' · '+new Date().toLocaleTimeString('fr-FR')+']';}S.busyAuth=false;render();return;}
     if(a==='auth-reset'){S.err='';S.info='';try{await S.auth.sendPasswordResetEmail(val('au-email'));S.info='Email envoyé : suis le lien pour choisir un nouveau mot de passe.';}catch(er){S.err=AUTH_ERR[er.code]||'Entre ton email d\'abord.';}render();return;}
     if(a==='home') return go('home');
     if(a==='go') return go(v);
@@ -980,7 +980,7 @@ function shrink(file,m0,target){
 document.addEventListener('submit',async e=>{
   e.preventDefault();
   const f=e.target.dataset.f; S.err='';
-  if(f==='login'){S.info='';try{await S.auth.signInWithEmailAndPassword(val('au-email'),document.getElementById('au-pass').value);}catch(er){S.err=AUTH_ERR[er.code]||'Connexion impossible.';render();}return;}
+  if(f==='login'){if(S.busyAuth)return;S.info='Connexion en cours…';S.busyAuth=true;render();try{await S.auth.signInWithEmailAndPassword(val('au-email'),document.getElementById('au-pass').value);}catch(er){S.info='';S.err=(AUTH_ERR[er.code]||'Connexion impossible.')+' ['+(er.code||'erreur')+' · '+new Date().toLocaleTimeString('fr-FR')+']';}S.busyAuth=false;render();return;}
   const p=S.view==='project'?prjById(S.p.id):null;
   try{
     if(f==='signup'){
