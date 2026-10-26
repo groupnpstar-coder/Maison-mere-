@@ -1177,6 +1177,8 @@ async function sysMsg(pid,text){
 function myName(p){const r=role(p);return r==='pro'?(p.proName):S.me.name;}
 
 document.addEventListener('click',async e=>{
+  const lab=e.target.closest('label[for]');
+  if(lab){const inp=document.getElementById(lab.htmlFor);if(inp&&inp.type==='file'&&camOK()){e.preventDefault();openCam(inp);return;}}
   const b=e.target.closest('[data-a]'); if(!b||b.tagName==='INPUT'||b.tagName==='SELECT') return;
   const a=b.dataset.a, v=b.dataset.v;
   const p=S.view==='project'?prjById(S.p.id):null;
@@ -1267,26 +1269,30 @@ document.addEventListener('input',e=>{
 document.addEventListener('change',async e=>{
   if(e.target.dataset.a==='dirpays'){S.p.pays=e.target.value;render();}
   if(e.target.id==='langSel'){LANG=e.target.value;try{localStorage.setItem('mm-lang',LANG);}catch(x){}if(S.me&&S.me.checks&&!S.me.checks.c13&&LANG!=='fr')S.db.doc('profiles/'+S.uid).update({'checks.c13':true}).catch(()=>{});render();}
-  if(e.target.classList.contains('dl-file')&&e.target.files[0]){
+  if(e.target.type==='file'&&e.target.files&&e.target.files[0]){const f=e.target.files[0];e.target.value='';return handleFile(e.target,f,null);}
+});
+
+async function handleFile(el,file,camShot){
+  if(el.classList.contains('dl-file')&&file){
     S.busy=true;render();
-    try{const data=await shrink(e.target.files[0],600,50000);await S.db.doc('orders/'+e.target.dataset.v).update({status:'livre',deliveredAt:Date.now(),photo:data});}
+    try{const data=await shrink(file,600,50000);await S.db.doc('orders/'+el.dataset.v).update({status:'livre',deliveredAt:Date.now(),photo:data});}
     catch(err){S.err='La photo n\'a pas pu être envoyée.';}
     S.busy=false;render();
   }
-  if(e.target.classList.contains('ck-file')&&e.target.files[0]){
+  if(el.classList.contains('ck-file')&&file){
     const p=prjById(S.p.id); if(!p) return;
     S.busy=true;render();
-    try{const data=await shrink(e.target.files[0],480,35000);await S.db.collection('checkins').add({projectId:p.id,uid:S.uid,slot:e.target.dataset.slot,data,at:Date.now()});}
+    try{const data=await shrink(file,480,35000);await S.db.collection('checkins').add({projectId:p.id,uid:S.uid,slot:el.dataset.slot,data,at:Date.now()});}
     catch(err){S.err='Le pointage n\'a pas pu être envoyé.';}
     S.busy=false;render();
   }
-  if(e.target.id==='msg-photo'&&e.target.files[0]){
+  if(el.id==='msg-photo'&&file){
     const p=prjById(S.p.id); if(!p) return;
     S.busy=true;S.err='';render();
     try{
-      const shotAt=await exifDate(e.target.files[0]);
-      const data=await shrink(e.target.files[0],720,80000,dayCode(p.id)+' · '+new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · Maison Mère');
-      const ref=await S.db.collection('photos').add({projectId:p.id,step:Math.max(0,p.steps.findIndex(x=>x.status!=='paye'&&x.status!=='rembourse')),uid:S.uid,who:myName(p),data,at:Date.now(),fromChat:true,kind:'pendant',code:dayCode(p.id),shotAt});
+      const shotAt=camShot||await exifDate(file);
+      const data=await shrink(file,720,80000,dayCode(p.id)+' · '+new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · Maison Mère');
+      const ref=await S.db.collection('photos').add({projectId:p.id,step:Math.max(0,p.steps.findIndex(x=>x.status!=='paye'&&x.status!=='rembourse')),uid:S.uid,who:myName(p),data,at:Date.now(),fromChat:true,kind:'pendant',code:dayCode(p.id),shotAt,src:camShot?'camera':'fichier'});
       const mref=S.db.doc('messages/'+p.id); const ms=await mref.get();
       const items=(ms.exists?(ms.data().items||[]):[]).slice(-300);
       items.push({uid:S.uid,who:myName(p),photoId:ref.id,text:'',at:Date.now()});
@@ -1294,31 +1300,68 @@ document.addEventListener('change',async e=>{
     }catch(err){S.err='La photo n\'a pas pu être envoyée. Essaie une autre image.';}
     S.busy=false;render();
   }
-  if(e.target.classList&&e.target.classList.contains('pq-file')&&e.target.files[0]){
-    const p=prjById(S.p.id); if(!p) return; const rid=e.target.dataset.v;
+  if(el.classList.contains('pq-file')&&file){
+    const p=prjById(S.p.id); if(!p) return; const rid=el.dataset.v;
     S.busy=true;S.err='';render();
     try{
-      const shotAt=await exifDate(e.target.files[0]);
-      const data=await shrink(e.target.files[0],720,80000,dayCode(p.id)+' · '+new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · Maison Mère');
-      const ref=await S.db.collection('photos').add({projectId:p.id,step:Math.max(0,p.steps.findIndex(x=>x.status!=='paye'&&x.status!=='rembourse')),kind:'pendant',code:dayCode(p.id),shotAt,reqId:rid,uid:S.uid,who:myName(p),data,at:Date.now()});
+      const shotAt=camShot||await exifDate(file);
+      const data=await shrink(file,720,80000,dayCode(p.id)+' · '+new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · Maison Mère');
+      const ref=await S.db.collection('photos').add({projectId:p.id,step:Math.max(0,p.steps.findIndex(x=>x.status!=='paye'&&x.status!=='rembourse')),kind:'pendant',code:dayCode(p.id),shotAt,src:camShot?'camera':'fichier',reqId:rid,uid:S.uid,who:myName(p),data,at:Date.now()});
       const list=(p.photoReqs||[]).map(x=>x.id===rid?Object.assign({},x,{status:'faite',photoId:ref.id,doneAt:Date.now()}):x);
       await S.db.doc('projects/'+p.id).update({photoReqs:list});
       await sysMsg(p.id,`${myName(p)} a envoyé la photo demandée.`);
     }catch(err){S.err='La photo n\'a pas pu être envoyée.';}
     S.busy=false;render();
   }
-  if(e.target.id==='ph-file'&&e.target.files[0]){
+  if(el.id==='ph-file'&&file){
     const p=prjById(S.p.id); if(!p) return;
     S.busy=true;S.err='';render();
     try{
-      const shotAt=await exifDate(e.target.files[0]);
-      const data=await shrink(e.target.files[0],720,80000,dayCode(p.id)+' · '+new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · Maison Mère');
-      await S.db.collection('photos').add({projectId:p.id,step:+val('ph-step')||0,kind:S.p.phKind||'pendant',code:dayCode(p.id),shotAt,reqId:S.p.answerReq||null,uid:S.uid,who:myName(p),data,at:Date.now()});
+      const shotAt=camShot||await exifDate(file);
+      const data=await shrink(file,720,80000,dayCode(p.id)+' · '+new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · Maison Mère');
+      await S.db.collection('photos').add({projectId:p.id,step:+val('ph-step')||0,kind:S.p.phKind||'pendant',code:dayCode(p.id),shotAt,src:camShot?'camera':'fichier',reqId:S.p.answerReq||null,uid:S.uid,who:myName(p),data,at:Date.now()});
     }catch(err){S.err='La photo n\'a pas pu être envoyée. Essaie une autre image.';}
     S.busy=false;render();
   }
-});
+}
 
+
+
+/* ---------- appareil photo intégré : pas de galerie ---------- */
+function camOK(){return !!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);}
+async function openCam(inp){
+  const ov=document.createElement('div');
+  ov.setAttribute('role','dialog');ov.setAttribute('aria-label','Appareil photo');
+  ov.style.cssText='position:fixed;inset:0;z-index:50;background:#000;display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)';
+  ov.innerHTML=`<div style="color:#fff;font:600 13px system-ui;padding:12px 16px;display:flex;justify-content:space-between;align-items:center"><span>Photo en direct · code <span style="background:#FFD400;color:#111;padding:2px 6px">${esc(S.p&&S.p.id?dayCode(S.p.id):'')}</span></span><button data-c="x" style="background:none;border:none;color:#fff;font-size:26px;width:44px;height:44px" aria-label="Fermer">×</button></div>
+    <video playsinline autoplay muted style="flex:1;min-height:0;width:100%;object-fit:contain;background:#000"></video>
+    <p data-c="msg" style="color:#ddd;font:13px system-ui;text-align:center;margin:8px 16px">Ouverture de la caméra…</p>
+    <div style="display:flex;justify-content:center;align-items:center;gap:28px;padding:14px 0 22px"><button data-c="flip" style="width:52px;height:52px;border-radius:26px;border:1px solid #fff;background:none;color:#fff;font-size:20px" aria-label="Changer de caméra">⟲</button>
+    <button data-c="shot" disabled style="width:74px;height:74px;border-radius:37px;border:5px solid #fff;background:#FFD400" aria-label="Prendre la photo"></button><span style="width:52px"></span></div>`;
+  document.body.appendChild(ov);
+  const video=ov.querySelector('video'), msg=ov.querySelector('[data-c="msg"]'), shot=ov.querySelector('[data-c="shot"]');
+  let stream=null, facing='environment';
+  const stop=()=>{if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;};
+  const close=()=>{stop();ov.remove();};
+  const start=async()=>{
+    stop();shot.disabled=true;
+    try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing},width:{ideal:1280},height:{ideal:960}},audio:false});
+      video.srcObject=stream;await video.play().catch(()=>{});shot.disabled=false;msg.textContent='Cadre le travail (et le papier avec le code), puis appuie sur le bouton jaune.';}
+    catch(err){msg.innerHTML='Impossible d\'ouvrir la caméra. Autorise l\'appareil photo pour ce site dans les réglages du téléphone, puis réessaie.'+(TEST?'<br><br><button data-c="fallback" style="background:#fff;color:#111;border:none;padding:10px 14px;font:600 13px system-ui">Utiliser l\'appareil photo du téléphone</button><br><span style="font-size:11px">La photo sera contrôlée par sa date.</span>':'');}
+  };
+  ov.addEventListener('click',async ev=>{
+    const c=ev.target.closest('[data-c]'); if(!c) return; const k=c.dataset.c;
+    if(k==='x') close();
+    if(k==='fallback'){close();inp.click();return;}
+    if(k==='flip'){facing=facing==='environment'?'user':'environment';start();}
+    if(k==='shot'&&video.videoWidth){
+      const cv=document.createElement('canvas');cv.width=video.videoWidth;cv.height=video.videoHeight;cv.getContext('2d').drawImage(video,0,0);
+      const t=Date.now();
+      cv.toBlob(b=>{close();if(b)handleFile(inp,new File([b],'photo.jpg',{type:'image/jpeg'}),t);},'image/jpeg',.9);
+    }
+  });
+  start();
+}
 /* date de prise de vue cachée dans la photo (EXIF) */
 function exifDate(file){
   return new Promise(res=>{
@@ -1355,6 +1398,7 @@ function freshness(shot,at){
   return {k:'old',t:'Photo ancienne : prise le '+new Date(shot).toLocaleDateString('fr-FR')};
 }
 function freshBadge(ph){
+  if(ph.src==='camera') return '<br><b style="font-weight:600;color:var(--ok)">✓ Prise en direct dans l\'app</b>';
   if(!('shotAt' in ph)) return '';
   const f=freshness(ph.shotAt,ph.at);
   const col=f.k==='ok'?'var(--ok)':f.k==='old'?'var(--bad)':'var(--warn)';
