@@ -1,13 +1,11 @@
 // Configuration Firebase de Maison Mère.
-// Remplace le bloc ci-dessous par celui de ta console Firebase
-// (Paramètres du projet > Vos applications > firebaseConfig).
 window.FIREBASE_CONFIG = {
-  apiKey: "COLLE_ICI_TA_CLE",
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: ""
+  apiKey: "AIzaSyAdTE0mzjfRljzwZXLM2UB0kSgdNViKD9o",
+  authDomain: "maison-mere-5a3db.firebaseapp.com",
+  projectId: "maison-mere-5a3db",
+  storageBucket: "maison-mere-5a3db.firebasestorage.app",
+  messagingSenderId: "427602687974",
+  appId: "1:427602687974:web:1fc3a44144f06a25a14827"
 };
 
 // Emails qui ont accès à l'espace admin.
