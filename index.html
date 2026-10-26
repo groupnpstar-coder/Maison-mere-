@@ -202,7 +202,8 @@ const OK=x=>!!x&&!x.hidden&&(TEST||!!x.verified);
 const nv=x=>x&&!x.verified?' (non vérifié)':'';
 const avg=r0=>{const r=vr(r0);return r.length?(r.reduce((a,b)=>a+b.note,0)/r.length):0;};
 
-function go(view,p){S.view=view;S.p=p||{};S.err='';window.scrollTo(0,0);if(['market','estim','myfiche','home'].includes(view)&&(view!=='home'||S.mode==='pro'))ensureProducts();watchProject();render();}
+let viewUnsubs=[];
+function go(view,p){viewUnsubs.forEach(u=>u());viewUnsubs=[];S.view=view;S.p=p||{};S.err='';if(view==='req')watchReq();window.scrollTo(0,0);if(['market','estim','myfiche','home'].includes(view)&&(view!=='home'||S.mode==='pro'))ensureProducts();watchProject();render();}
 function ensureProducts(){if(S.productsOn||!S.db)return;S.productsOn=true;S.db.collection('products').onSnapshot(q=>{S.products=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});}
 
 /* ---------- boot ---------- */
@@ -241,6 +242,7 @@ function start(u){
   db.doc('config/i18n').onSnapshot(s=>{S.tr=s.exists?s.data():null;render();},()=>{});
   db.collection('pros').onSnapshot(q=>{S.pros=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});
   db.collection('orders').where('clientUid','==',S.uid).onSnapshot(q=>{S.myOrders=q.docs.map(d=>Object.assign({id:d.id},d.data()));autoReleaseOrders();render();},()=>{});
+  db.collection('requests').where('clientUid','==',S.uid).onSnapshot(q=>{S.myReqs=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});
   db.collection('projects').where('clientUid','==',S.uid).onSnapshot(q=>{S.myProjects=q.docs.map(d=>Object.assign({id:d.id},d.data()));autoRelease();render();},()=>{});
 }
 function fail(msg){
@@ -266,6 +268,8 @@ function watchProProjects(){
   unsubProPrj=S.db.collection('projects').where('proId','==',S.me.proId).onSnapshot(q=>{S.proProjects=q.docs.map(d=>Object.assign({id:d.id},d.data()));autoRelease();render();},()=>{});
   proUnsubs.forEach(u=>u());proUnsubs=[];S.sellerOrders=[];S.guardProjects=[];
   proUnsubs.push(S.db.collection('orders').where('sellerProId','==',S.me.proId).onSnapshot(q=>{S.sellerOrders=q.docs.map(d=>Object.assign({id:d.id},d.data()));autoReleaseOrders();render();},()=>{}));
+  proUnsubs.push(S.db.collection('requests').where('status','==','ouverte').onSnapshot(q=>{S.openReqs=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{}));
+  proUnsubs.push(S.db.collection('offers').where('proId','==',S.me.proId).onSnapshot(q=>{S.myOffers=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{}));
   proUnsubs.push(S.db.collection('projects').where('guardProId','==',S.me.proId).onSnapshot(q=>{S.guardProjects=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{}));
 }
 function watchProject(){
@@ -319,7 +323,7 @@ function render(){
   else if(!S.me) html=vSignup();
   else if(!S.chosen) html=vChoose();
   else {
-    const v={home:vHome,dir:vDir,pro:vProFiche,newp:vNewProject,project:vProject,myfiche:vMyFiche,account:vAccount,plan:vPlan,market:vMarket,estim:vEstim,orders:vOrders,client:vClient}[S.view]||vHome;
+    const v={home:vHome,dir:vDir,pro:vProFiche,newp:vNewProject,project:vProject,myfiche:vMyFiche,account:vAccount,plan:vPlan,market:vMarket,estim:vEstim,orders:vOrders,client:vClient,reqnew:vReqNew,reqs:vReqs,req:vReq}[S.view]||vHome;
     html=v();
   }
   const ih=introHtml();
@@ -384,6 +388,7 @@ function vHome(){
       ${badgesHtml(me)}
       ${me&&me.metier==='Fournisseur de matériaux'?sellerBlock(me):''}
       ${S.guardProjects.length?`<span class="label">${t('Gardien')}</span><div class="list">${S.guardProjects.map(p=>`<button class="item" data-a="open" data-v="${p.id}" data-t="guard"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)} · ${eur(p.guard?p.guard.salary:0)} / mois</div></div><span class="pill s-bloque">${t('Gardien')}</span></button>`).join('')}</div>`:''}
+      ${(()=>{const n=proReqs(me).length;return `<button class="item" data-a="go" data-v="reqs" style="border:1px solid var(--fg);padding:16px"><div><div class="t">Demandes de travaux</div><div class="small muted">${n?n+' demande'+(n>1?'s':'')+' pour ton métier':'Aucune demande pour l\'instant'}</div></div><span aria-hidden="true">›</span></button>`;})()}
       <span class="label">${t('Mes chantiers')}</span>
       ${list.length?`<div class="list">${list.map(p=>`<button class="item" data-a="open" data-v="${p.id}"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)} · client : ${esc(p.clientName)}</div></div>${stepSummary(p)}</button>`).join('')}</div>`
       :`<div class="empty">Aucun chantier pour l'instant. Quand un client te choisit, son projet apparaît ici.</div>`}
@@ -392,7 +397,8 @@ function vHome(){
   const list=S.myProjects.sort((a,b)=>b.createdAt-a.createdAt);
   return `<div class="stack">
     <div class="stack-s"><span class="label">Bonjour ${esc(S.me.name.split(' ')[0])}</span><h1>${t('Mes projets')}</h1></div>
-    <button class="btn" data-a="go" data-v="newp">${t('Nouveau projet')}</button>
+    <div class="row"><button class="btn" data-a="go" data-v="reqnew" style="flex:1">Demander des devis</button><button class="btn ghost" data-a="go" data-v="newp" style="flex:1">${t('Nouveau projet')}</button></div>
+    ${(S.myReqs||[]).filter(x=>x.status==='ouverte').length?`<span class="label">Mes demandes en cours</span><div class="list">${(S.myReqs||[]).filter(x=>x.status==='ouverte').sort((a,b)=>b.at-a.at).map(x=>`<button class="item" data-a="openreq" data-v="${x.id}"><div><div class="t">${esc(x.title)}</div><div class="small muted">${esc(x.metier)} · ${esc(x.ville)}</div></div><span class="pill s-fait">${x.offerCount||0} proposition${(x.offerCount||0)>1?'s':''}</span></button>`).join('')}</div>`:''}
     ${list.length?`<div class="list">${list.map(p=>`<button class="item" data-a="open" data-v="${p.id}"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)}, ${esc(p.pays)} · ${esc(p.proName||'Pro à choisir')}</div></div>${stepSummary(p)}</button>`).join('')}</div>`
     :`<div class="empty">Pas encore de projet. Crée ton premier : choisis un pro vérifié, découpe le travail en étapes et bloque l'argent étape par étape.</div>`}
     <div class="tiles">
@@ -663,6 +669,104 @@ function vAccount(){
   </form>`;
 }
 
+/* ---------- demandes de travaux ---------- */
+function proReqs(me){
+  if(!me) return [];
+  return (S.openReqs||[]).filter(x=>(TEST||x.clientUid!==S.uid)&&x.metier===me.metier).sort((a,b)=>(b.pays===me.pays)-(a.pays===me.pays)||b.at-a.at);
+}
+function watchReq(){
+  const id=S.p.id; if(!id||!S.db) return;
+  S.p.offers=null; S.p.req=null;
+  viewUnsubs.push(S.db.doc('requests/'+id).onSnapshot(d=>{S.p.req=d.exists?Object.assign({id:d.id},d.data()):false;render();},()=>{}));
+  viewUnsubs.push(S.db.collection('offers').where('requestId','==',id).onSnapshot(q=>{S.p.offers=q.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>a.price-b.price);render();},()=>{}));
+}
+function watchChat(oid){
+  if(S.p.chatId===oid) return; S.p.chatId=oid; S.p.chat=[];
+  if(S.p.chatUnsub){S.p.chatUnsub();}
+  S.p.chatUnsub=S.db.doc('offerchats/'+oid).onSnapshot(d=>{S.p.chat=d.exists?(d.data().items||[]):[];render();},()=>{});
+  viewUnsubs.push(()=>{if(S.p.chatUnsub)S.p.chatUnsub();});
+}
+function vReqNew(){
+  return `<form class="stack" data-f="reqnew">
+    <button class="link" type="button" data-a="home">${t('Retour')}</button>
+    <h1>Demander des devis</h1>
+    <div class="field"><label class="label" for="rq-title">Ton besoin en une phrase</label><input id="rq-title" maxlength="80" required placeholder="Installer l'électricité d'une maison de 3 chambres"></div>
+    <div class="field"><label class="label" for="rq-metier">Métier recherché</label><select id="rq-metier">${opts(METIERS,'Maçonnerie')}</select></div>
+    <div class="row"><div class="field" style="flex:1;min-width:0"><label class="label" for="rq-pays">Pays</label><select id="rq-pays">${opts(PAYS,'RD Congo')}</select></div>
+    <div class="field" style="flex:1;min-width:0"><label class="label" for="rq-ville">Ville et quartier</label><input id="rq-ville" maxlength="50" required></div></div>
+    <div class="field"><label class="label" for="rq-desc">Détails (taille, délai souhaité, matériaux…)</label><textarea id="rq-desc" rows="4" maxlength="800"></textarea></div>
+    <div class="field"><label class="label" for="rq-budget">Budget approximatif en € (facultatif)</label><input id="rq-budget" inputmode="numeric" maxlength="7"></div>
+    <p class="small muted" style="margin:0">Le budget sert de repère. Ce sont les pros qui proposent leur prix, et c'est toi qui choisis.</p>
+    ${S.err?`<p class="err">${esc(S.err)}</p>`:''}
+    <button class="btn" type="submit">Publier la demande</button>
+  </form>`;
+}
+function vReqs(){
+  const me=proById(S.me.proId); const list=proReqs(me);
+  const mine=new Set((S.myOffers||[]).map(o=>o.requestId));
+  return `<div class="stack">
+    <button class="link" data-a="home">${t('Retour')}</button>
+    <div class="stack-s"><span class="label">${me?esc(me.metier):''}</span><h1>Demandes de travaux</h1></div>
+    ${!me?'<div class="empty">Crée d\'abord ta fiche pro pour voir les demandes de ton métier.</div>':list.length?`<div class="list">${list.map(x=>`<button class="item" data-a="openreq" data-v="${x.id}"><div><div class="t">${esc(x.title)}</div><div class="small muted">${esc(x.ville)}, ${esc(x.pays)} · ${fdate(x.at)}${x.budget?' · budget ~'+eur(x.budget):''}</div></div>${mine.has(x.id)?'<span class="pill s-paye">Proposé</span>':`<span class="pill s-attente">${x.offerCount||0} offre${(x.offerCount||0)>1?'s':''}</span>`}</button>`).join('')}</div>`
+    :`<div class="empty">Aucune demande ouverte pour le métier « ${esc(me.metier)} » pour l'instant. Reviens bientôt, ou partage le lien de l'app à des clients.</div>`}
+  </div>`;
+}
+function chatBox(o){
+  watchChat(o.id);
+  const items=S.p.chat||[];
+  return `<div class="stack-s" style="border-top:1px solid var(--line);padding-top:12px">
+    <span class="label">Discussion</span>
+    <div class="stack-s" style="max-height:40vh;overflow-y:auto">${items.length?items.map(m=>`<div class="stack-s" style="gap:2px;${m.uid===S.uid?'align-items:flex-end':''}"><div class="bubble${m.uid===S.uid?' me':''}">${esc(m.text)}</div><span class="meta">${esc(m.who)} · ${ftime(m.at)}</span></div>`).join(''):'<p class="small muted" style="margin:0">Pose tes questions ou négocie le prix ici.</p>'}</div>
+    <form class="row" data-f="ochat" data-v="${o.id}"><div class="field" style="flex:1;min-width:0"><label class="label" for="oc-text">Message</label><input id="oc-text" maxlength="500" autocomplete="off"></div><button class="btn sm" type="submit" style="align-self:flex-end">Envoyer</button></form>
+  </div>`;
+}
+function offerSteps(o){return (o.steps&&o.steps.length?o.steps:[{name:'Travaux',amount:o.price}]);}
+function vReq(){
+  const x=S.p.req;
+  if(x===null||S.p.offers===null) return `<div class="stack"><button class="link" data-a="back2">${t('Retour')}</button><p class="muted">Chargement…</p></div>`;
+  if(x===false) return `<div class="stack"><button class="link" data-a="back2">${t('Retour')}</button><p class="muted">Demande introuvable.</p></div>`;
+  const isClient=x.clientUid===S.uid&&S.mode!=='pro'; const offers=S.p.offers||[];
+  const head=`<button class="link" data-a="back2">${t('Retour')}</button>
+    <div class="stack-s"><span class="label">${esc(x.metier)} · ${esc(x.ville)}, ${esc(x.pays)}</span><h1>${esc(x.title)}</h1>
+    <span class="small muted">Publiée le ${fdate(x.at)}${x.budget?' · budget approximatif '+eur(x.budget):''} · ${x.status==='ouverte'?'ouverte':'attribuée'}</span></div>
+    ${x.desc?`<p style="margin:0;white-space:pre-line">${esc(x.desc)}</p>`:''}`;
+  if(isClient){
+    const open=S.p.openOffer;
+    return `<div class="stack">${head}
+      <span class="label">${offers.length} proposition${offers.length>1?'s':''}</span>
+      ${offers.length?offers.map(o=>{const pr=proById(o.proId);const acc=x.chosenOfferId===o.id;return `<div class="step${acc?' current':''}">
+        <div class="between"><div style="min-width:0"><div class="t" style="font-weight:500">${esc(o.proName)}</div>${badgesHtml(pr,true)}${pr&&vr(pr.reviews).length?`<div class="small">★ ${avg(pr.reviews).toFixed(1).replace('.',',')}/5 · ${vr(pr.reviews).length} avis</div>`:''}</div>
+        <div style="text-align:right;flex-shrink:0"><div class="big" style="font-size:26px">${eur(o.price)}</div><div class="small muted">${esc(o.delay||'')}</div></div></div>
+        ${o.note?`<p class="small" style="margin:0;white-space:pre-line">${esc(o.note)}</p>`:''}
+        <div class="small muted">${offerSteps(o).map(st=>esc(st.name)+' : '+eur(st.amount)).join(' · ')}</div>
+        ${x.status==='ouverte'?`<div class="row"><button class="btn sm" data-a="accept" data-v="${o.id}">Accepter</button><button class="btn ghost sm" data-a="talk" data-v="${o.id}">${open===o.id?'Fermer':'Discuter'}</button><button class="link" data-a="pro" data-v="${o.proId}">Voir la fiche</button></div>`:acc?'<span class="pill s-paye" style="align-self:flex-start">Proposition acceptée</span>':''}
+        ${open===o.id||acc?chatBox(o):''}
+      </div>`;}).join(''):'<div class="empty">Pas encore de proposition. Les pros de ce métier voient ta demande et vont te répondre.</div>'}
+      ${x.status==='ouverte'?'<button class="link" data-a="closereq">Retirer ma demande</button>':''}
+    </div>`;
+  }
+  const me=proById(S.me.proId); const mine=offers.find(o=>o.proId===S.me.proId);
+  if(mine) return `<div class="stack">${head}
+    <div class="step current"><span class="label">Ta proposition${x.chosenOfferId===mine.id?' · acceptée':''}</span>
+      <div class="between"><span class="big" style="font-size:28px">${eur(mine.price)}</span><span class="small muted">${esc(mine.delay||'')}</span></div>
+      <div class="small muted">${offerSteps(mine).map(st=>esc(st.name)+' : '+eur(st.amount)).join(' · ')}</div>
+      ${chatBox(mine)}</div>
+    <p class="small muted" style="margin:0">${offers.length} proposition${offers.length>1?'s':''} au total sur cette demande.</p></div>`;
+  if(x.status!=='ouverte') return `<div class="stack">${head}<div class="empty">Cette demande a déjà été attribuée.</div></div>`;
+  return `<div class="stack">${head}
+    <form class="stack-s" data-f="offer" style="border:1px solid var(--fg);padding:16px">
+      <span class="label">Ta proposition</span>
+      <div class="row"><div class="field" style="flex:1;min-width:0"><label class="label" for="of-price">Prix total (€)</label><input id="of-price" inputmode="numeric" maxlength="7" required></div>
+      <div class="field" style="flex:1;min-width:0"><label class="label" for="of-delay">Délai</label><input id="of-delay" maxlength="30" placeholder="3 semaines"></div></div>
+      <div class="field"><label class="label" for="of-note">Message au client</label><textarea id="of-note" rows="3" maxlength="600" placeholder="Ce qui est compris, matériaux, garanties…"></textarea></div>
+      <span class="label">Détail par étape (facultatif)</span>
+      ${[0,1,2].map(i=>`<div class="row"><div class="field" style="flex:2;min-width:0"><label class="label" for="of-s${i}">Étape ${i+1}</label><input id="of-s${i}" maxlength="40"></div><div class="field" style="flex:1;min-width:0"><label class="label" for="of-a${i}">€</label><input id="of-a${i}" inputmode="numeric" maxlength="7"></div></div>`).join('')}
+      <p class="small muted" style="margin:0">Si le client accepte, le projet se crée avec ces étapes. Il bloque l'argent avant que tu commences.</p>
+      ${S.err?`<p class="err" style="margin:0">${esc(S.err)}</p>`:''}
+      <button class="btn" type="submit"${me?'':' disabled'}>Envoyer ma proposition</button>
+    </form></div>`;
+}
+
 /* ---------- avis à la Airbnb ---------- */
 function rvForm(kind,v,x,title,who){
   const key=(kind+'_'+v+'_'+x).replace(/[^A-Za-z0-9_]/g,'_'), n=S.p['rv_'+key+'n']||0;
@@ -882,6 +986,9 @@ const INTRO={
  'myfiche':['card','<b>Ta fiche, c\'est ta vitrine.</b> Les clients la voient dans l\'annuaire. Mets ton vrai métier, ta ville et ton numéro WhatsApp.'],
  'account':['user','<b>Ton compte.</b> Tes infos, le changement d\'espace et les avis que tu as reçus.'],
  'plan':['list','<b>Le plan de test.</b> Essaie chaque ligne, coche ce qui marche et signale ce qui bloque.'],
+ 'reqnew':['chat','<b>Demander des devis.</b> Décris ton besoin. Les pros de ce métier te proposent un prix, tu discutes avec eux, puis tu choisis.'],
+ 'reqs':['search','<b>Les demandes des clients.</b> Propose ton prix et ton délai. Si le client accepte, le projet se crée et l\'argent est bloqué avant que tu commences.'],
+ 'req':['chat','<b>Propositions et discussion.</b> Le pro propose un prix, vous pouvez en parler, et le client accepte celle qui lui convient.'],
  'client':['user','<b>Le profil du client.</b> Les avis laissés par les pros qui ont déjà travaillé avec lui.']
 };
 function introKey(){
@@ -914,8 +1021,8 @@ function houseCard(p){
 
 /* ---------- plan de test ---------- */
 const PLAN=[
-  ['Client',[['c1','Créer mon compte'],['c2','Trouver un pro dans l\'annuaire'],['c3','Créer un projet avec 3 étapes'],['c4','Bloquer l\'argent d\'une étape'],['c5','Voir la photo envoyée par le pro'],['c6','Valider et payer une étape'],['c7','Ouvrir un litige'],['c8','Laisser un avis après chaque étape payée'],['c9','Arrêter un contrat'],['c10','Commander des matériaux'],['c11','Estimer le prix d\'une maison'],['c12','Engager un gardien et payer le mois'],['c13','Changer de langue']]],
-  ['Pro',[['p1','Créer ma fiche pro'],['p2','Vérifier mon compte (test)'],['p3','Envoyer une photo du chantier'],['p4','Appuyer sur « Étape terminée »'],['p5','Écrire au client dans Messages'],['p6','Noter le client et voir son profil'],['p10','Vérifier que les avis restent cachés jusqu\'à ce que les deux aient noté'],['p7','Fournisseur : publier un produit'],['p8','Fournisseur : livrer une commande avec photo'],['p9','Gardien : pointer matin et soir']]],
+  ['Client',[['c1','Créer mon compte'],['c2','Trouver un pro dans l\'annuaire'],['c3','Créer un projet avec 3 étapes'],['c4','Bloquer l\'argent d\'une étape'],['c5','Voir la photo envoyée par le pro'],['c6','Valider et payer une étape'],['c7','Ouvrir un litige'],['c8','Laisser un avis après chaque étape payée'],['c9','Arrêter un contrat'],['c10','Commander des matériaux'],['c11','Estimer le prix d\'une maison'],['c12','Engager un gardien et payer le mois'],['c13','Changer de langue'],['c14','Publier une demande de devis'],['c15','Discuter avec un pro et accepter sa proposition']]],
+  ['Pro',[['p1','Créer ma fiche pro'],['p2','Vérifier mon compte (test)'],['p3','Envoyer une photo du chantier'],['p4','Appuyer sur « Étape terminée »'],['p5','Écrire au client dans Messages'],['p6','Noter le client et voir son profil'],['p11','Envoyer une proposition à une demande'],['p10','Vérifier que les avis restent cachés jusqu\'à ce que les deux aient noté'],['p7','Fournisseur : publier un produit'],['p8','Fournisseur : livrer une commande avec photo'],['p9','Gardien : pointer matin et soir']]],
   ['Admin',[['a1','Voir les comptes et les projets'],['a2','Ajouter un pro à l\'annuaire'],['a3','Décider un litige comme expert'],['a4','Lire les bugs signalés']]]
 ];
 const LATER=['Lingala : corriger les traductions dans Admin › Lingala','Traduction complète de tous les textes','Règles d\'utilisation et protection des données','Vrai argent (Mangopay) et vraie vérification d\'identité (Smile ID)','Position GPS sur les photos','Carnet souvenir'];
@@ -1023,6 +1130,20 @@ document.addEventListener('click',async e=>{
     if(a==='home') return go('home');
     if(a==='go') return go(v);
     if(a==='role'){S.p.role=v;return render();}
+    if(a==='openreq'){S.back={view:S.view,p:S.p};return go('req',{id:v});}
+    if(a==='back2'){return go(S.back&&S.back.view!=='req'?S.back.view:'home');}
+    if(a==='talk'){S.p.openOffer=S.p.openOffer===v?null:v;if(!S.p.openOffer){S.p.chatId=null;}return render();}
+    if(a==='closereq'){await S.db.doc('requests/'+S.p.id).update({status:'fermee'});return go('home');}
+    if(a==='accept'){
+      const x=S.p.req,o=(S.p.offers||[]).find(y=>y.id===v); if(!x||!o||x.status!=='ouverte') return;
+      const steps=offerSteps(o).map(st=>({name:st.name,amount:+st.amount||0,status:'attente',blockedAt:null,doneAt:null,paidAt:null}));
+      const ref=await S.db.collection('projects').add({title:x.title,pays:x.pays,ville:x.ville,clientUid:S.uid,clientName:S.me.name,proId:o.proId,proName:o.proName,createdAt:Date.now(),steps,fromRequest:x.id,reviewed:false,proReviewed:false,stopped:null});
+      await S.db.doc('requests/'+x.id).update({status:'attribuee',chosenOfferId:o.id,projectId:ref.id});
+      await S.db.doc('offers/'+o.id).update({status:'acceptee',projectId:ref.id});
+      await S.db.doc('messages/'+ref.id).set({items:[{uid:'system',who:'Maison Mère',text:`Projet créé à partir de la proposition de ${o.proName} : ${eur(o.price)}${o.delay?', délai '+o.delay:''}.`,at:Date.now()}]});
+      return go('project',{id:ref.id,tab:'steps'});
+    }
+
     if(a==='wacall'){const pp=prjById(S.p.id);if(pp)sysMsg(pp.id,`${role(pp)==='client'?S.me.name:myName(pp)} a demandé un appel vidéo WhatsApp (code du jour : ${dayCode(pp.id)}).`).catch(()=>{});return;}
     if(a==='phkind'){S.p.phKind=v;return render();}
     if(a==='hideintro'){const h=hiddenIntros();h[v]=1;try{localStorage.setItem('mm-intro',JSON.stringify(h));}catch(x){}return render();}
@@ -1228,6 +1349,29 @@ document.addEventListener('submit',async e=>{
       const pr=proById(val('sp-pro')); if(!OK(pr)){S.err='Choisis un pro dans la liste.';return render();}
       await S.db.doc('projects/'+p.id).update({proId:pr.id,proName:pr.name});
       await sysMsg(p.id,`${pr.name} est choisi comme professionnel du projet.`);
+    }
+    if(f==='reqnew'){
+      if(!val('rq-title')||!val('rq-ville')){S.err='Décris ton besoin et indique la ville.';return render();}
+      const ref=await S.db.collection('requests').add({clientUid:S.uid,clientName:S.me.name,title:val('rq-title'),metier:val('rq-metier'),pays:val('rq-pays'),ville:val('rq-ville'),desc:val('rq-desc'),budget:parseInt(val('rq-budget').replace(/\D/g,''),10)||0,status:'ouverte',offerCount:0,at:Date.now()});
+      S.back={view:'home',p:{}};return go('req',{id:ref.id});
+    }
+    if(f==='offer'){
+      const me=proById(S.me.proId),x=S.p.req; if(!me||!x) return;
+      const price=parseInt(val('of-price').replace(/\D/g,''),10)||0;
+      if(!price){S.err='Indique ton prix total.';return render();}
+      let steps=[0,1,2].map(i=>({name:val('of-s'+i),amount:parseInt(val('of-a'+i).replace(/\D/g,''),10)||0})).filter(st=>st.name&&st.amount);
+      if(steps.length&&steps.reduce((a,b)=>a+b.amount,0)!==price){S.err='La somme des étapes doit être égale au prix total ('+eur(price)+').';return render();}
+      await S.db.collection('offers').add({requestId:x.id,clientUid:x.clientUid,proId:me.id,proName:me.name,proUid:S.uid,price,delay:val('of-delay'),note:val('of-note'),steps,status:'envoyee',at:Date.now()});
+      await S.db.doc('requests/'+x.id).update({offerCount:(x.offerCount||0)+1});
+      render();
+    }
+    if(f==='ochat'){
+      const oid=e.target.dataset.v, text=val('oc-text'); if(!text) return;
+      const ref=S.db.doc('offerchats/'+oid); const d=await ref.get();
+      const items=(d.exists?(d.data().items||[]):[]).slice(-300);
+      const o=(S.p.offers||[]).find(y=>y.id===oid);
+      items.push({uid:S.uid,who:o&&o.proUid===S.uid?o.proName:S.me.name,text,at:Date.now()});
+      await ref.set({items}); const el=document.getElementById('oc-text'); if(el) el.value='';
     }
     if(f==='bug'){
       const text=val('bug-text'); if(!text) return;
