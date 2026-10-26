@@ -29,7 +29,13 @@
   --ink:#F3F2EE; --on-ink:#111110;
   --ok:#5FC08E; --warn:#E3A94A; --bad:#EE7D70; --held:#9DAAE8; color-scheme:dark }
 /* Une seule couleur de marque : le jaune chantier, avec le noir */
-#modeTag:not(:empty){background:#FFD400;color:#111;font-weight:600;padding:3px 7px;letter-spacing:.1em}
+#modeTag{background:#FFD400;color:#111;font-weight:600;padding:0 8px;letter-spacing:.1em;border:none;min-height:32px;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+#modeTag::after{content:"";width:6px;height:6px;border-right:1.5px solid #111;border-bottom:1.5px solid #111;transform:rotate(45deg) translateY(-2px)}
+.top{position:sticky}
+#spaceMenu{position:absolute;left:0;top:100%;margin-top:6px;z-index:20;background:var(--bg);border:1px solid var(--fg);min-width:240px;box-shadow:0 8px 24px rgba(0,0,0,.12)}
+#spaceMenu button{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;border:none;border-bottom:1px solid var(--line);background:var(--bg);padding:14px 16px;min-height:52px}
+#spaceMenu button:last-child{border-bottom:none}
+#spaceMenu .on{background:#FFD400;color:#111;font-size:10px;letter-spacing:.1em;font-weight:600;padding:3px 6px}
 .top{box-shadow:inset 0 3px 0 #FFD400}
 html,body{height:100%}
 html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -132,7 +138,8 @@ footer{font-size:11px;color:var(--muted);text-align:center;padding-top:20px;bord
 <body>
 <div id="app">
   <div class="top">
-    <div class="row" style="gap:10px;min-width:0"><button class="brand" data-a="home">Maison Mère</button><span id="modeTag" class="label"></span></div>
+    <div class="row" style="gap:10px;min-width:0;position:relative"><button class="brand" data-a="home">Maison Mère</button><button id="modeTag" class="label" data-a="spacemenu" aria-haspopup="true" aria-expanded="false" hidden></button></div>
+    <div id="spaceMenu" role="menu" hidden></div>
     <div class="row" style="gap:8px">
     <label for="langSel" class="label" style="position:absolute;left:-9999px">Langue</label>
     <select id="langSel" class="lang"><option value="fr">FR</option><option value="en">EN</option><option value="pt">PT</option><option value="ln">LN</option></select>
@@ -326,7 +333,10 @@ function render(){
   $main.querySelectorAll('input[id],textarea[id],select[id]').forEach(el=>{if(el.type!=='file') keep[el.id]=el.value;});
   const ae=document.activeElement&&document.activeElement.id;
   document.getElementById('acctBtn').hidden=!S.me;
-  document.getElementById('modeTag').textContent=S.me&&S.chosen?({client:'Client',pro:'Pro',admin:'Admin'}[S.mode]||''):'';
+  const mt=document.getElementById('modeTag'), sm=document.getElementById('spaceMenu');
+  mt.hidden=!(S.me&&S.chosen); mt.textContent=({client:'Client',pro:'Pro',admin:'Admin'}[S.mode]||'Client');
+  mt.setAttribute('aria-expanded',String(!!S.menuOpen)); sm.hidden=!(S.menuOpen&&S.me&&S.chosen);
+  if(!sm.hidden) sm.innerHTML=[['client','Espace client','Faire faire des travaux',true],['pro','Espace pro','Mes chantiers, mes devis, mes produits',true],['admin','Espace admin','Gérer l\'app',S.admin]].filter(x=>x[3]).map(x=>`<button role="menuitem" data-a="mode" data-v="${x[0]}"><span><b style="font-weight:500;display:block">${x[1]}</b><span class="small muted">${x[2]}</span></span>${S.mode===x[0]?'<span class="on">ICI</span>':''}</button>`).join('');
   document.getElementById('langSel').value=LANG;
   document.getElementById('testBanner').textContent=t('Version de test : l\'argent est fictif, rien n\'est réellement payé.');
   document.getElementById('footRule').textContent=t('Chacun peut noter l\'autre et arrêter le contrat si l\'accord n\'est pas respecté.');
@@ -1168,6 +1178,7 @@ async function sysMsg(pid,text){
 function myName(p){const r=role(p);return r==='pro'?(p.proName):S.me.name;}
 
 document.addEventListener('click',async e=>{
+  if(S.menuOpen&&!e.target.closest('#spaceMenu')&&!e.target.closest('#modeTag')){S.menuOpen=false;render();}
   const lab=e.target.closest('label[for]');
   if(lab){const inp=document.getElementById(lab.htmlFor);if(inp&&inp.type==='file'&&camOK()){e.preventDefault();openCam(inp);return;}}
   const b=e.target.closest('[data-a]'); if(!b||b.tagName==='INPUT'||b.tagName==='SELECT') return;
@@ -1202,7 +1213,8 @@ document.addEventListener('click',async e=>{
     if(a==='hideintro'){const h=hiddenIntros();h[v]=1;try{localStorage.setItem('mm-intro',JSON.stringify(h));}catch(x){}return render();}
     if(a==='showintros'){try{localStorage.removeItem('mm-intro');}catch(x){}return render();}
     if(a==='choose'){if(v==='admin'&&!S.admin)return;S.chosen=true;try{sessionStorage.setItem('mm-chosen-'+S.uid,'1');localStorage.setItem('mm-mode-'+S.uid,v);}catch(e){}S.mode=v;if(v==='pro'&&!S.me.proId)return go('myfiche');return go('home');}
-    if(a==='mode'){if(v==='admin'&&!S.admin)return;S.mode=v;try{localStorage.setItem('mm-mode-'+S.uid,v);}catch(e){}if(v==='pro'&&!S.me.proId)return go('myfiche');return go('home');}
+    if(a==='spacemenu'){S.menuOpen=!S.menuOpen;return render();}
+    if(a==='mode'){S.menuOpen=false;if(v==='admin'&&!S.admin)return;S.mode=v;try{localStorage.setItem('mm-mode-'+S.uid,v);}catch(e){}if(v==='pro'&&!S.me.proId)return go('myfiche');return go('home');}
     if(a==='open') return go('project',{id:v,tab:b.dataset.t||'steps'});
     if(a==='pro') return go('pro',{id:v});
     if(a==='newwith'){S.mode='client';return go('newp',{proId:v});}
