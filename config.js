@@ -10,3 +10,7 @@ window.FIREBASE_CONFIG = {
 
 // Emails qui ont accès à l'espace admin.
 window.ADMIN_EMAILS = ["groupnpstar@gmail.com"];
+
+// Mode test : on peut choisir les pros même non vérifiés.
+// Mets false au lancement réel pour exiger la vérification.
+window.TEST_MODE = true;

@@ -193,6 +193,9 @@ const allProjects=()=>{const m=new Map();[...S.allProjects,...S.myProjects,...S.
 const prjById=id=>allProjects().find(p=>p.id===id);
 const isVis=x=>!x.hidden||Date.now()-x.at>14*DAY;
 const vr=r=>(r||[]).filter(isVis);
+const TEST=window.TEST_MODE!==false;
+const OK=x=>!!x&&!x.hidden&&(TEST||!!x.verified);
+const nv=x=>x&&!x.verified?' (non vérifié)':'';
 const avg=r0=>{const r=vr(r0);return r.length?(r.reduce((a,b)=>a+b.note,0)/r.length):0;};
 
 function go(view,p){S.view=view;S.p=p||{};S.err='';window.scrollTo(0,0);if(['market','estim','myfiche','home'].includes(view)&&(view!=='home'||S.mode==='pro'))ensureProducts();watchProject();render();}
@@ -404,12 +407,12 @@ function vProFiche(){
     <div class="stack-s"><span class="label">Contact</span><span class="money" style="user-select:all">${esc(p.phone||'—')}</span></div>
     <div class="stack-s"><span class="label">Avis de clients ayant payé via l'app${r.length?' · '+avg(r).toFixed(1).replace('.',',')+'/5':''}</span>
     ${reviewsList(p.reviews)}</div>
-    ${p.verified?`<button class="btn" data-a="newwith" data-v="${p.id}">Choisir pour un projet</button>`:`<p class="notice">Seuls les professionnels vérifiés peuvent recevoir de l'argent dans l'app.</p>`}
+    ${OK(p)?`<button class="btn" data-a="newwith" data-v="${p.id}">Choisir pour un projet</button>`:`<p class="notice">Seuls les professionnels vérifiés peuvent recevoir de l'argent dans l'app.</p>`}
   </div>`;
 }
 
 function vNewProject(){
-  const ver=S.pros.filter(p=>p.verified&&!p.hidden);
+  const ver=S.pros.filter(OK);
   const pre=S.p.proId||'';
   return `<form class="stack" data-f="newp">
     <button class="link" type="button" data-a="home">Retour</button>
@@ -417,8 +420,8 @@ function vNewProject(){
     <div class="field"><label class="label" for="np-title">Nom du projet</label><input id="np-title" required maxlength="60" placeholder="Ma maison à Kinshasa"></div>
     <div class="field"><label class="label" for="np-pays">Pays du chantier</label><select id="np-pays">${opts(PAYS,'RD Congo')}</select></div>
     <div class="field"><label class="label" for="np-ville">Ville et quartier</label><input id="np-ville" required maxlength="50"></div>
-    <div class="field"><label class="label" for="np-pro">Professionnel (vérifié)</label>
-      <select id="np-pro"><option value="">Je le choisirai plus tard</option>${ver.map(p=>`<option value="${p.id}"${p.id===pre?' selected':''}>${esc(p.name)} · ${esc(p.metier)} · ${esc(p.ville)}</option>`).join('')}</select>
+    <div class="field"><label class="label" for="np-pro">Professionnel${TEST?'':' (vérifié)'}</label>
+      <select id="np-pro"><option value="">Je le choisirai plus tard</option>${ver.map(p=>`<option value="${p.id}"${p.id===pre?' selected':''}>${esc(p.name)} · ${esc(p.metier)} · ${esc(p.ville)}${nv(p)}</option>`).join('')}</select>
       <span class="small muted">${ver.length?'Tu peux aussi créer le projet maintenant et choisir le pro ensuite.':'L\'annuaire est encore vide : crée le projet maintenant, tu choisiras le pro ensuite.'}</span>
       ${ver.length?'':'<button class="link" type="button" data-a="mkpro">Pour tester seul : créer une fiche pro de test</button>'}</div>
     <span class="label">Étapes et montants</span>
@@ -451,12 +454,12 @@ function vProject(){
 function canBlock(p,i){return !p.stopped&&p.steps.slice(0,i).every(s=>s.status==='paye'||s.status==='rembourse');}
 
 function choosePro(p){
-  const ver=S.pros.filter(x=>x.verified&&!x.hidden);
+  const ver=S.pros.filter(OK);
   return `<form class="stack-s" data-f="setpro" style="border:1px solid var(--fg);padding:16px">
     <span class="label">Choisis le professionnel</span>
-    <p class="small muted" style="margin:0">Il faut un pro vérifié avant de bloquer l'argent.</p>
-    <div class="field"><label class="label" for="sp-pro">Professionnel vérifié</label><select id="sp-pro"><option value="">Choisir…</option>${ver.map(x=>`<option value="${x.id}">${esc(x.name)} · ${esc(x.metier)} · ${esc(x.ville)}</option>`).join('')}</select></div>
-    ${ver.length?'<button class="btn sm" type="submit">Choisir ce pro</button>':'<p class="small muted" style="margin:0">Aucun pro vérifié pour l\'instant. Invite ton maçon à créer sa fiche dans l\'app avec le lien, ou crée une fiche de test.</p><button class="link" type="button" data-a="mkpro">Créer une fiche pro de test</button>'}
+    <p class="small muted" style="margin:0">${TEST?'Mode test : tu peux choisir n\'importe quel pro de l\'annuaire. Dans la vraie app, seuls les pros vérifiés pourront recevoir de l\'argent.':'Il faut un pro vérifié avant de bloquer l\'argent.'}</p>
+    <div class="field"><label class="label" for="sp-pro">Professionnel vérifié</label><select id="sp-pro"><option value="">Choisir…</option>${ver.map(x=>`<option value="${x.id}">${esc(x.name)} · ${esc(x.metier)} · ${esc(x.ville)}${nv(x)}</option>`).join('')}</select></div>
+    ${ver.length?'<button class="btn sm" type="submit">Choisir ce pro</button>':'<p class="small muted" style="margin:0">L\'annuaire est vide pour l\'instant. Invite ton maçon à créer sa fiche dans l\'app avec le lien, ou crée une fiche de test.</p><button class="link" type="button" data-a="mkpro">Créer une fiche pro de test</button>'}
   </form>`;
 }
 function tSteps(p,r){
@@ -638,7 +641,7 @@ function vMarket(){
     ${list.length?`<div class="list">${list.map(x=>`<div class="item"><div><div class="t">${esc(x.name)}</div><div class="small muted">${esc(x.sellerName)} · ${esc(x.ville)}</div>${badgesHtml(proById(x.sellerProId),true)}</div>
       <div class="stack-s" style="align-items:flex-end;flex-shrink:0"><span class="money">${eur(x.price)}</span><span class="meta">/ ${esc(x.unit)}</span><button class="btn sm" data-a="buy" data-v="${x.id}">${t('Commander')}</button></div></div>
       ${sel&&sel.id===x.id?orderForm(x):''}`).join('')}</div>`
-    :`<div class="empty">Aucun produit pour l'instant. Les fournisseurs de matériaux publient leurs produits depuis leur espace pro.</div>`}
+    :`<div class="empty">Aucun produit pour l'instant. Les fournisseurs de matériaux publient leurs produits depuis leur espace pro. Pour tester : en mode Pro, choisis le métier « Fournisseur de matériaux » dans ta fiche.</div>`}
   </div>`;
 }
 function orderForm(x){
@@ -736,11 +739,11 @@ function tGuard(p,r){
   const g=p.guard;
   if(!g){
     if(r!=='client') return `<div class="stack"><div class="empty">Pas de gardien en ce moment sur ce chantier.</div>${guardHist(p,r)}</div>`;
-    const guards=S.pros.filter(x=>x.metier==='Gardiennage'&&x.verified&&!x.hidden);
+    const guards=S.pros.filter(OK).sort((a,b)=>(b.metier==='Gardiennage')-(a.metier==='Gardiennage'));
     return `<form class="stack" data-f="hire">
       <p class="small muted" style="margin:0">Le gardien envoie une photo datée matin et soir. Son salaire est bloqué au début du mois et versé à la fin, moins les pointages manqués.</p>
-      <div class="field"><label class="label" for="gd-pro">Gardien (vérifié)</label><select id="gd-pro" required><option value="">Choisir…</option>${guards.map(x=>`<option value="${x.id}">${esc(x.name)} · ${esc(x.ville)}</option>`).join('')}</select>
-      ${guards.length?'':'<span class="small muted">Aucun gardien vérifié. Pour tester seul, crée une fiche pro avec le métier « Gardiennage ».</span>'}</div>
+      <div class="field"><label class="label" for="gd-pro">Gardien</label><select id="gd-pro" required><option value="">Choisir…</option>${guards.map(x=>`<option value="${x.id}">${esc(x.name)} · ${esc(x.metier)} · ${esc(x.ville)}${nv(x)}</option>`).join('')}</select>
+      ${guards.length?'':'<span class="small muted">L\'annuaire est vide. Pour tester seul, crée une fiche pro (métier « Gardiennage » de préférence).</span>'}</div>
       <div class="field"><label class="label" for="gd-sal">Salaire du mois (€)</label><input id="gd-sal" inputmode="numeric" maxlength="5" required></div>
       ${S.err?`<p class="err">${esc(S.err)}</p>`:''}
       <button class="btn" type="submit">Engager et bloquer le salaire</button></form>${guardHist(p,r)}`;
@@ -1005,7 +1008,7 @@ document.addEventListener('submit',async e=>{
       const steps=[0,1,2,3].map(i=>({name:val('np-s'+i),amount:parseInt(val('np-a'+i).replace(/\D/g,''),10)||0})).filter(s=>s.name)
         .map(s=>({name:s.name,amount:s.amount,status:'attente',blockedAt:null,doneAt:null,paidAt:null}));
       if(!val('np-title')||!val('np-ville')){S.err='Donne un nom et une ville au projet.';return render();}
-      if(proId&&(!pro||!pro.verified)){S.err='Ce professionnel n\'est pas vérifié.';return render();}
+      if(proId&&!OK(pro)){S.err='Ce professionnel n\'est pas vérifié.';return render();}
       if(!steps.length||steps.some(s=>!s.amount)){S.err='Ajoute au moins une étape, chacune avec un montant.';return render();}
       const ref=await S.db.collection('projects').add({title:val('np-title'),pays:val('np-pays'),ville:val('np-ville'),clientUid:S.uid,clientName:S.me.name,proId:proId||null,proName:pro?pro.name:'',createdAt:Date.now(),steps,reviewed:false,proReviewed:false,stopped:null});
       go('project',{id:ref.id,tab:'steps'});
@@ -1068,7 +1071,7 @@ document.addEventListener('submit',async e=>{
       delete S.p['rv_'+key+'n'];render();
     }
     if(f==='setpro'&&p){
-      const pr=proById(val('sp-pro')); if(!pr||!pr.verified){S.err='Choisis un pro vérifié.';return render();}
+      const pr=proById(val('sp-pro')); if(!OK(pr)){S.err='Choisis un pro dans la liste.';return render();}
       await S.db.doc('projects/'+p.id).update({proId:pr.id,proName:pr.name});
       await sysMsg(p.id,`${pr.name} est choisi comme professionnel du projet.`);
     }
