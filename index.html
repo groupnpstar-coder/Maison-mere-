@@ -15,7 +15,7 @@
 /* Layout: one mobile column, max 480px, black and white like a document; money states carry the only color. */
 :root{
   --bg:#FFFFFF; --fg:#121211; --muted:#5A5955; --line:#E3E2DE; --tile:#F0EFEB;
-  --ink:#121211; --on-ink:#FFFFFF;
+  --ink:#121211; --on-ink:#FFFFFF; --accent:#121211;
   --ok:#1D6B45; --warn:#9A5B05; --bad:#A3271C; --held:#3F4E8C;
   --display:Georgia, 'Times New Roman', serif;
   --body:system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -28,6 +28,17 @@
   --bg:#111110; --fg:#F3F2EE; --muted:#A8A6A0; --line:#2C2B29; --tile:#1D1C1A;
   --ink:#F3F2EE; --on-ink:#111110;
   --ok:#5FC08E; --warn:#E3A94A; --bad:#EE7D70; --held:#9DAAE8; color-scheme:dark }
+/* Une couleur par espace : client noir, pro brun chantier, admin bleu nuit */
+:root[data-mode="pro"]{--ink:#7A3E12;--on-ink:#FFFFFF;--accent:#7A3E12}
+:root[data-mode="admin"]{--ink:#1E3A5F;--on-ink:#FFFFFF;--accent:#1E3A5F}
+:root[data-mode="client"]{--accent:var(--fg)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"])[data-mode="pro"]{--ink:#E2A066;--on-ink:#111110;--accent:#E2A066}:root:not([data-theme="light"])[data-mode="admin"]{--ink:#8DB4E2;--on-ink:#111110;--accent:#8DB4E2}}
+:root[data-theme="dark"][data-mode="pro"]{--ink:#E2A066;--on-ink:#111110;--accent:#E2A066}
+:root[data-theme="dark"][data-mode="admin"]{--ink:#8DB4E2;--on-ink:#111110;--accent:#8DB4E2}
+#modeTag{color:var(--accent,var(--muted));font-weight:600}
+.top{box-shadow:inset 0 3px 0 var(--accent,transparent)}
+.tabs button[aria-selected="true"]{border-bottom-color:var(--accent,var(--fg))}
+.btn.ghost{border-color:var(--accent,var(--fg))}
 html,body{height:100%}
 html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0}
@@ -323,6 +334,7 @@ function render(){
   $main.querySelectorAll('input[id],textarea[id],select[id]').forEach(el=>{if(el.type!=='file') keep[el.id]=el.value;});
   const ae=document.activeElement&&document.activeElement.id;
   document.getElementById('acctBtn').hidden=!S.me;
+  document.documentElement.dataset.mode=S.me&&S.chosen?S.mode:'client';
   document.getElementById('modeTag').textContent=S.me&&S.chosen?({client:'Client',pro:'Pro',admin:'Admin'}[S.mode]||''):'';
   document.getElementById('langSel').value=LANG;
   document.getElementById('testBanner').textContent=t('Version de test : l\'argent est fictif, rien n\'est réellement payé.');
@@ -593,7 +605,22 @@ function dayCode(pid,t){
 }
 const KIND={avant:'Avant',pendant:'Pendant',apres:'Après'};
 function phCard(ph,p){
-  return `<div class="photo"><img loading="lazy" decoding="async" src="${esc(ph.data)}" alt="Photo ${esc(KIND[ph.kind]||'')} du chantier, ${esc(p.steps[ph.step]?p.steps[ph.step].name:'')}"><span><b style="font-weight:600">${esc(KIND[ph.kind]||'Photo')}</b> · ${esc(p.steps[ph.step]?p.steps[ph.step].name:'')}<br>${ftime(ph.at)} · ${esc(ph.who)}${ph.code?`<br>Code attendu : <b style="font-weight:600">${esc(ph.code)}</b>`:''}</span></div>`;
+  return `<div class="photo"><img loading="lazy" decoding="async" src="${esc(ph.data)}" alt="Photo ${esc(KIND[ph.kind]||'')} du chantier, ${esc(p.steps[ph.step]?p.steps[ph.step].name:'')}"><span><b style="font-weight:600">${esc(KIND[ph.kind]||'Photo')}</b> · ${esc(p.steps[ph.step]?p.steps[ph.step].name:'')}<br>${ftime(ph.at)} · ${esc(ph.who)}${ph.code?`<br>Code attendu : <b style="font-weight:600">${esc(ph.code)}</b>`:''}${freshBadge(ph)}</span></div>`;
+}
+function photoReqs(p,r){
+  const reqs=(p.photoReqs||[]).slice().reverse();
+  const pend=reqs.filter(x=>x.status==='attente');
+  let out='';
+  if(r==='client') out+=`<form class="stack-s" data-f="photoreq" style="border:1px solid var(--line);padding:14px"><span class="label">Demander une photo précise</span>
+    <div class="field"><label class="label" for="pq-text">Ce que tu veux voir</label><input id="pq-text" maxlength="160" placeholder="Le coin gauche du mur, avec le mètre posé"></div>
+    <button class="btn sm" type="submit">Envoyer la demande</button>
+    <p class="small muted" style="margin:0">Le pro ne sait pas à l'avance ce que tu vas demander : il ne peut pas préparer de fausses photos.</p></form>`;
+  if(reqs.length) out+=`<div class="stack-s"><span class="label">Photos demandées</span>${reqs.map(x=>{const ph=x.photoId?S.photos.find(y=>y.id===x.photoId):null;
+    return `<div class="step${x.status==='attente'?' current':''}"><div class="between"><span class="small" style="min-width:0">« ${esc(x.text)} »</span><span class="pill ${x.status==='attente'?'s-fait':'s-paye'}">${x.status==='attente'?'À faire':'Reçue'}</span></div>
+    <span class="meta">Demandée le ${ftime(x.at)}${x.doneAt?' · reçue le '+ftime(x.doneAt):''}</span>
+    ${ph?`<div style="max-width:240px">${phCard(ph,p)}</div>`:''}
+    ${x.status==='attente'&&(r==='pro'||r==='guard')?`<label class="btn sm" style="display:flex;align-items:center;justify-content:center" for="pq-${x.id}">Prendre cette photo</label><input id="pq-${x.id}" class="pq-file" data-v="${x.id}" type="file" accept="image/*" capture="environment" hidden>`:''}</div>`;}).join('')}</div>`;
+  return out;
 }
 function tPhotos(p,r){
   const code=dayCode(p.id);
@@ -616,6 +643,7 @@ function tPhotos(p,r){
     <input id="ph-file" type="file" accept="image/*" capture="environment" hidden>
     ${S.busy?'<p class="small muted" style="margin:0">Envoi de la photo…</p>':''}${S.err?`<p class="err" style="margin:0">${esc(S.err)}</p>`:''}
     ${!S.photosLoaded?'<p class="small muted" style="margin:0">Chargement des photos…</p>':''}
+    ${photoReqs(p,r)}
     ${pairs}
     ${S.photos.length?`<span class="label">Toutes les photos</span><div class="grid3">${S.photos.map(ph=>phCard(ph,p)).join('')}</div>`
     :S.photosLoaded?`<div class="empty">Aucune photo pour l'instant. Commence par une photo « Avant » de chaque étape.</div>`:''}
@@ -1256,8 +1284,9 @@ document.addEventListener('change',async e=>{
     const p=prjById(S.p.id); if(!p) return;
     S.busy=true;S.err='';render();
     try{
+      const shotAt=await exifDate(e.target.files[0]);
       const data=await shrink(e.target.files[0],720,80000,dayCode(p.id)+' · '+new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · Maison Mère');
-      const ref=await S.db.collection('photos').add({projectId:p.id,step:Math.max(0,p.steps.findIndex(x=>x.status!=='paye'&&x.status!=='rembourse')),uid:S.uid,who:myName(p),data,at:Date.now(),fromChat:true,kind:'pendant',code:dayCode(p.id)});
+      const ref=await S.db.collection('photos').add({projectId:p.id,step:Math.max(0,p.steps.findIndex(x=>x.status!=='paye'&&x.status!=='rembourse')),uid:S.uid,who:myName(p),data,at:Date.now(),fromChat:true,kind:'pendant',code:dayCode(p.id),shotAt});
       const mref=S.db.doc('messages/'+p.id); const ms=await mref.get();
       const items=(ms.exists?(ms.data().items||[]):[]).slice(-300);
       items.push({uid:S.uid,who:myName(p),photoId:ref.id,text:'',at:Date.now()});
@@ -1265,17 +1294,72 @@ document.addEventListener('change',async e=>{
     }catch(err){S.err='La photo n\'a pas pu être envoyée. Essaie une autre image.';}
     S.busy=false;render();
   }
+  if(e.target.classList&&e.target.classList.contains('pq-file')&&e.target.files[0]){
+    const p=prjById(S.p.id); if(!p) return; const rid=e.target.dataset.v;
+    S.busy=true;S.err='';render();
+    try{
+      const shotAt=await exifDate(e.target.files[0]);
+      const data=await shrink(e.target.files[0],720,80000,dayCode(p.id)+' · '+new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · Maison Mère');
+      const ref=await S.db.collection('photos').add({projectId:p.id,step:Math.max(0,p.steps.findIndex(x=>x.status!=='paye'&&x.status!=='rembourse')),kind:'pendant',code:dayCode(p.id),shotAt,reqId:rid,uid:S.uid,who:myName(p),data,at:Date.now()});
+      const list=(p.photoReqs||[]).map(x=>x.id===rid?Object.assign({},x,{status:'faite',photoId:ref.id,doneAt:Date.now()}):x);
+      await S.db.doc('projects/'+p.id).update({photoReqs:list});
+      await sysMsg(p.id,`${myName(p)} a envoyé la photo demandée.`);
+    }catch(err){S.err='La photo n\'a pas pu être envoyée.';}
+    S.busy=false;render();
+  }
   if(e.target.id==='ph-file'&&e.target.files[0]){
     const p=prjById(S.p.id); if(!p) return;
     S.busy=true;S.err='';render();
     try{
+      const shotAt=await exifDate(e.target.files[0]);
       const data=await shrink(e.target.files[0],720,80000,dayCode(p.id)+' · '+new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · Maison Mère');
-      await S.db.collection('photos').add({projectId:p.id,step:+val('ph-step')||0,kind:S.p.phKind||'pendant',code:dayCode(p.id),uid:S.uid,who:myName(p),data,at:Date.now()});
+      await S.db.collection('photos').add({projectId:p.id,step:+val('ph-step')||0,kind:S.p.phKind||'pendant',code:dayCode(p.id),shotAt,reqId:S.p.answerReq||null,uid:S.uid,who:myName(p),data,at:Date.now()});
     }catch(err){S.err='La photo n\'a pas pu être envoyée. Essaie une autre image.';}
     S.busy=false;render();
   }
 });
 
+/* date de prise de vue cachée dans la photo (EXIF) */
+function exifDate(file){
+  return new Promise(res=>{
+    const fr=new FileReader();
+    fr.onload=()=>{try{
+      const v=new DataView(fr.result); if(v.getUint16(0)!==0xFFD8) return res(null);
+      let o=2;
+      while(o<v.byteLength-4){
+        const mk=v.getUint16(o), len=v.getUint16(o+2);
+        if(mk===0xFFE1&&v.getUint32(o+4)===0x45786966){
+          const t=o+10, le=v.getUint16(t)===0x4949, g16=x=>v.getUint16(x,le), g32=x=>v.getUint32(x,le);
+          const str=(off,n)=>{let r='';for(let i=0;i<n-1;i++)r+=String.fromCharCode(v.getUint8(t+off+i));return r;};
+          let best=null;
+          const ifd=(off,depth)=>{if(depth>2||off<=0||t+off+2>v.byteLength)return;const n=g16(t+off);for(let i=0;i<n;i++){const e=t+off+2+i*12;if(e+12>v.byteLength)break;const tag=g16(e);
+            if(tag===0x9003||(tag===0x0132&&!best)){best=str(g32(e+8),20);}
+            if(tag===0x8769)ifd(g32(e+8),depth+1);}};
+          ifd(g32(t+4),0);
+          if(!best) return res(null);
+          const m=best.match(/(\d{4}):(\d{2}):(\d{2}) (\d{2}):(\d{2}):(\d{2})/); if(!m) return res(null);
+          return res(new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+m[6]).getTime());
+        }
+        if((mk&0xFF00)!==0xFF00) break; o+=2+len;
+      }
+      res(null);
+    }catch(e){res(null);}};
+    fr.onerror=()=>res(null);
+    fr.readAsArrayBuffer(file.slice(0,262144));
+  });
+}
+function freshness(shot,at){
+  if(!shot) return {k:'unk',t:'Date de prise inconnue'};
+  const d=Math.abs((at||Date.now())-shot);
+  if(d<=6*3600000) return {k:'ok',t:'Prise aujourd\'hui'};
+  return {k:'old',t:'Photo ancienne : prise le '+new Date(shot).toLocaleDateString('fr-FR')};
+}
+function freshBadge(ph){
+  if(!('shotAt' in ph)) return '';
+  const f=freshness(ph.shotAt,ph.at);
+  const col=f.k==='ok'?'var(--ok)':f.k==='old'?'var(--bad)':'var(--warn)';
+  return `<br><b style="font-weight:600;color:${col}">${f.k==='ok'?'✓':'⚠'} ${esc(f.t)}</b>`;
+}
 function shrink(file,m0,target,stamp){
   return new Promise((res,rej)=>{
     const url=URL.createObjectURL(file), img=new Image();
@@ -1395,6 +1479,12 @@ document.addEventListener('submit',async e=>{
       await S.db.doc('projects/'+p.id).update({steps,pricesStatus:r0==='pro'?'attente_client':'attente_pro'});
       await sysMsg(p.id,`${r0==='pro'?p.proName:S.me.name} propose d'autres prix : ${steps.filter(x=>x.status==='attente').map(x=>x.name+' '+eur(x.amount)).join(', ')}.`);
       S.p.counter=false;render();
+    }
+    if(f==='photoreq'&&p){
+      const text=val('pq-text'); if(!text) return;
+      const list=[...(p.photoReqs||[]),{id:Math.random().toString(36).slice(2,9),text,at:Date.now(),status:'attente',photoId:null}];
+      await S.db.doc('projects/'+p.id).update({photoReqs:list});
+      await sysMsg(p.id,`${S.me.name} demande une photo : « ${text} ».`);
     }
     if(f==='setpro'&&p){
       const pr=proById(val('sp-pro')); if(!OK(pr)){S.err='Choisis un pro dans la liste.';return render();}
