@@ -345,7 +345,7 @@ function render(){
   else if(!S.me) html=vSignup();
   else if(!S.chosen) html=vChoose();
   else {
-    const v={home:vHome,dir:vDir,pro:vProFiche,newp:vNewProject,project:vProject,myfiche:vMyFiche,account:vAccount,plan:vPlan,market:vMarket,estim:vEstim,orders:vOrders,client:vClient,reqnew:vReqNew,reqs:vReqs,req:vReq}[S.view]||vHome;
+    const v={home:vHome,dir:vDir,pro:vProFiche,newp:vNewProject,project:vProject,myfiche:vMyFiche,account:vAccount,plan:vPlan,market:vMarket,estim:vEstim,orders:vOrders,client:vClient,reqnew:vReqNew,reqs:vReqs,req:vReq,myclients:vMyClients}[S.view]||vHome;
     html=v();
   }
   const ih=introHtml();
@@ -411,6 +411,7 @@ function vHome(){
       ${me&&me.metier==='Fournisseur de matériaux'?sellerBlock(me):''}
       ${S.guardProjects.length?`<span class="label">${t('Gardien')}</span><div class="list">${S.guardProjects.map(p=>`<button class="item" data-a="open" data-v="${p.id}" data-t="guard"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)} · ${eur(p.guard?p.guard.salary:0)} / mois</div></div><span class="pill s-bloque">${t('Gardien')}</span></button>`).join('')}</div>`:''}
       ${(()=>{const n=proReqs(me).length,n2=otherReqs(me).length;return `<button class="item" data-a="go" data-v="reqs" style="border:1px solid var(--fg);padding:16px"><div><div class="t">Demandes de travaux</div><div class="small muted">${n||n2?(n?n+' pour ton métier':'0 pour ton métier')+' · '+n2+' autre'+(n2>1?'s':''):'Aucune demande pour l\'instant'}</div></div><span aria-hidden="true">›</span></button>`;})()}
+      ${(()=>{const n=myClients().length;return `<button class="item" data-a="go" data-v="myclients" style="border:1px solid var(--line);padding:16px"><div><div class="t">Mes clients</div><div class="small muted">${n?n+' client'+(n>1?'s':''):'Pas encore de client'}</div></div><span aria-hidden="true">›</span></button>`;})()}
       <span class="label">${t('Mes chantiers')}</span>
       ${list.length?`<div class="list">${list.map(p=>`<button class="item" data-a="open" data-v="${p.id}"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)} · client : ${esc(p.clientName)}</div></div>${stepSummary(p)}</button>`).join('')}</div>`
       :`<div class="empty">Aucun chantier pour l'instant. Quand un client te choisit, son projet apparaît ici.</div>`}
@@ -835,6 +836,36 @@ function vReq(){
     </form></div>`;
 }
 
+/* ---------- mes clients (espace pro) ---------- */
+function myClients(){
+  const m=new Map();
+  const get=(uid,name)=>{if(!uid)return null;if(!m.has(uid))m.set(uid,{uid,name:name||'Client',projects:[],orders:[],talks:0,paid:0,last:0});const c=m.get(uid);if(name&&c.name==='Client')c.name=name;return c;};
+  const myId=S.me&&S.me.proId;
+  [...S.proProjects,...S.guardProjects].forEach(p=>{if(p.clientUid===S.uid&&!TEST)return;const c=get(p.clientUid,p.clientName);if(!c)return;if(!c.projects.find(x=>x.id===p.id))c.projects.push(p);
+    if(p.proId===myId)(p.steps||[]).forEach(st=>{if(st.status==='paye')c.paid+=(+st.amount||0);});
+    (p.guardHistory||[]).forEach(h=>{if(h.proId===myId)c.paid+=(+h.amount||0);});
+    c.last=Math.max(c.last,p.createdAt||0);});
+  (S.sellerOrders||[]).forEach(o=>{const c=get(o.clientUid,o.clientName);if(!c)return;c.orders.push(o);if(o.status==='paye')c.paid+=(+o.total||0);c.last=Math.max(c.last,o.at||0);});
+  (S.myOffers||[]).forEach(o=>{if(o.status==='acceptee')return;const r=(S.openReqs||[]).find(x=>x.id===o.requestId);const c=get(o.clientUid,r&&r.clientName);if(!c)return;c.talks++;c.last=Math.max(c.last,o.at||0);});
+  return [...m.values()].sort((a,b)=>b.last-a.last);
+}
+function vMyClients(){
+  const list=myClients();
+  return `<div class="stack">
+    <button class="link" data-a="home">${t('Retour')}</button>
+    <h1>Mes clients</h1>
+    ${list.length?`<div class="list">${list.map(c=>{
+      const bits=[];if(c.projects.length)bits.push(c.projects.length+' chantier'+(c.projects.length>1?'s':''));if(c.orders.length)bits.push(c.orders.length+' commande'+(c.orders.length>1?'s':''));if(c.talks)bits.push(c.talks+' devis en discussion');
+      return `<div class="item" style="flex-direction:column;align-items:stretch;gap:8px">
+        <div class="between"><div style="min-width:0"><div class="t">${esc(c.name)}</div><div class="small muted">${bits.join(' · ')}</div></div>${c.paid?`<span class="money s-paye">${eur(c.paid)}</span>`:''}</div>
+        ${c.projects.length?`<div class="stack-s" style="gap:4px">${c.projects.map(p=>`<button class="link" data-a="open" data-v="${p.id}" style="padding:4px 0;text-transform:none;letter-spacing:0;font-size:14px;font-weight:400">${esc(p.title)} · ${esc(p.ville||'')}</button>`).join('')}</div>`:''}
+        <button class="btn ghost sm" data-a="cprof" data-v="${c.uid}" style="align-self:flex-start">Voir son profil et ses avis</button>
+      </div>`;}).join('')}</div>`
+    :'<div class="empty">Pas encore de client. Réponds aux demandes de travaux ou attends qu\'un client te choisisse : il apparaîtra ici.</div>'}
+    ${list.length?`<p class="small muted" style="margin:0">Le montant en vert est ce que chaque client t'a déjà payé via l'app.</p>`:''}
+  </div>`;
+}
+
 /* ---------- avis à la Airbnb ---------- */
 function rvForm(kind,v,x,title,who){
   const key=(kind+'_'+v+'_'+x).replace(/[^A-Za-z0-9_]/g,'_'), n=S.p['rv_'+key+'n']||0;
@@ -1057,6 +1088,7 @@ const INTRO={
  'reqnew':['chat','<b>Demander des devis.</b> Décris ton besoin. Les pros de ce métier te proposent un prix, tu discutes avec eux, puis tu choisis.'],
  'reqs':['search','<b>Les demandes des clients.</b> Propose ton prix et ton délai. Si le client accepte, le projet se crée et l\'argent est bloqué avant que tu commences.'],
  'req':['chat','<b>Propositions et discussion.</b> Le pro propose un prix, vous pouvez en parler, et le client accepte celle qui lui convient.'],
+ 'myclients':['user','<b>Tes clients.</b> Toutes les personnes avec qui tu travailles : chantiers, commandes et devis en discussion. Touche un client pour voir son profil et ses avis.'],
  'client':['user','<b>Le profil du client.</b> Les avis laissés par les pros qui ont déjà travaillé avec lui.']
 };
 function introKey(){
