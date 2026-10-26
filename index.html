@@ -508,6 +508,7 @@ function vProject(){
     ${r!=='client'?clientCard(p.clientUid,p.clientName):''}
     ${waCall(p,r)}
     ${houseCard(p)}
+    ${!p.stopped&&(r==='client'||r==='pro')?(S.p.confirmStop?`<div class="stack-s" style="border:1px solid var(--warn);padding:14px 16px"><span class="small">Arrêter le contrat ? L'argent bloqué et non validé sera rendu au client.</span><div class="row"><button class="btn sm" data-a="stopyes">Oui, arrêter</button><button class="btn ghost sm" data-a="stopno">Annuler</button></div></div>`:`<button class="link" data-a="stop" style="align-self:center;color:var(--muted);font-size:12px">Arrêter le contrat</button>`):''}
     </div>
   </div>`;
 }
@@ -595,8 +596,7 @@ function tSteps(p,r){
   let review='';
   const pend=p.steps.findIndex(st=>st.status==='paye'&&((r==='client'&&!st.rvClient)||(r==='pro'&&!st.rvPro)));
   if(pend>=0) review=r==='client'?rvForm('step-c',p.id,pend,p.steps[pend].name+' · '+p.title,p.proName):rvForm('step-p',p.id,pend,p.steps[pend].name+' · '+p.title,p.clientName);
-  const stop=p.stopped?'':`<button class="link" data-a="${S.p.confirmStop?'stopyes':'stop'}">${S.p.confirmStop?'Confirmer : arrêter le contrat et rembourser l\'argent bloqué non validé':'Arrêter le contrat'}</button>${S.p.confirmStop?'<button class="link" data-a="stopno">Annuler</button>':''}`;
-  return `<div class="stack">${steps}${review}${stop}</div>`;
+  return `<div class="stack">${steps}${review}</div>`;
 }
 function reviewForm(id,title){
   const n=S.p[id+'n']||0;
