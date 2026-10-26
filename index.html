@@ -697,16 +697,23 @@ function tPay(p){
 
 function vMyFiche(){
   const p=S.me.proId?proById(S.me.proId):null;
+  const lk=!!(p&&!p.idUnlocked);
   return `<form class="stack" data-f="fiche">
     <button class="link" type="button" data-a="home">Retour</button>
     <div class="stack-s"><h1>${p?'Ma fiche':'Créer ma fiche'}</h1>
     ${p?`<div class="small ${p.verified?'verified':'unverified'}">${p.verified?'Vérifié : tu peux recevoir de l\'argent.':'Pas encore vérifié : on te le demandera avant ton premier paiement.'}</div>${badgesHtml(p)}`:''}</div>
-    <div class="field"><label class="label" for="pf-name">Nom de l'entreprise ou ton nom</label><input id="pf-name" required maxlength="60" value="${esc(p?p.name:S.me.name)}"></div>
+    ${lk?`<div class="stack-s" style="border:1px solid var(--line);padding:14px 16px">
+      <span class="label">Identité · verrouillée</span>
+      <div class="t" style="font-weight:500">${esc(p.name)}</div>
+      <div class="small muted">${esc(p.pays)}${p.rccm?' · N° d\'entreprise '+esc(p.rccm):''}</div>
+      <p class="small muted" style="margin:0">Ton nom, ton pays et ton numéro d'entreprise ne se changent pas tout seuls. C'est ce que les clients et l'administration vérifient.</p>
+      ${p.idRequest?'<span class="small" style="color:var(--warn)">Demande de changement envoyée. L\'administration va te répondre.</span>':'<button class="link" type="button" data-a="idreq" style="align-self:flex-start">Demander un changement</button>'}
+    </div>`:`<div class="field"><label class="label" for="pf-name">Nom de l'entreprise ou ton nom</label><input id="pf-name" required maxlength="60" value="${esc(p?p.name:S.me.name)}"></div>`}
     <div class="field"><label class="label" for="pf-metier">Métier</label><select id="pf-metier">${opts(METIERS,p&&p.metier)}</select></div>
-    <div class="field"><label class="label" for="pf-pays">Pays</label><select id="pf-pays">${opts(PAYS,p?p.pays:'RD Congo')}</select></div>
+    ${lk?'':`<div class="field"><label class="label" for="pf-pays">Pays</label><select id="pf-pays">${opts(PAYS,p?p.pays:'RD Congo')}</select></div>`}
     <div class="field"><label class="label" for="pf-ville">Ville</label><input id="pf-ville" required maxlength="40" value="${esc(p?p.ville:'')}"></div>
     <div class="field"><label class="label" for="pf-phone">Téléphone WhatsApp, avec l'indicatif (+243…)</label><input id="pf-phone" required maxlength="25" value="${esc(p?p.phone:S.me.phone)}"></div>
-    <div class="field"><label class="label" for="pf-rccm">Numéro d'entreprise (RCCM ou autre)</label><input id="pf-rccm" maxlength="40" value="${esc(p?p.rccm:'')}"></div>
+    ${lk&&p.rccm?'':`<div class="field"><label class="label" for="pf-rccm">Numéro d'entreprise (RCCM ou autre)</label><input id="pf-rccm" maxlength="40" value="${esc(p?p.rccm:'')}"></div>${!p?'<p class="small muted" style="margin:-8px 0 0">Attention : ton nom, ton pays et ton numéro d\'entreprise seront verrouillés après l\'enregistrement.</p>':''}`}
     <div class="field"><label class="label" for="pf-about">Présentation</label><textarea id="pf-about" rows="3" maxlength="300">${esc(p?p.about:'')}</textarea></div>
     ${S.err?`<p class="err">${esc(S.err)}</p>`:''}
     <button class="btn" type="submit">Enregistrer</button>
@@ -1214,8 +1221,8 @@ function vAdmin(){
       <div class="field" style="flex:1;min-width:0"><label class="label" for="ap-ville">Ville</label><input id="ap-ville" maxlength="40" required></div></div>
       <div class="field"><label class="label" for="ap-phone">Téléphone public</label><input id="ap-phone" maxlength="25"></div>
       <button class="btn sm" type="submit">Ajouter</button></form>
-    ${pros.length?`<div class="list">${pros.map(p=>`<div class="item"><div><div class="t">${esc(p.name)}${p.hidden?' · masqué':''}</div><div class="small muted">${esc(p.metier)} · ${esc(p.ville)}, ${esc(p.pays)}${p.rccm?' · '+esc(p.rccm):''}</div><div class="small ${p.verified?'verified':'unverified'}">${p.verified?'Vérifié':'Non vérifié'}</div></div>
-      <div class="stack-s" style="flex-shrink:0"><button class="btn ghost sm" data-a="adm-verify" data-v="${p.id}">${p.verified?'Retirer':'Vérifier'}</button><button class="link" data-a="adm-hide" data-v="${p.id}">${p.hidden?'Réafficher':'Masquer'}</button></div></div>`).join('')}</div>`:'<div class="empty">Aucun pro.</div>'}`;
+    ${pros.length?`<div class="list">${pros.map(p=>`<div class="item"><div><div class="t">${esc(p.name)}${p.hidden?' · masqué':''}</div><div class="small muted">${esc(p.metier)} · ${esc(p.ville)}, ${esc(p.pays)}${p.rccm?' · '+esc(p.rccm):''}</div><div class="small ${p.verified?'verified':'unverified'}">${p.verified?'Vérifié':'Non vérifié'}</div>${p.idRequest?'<div class="small" style="color:var(--warn)">Demande de changement d\'identité</div>':''}${p.idUnlocked?'<div class="small muted">Identité débloquée (une fois)</div>':''}</div>
+      <div class="stack-s" style="flex-shrink:0"><button class="btn ghost sm" data-a="adm-verify" data-v="${p.id}">${p.verified?'Retirer':'Vérifier'}</button>${p.idRequest?`<button class="btn sm" data-a="adm-unlock" data-v="${p.id}">Débloquer</button>`:''}<button class="link" data-a="adm-hide" data-v="${p.id}">${p.hidden?'Réafficher':'Masquer'}</button></div></div>`).join('')}</div>`:'<div class="empty">Aucun pro.</div>'}`;
   if(tab==='users') body=S.allProfiles.length?`<div class="list">${S.allProfiles.sort((a,b)=>b.createdAt-a.createdAt).map(u=>`<div class="item"><div><div class="t">${esc(u.name)}</div><div class="small muted">${esc(u.ville)}, ${esc(u.pays)} · ${esc(u.phone)}</div></div><span class="meta">${fdate(u.createdAt)}${u.proId?' · pro':''}</span></div>`).join('')}</div>`:'<div class="empty">Aucun compte.</div>';
   if(tab==='tr'){const keys=Object.keys(I18N.ln), cur=(S.tr&&S.tr.ln)||{};
     body=`<form class="stack" data-f="tr"><p class="small muted" style="margin:0">Ce sont mes propositions de traduction. Corrige-les, puis enregistre : l'app en lingala change pour tout le monde.</p>
@@ -1308,6 +1315,8 @@ document.addEventListener('click',async e=>{
       await sysMsg(p.id,`Gardien ${g.proName} : mois clôturé, ${stt.present}/${stt.expected} pointages, ${eur(stt.amount)} versés, ${eur(g.salary-stt.amount)} rendus au client.`);return;}
     if(a==='check'){const cur=!!(S.me.checks&&S.me.checks[v]);await S.db.doc('profiles/'+S.uid).update({['checks.'+v]:!cur});return;}
     if(a==='adm-verify'&&S.admin){const pr=proById(v);if(pr) await S.db.doc('pros/'+v).update({verified:!pr.verified,verifiedAt:Date.now()});return;}
+    if(a==='idreq'&&S.me.proId){await S.db.doc('pros/'+S.me.proId).update({idRequest:{at:Date.now(),by:S.me.name}});return;}
+    if(a==='adm-unlock'&&S.admin){await S.db.doc('pros/'+v).update({idUnlocked:true,idRequest:null});return;}
     if(a==='adm-hide'&&S.admin){const pr=proById(v);if(pr) await S.db.doc('pros/'+v).update({hidden:!pr.hidden});return;}
     if(a==='stop'){S.p.confirmStop=true;return render();}
     if(a==='stopno'){S.p.confirmStop=false;return render();}
@@ -1531,7 +1540,9 @@ document.addEventListener('submit',async e=>{
       go('project',{id:ref.id,tab:'steps'});
     }
     if(f==='fiche'){
-      const data={photo:S.me.photo||'',name:val('pf-name'),metier:val('pf-metier'),pays:val('pf-pays'),ville:val('pf-ville'),phone:val('pf-phone'),rccm:val('pf-rccm'),about:val('pf-about')};
+      const cur=S.me.proId?proById(S.me.proId):null, lk=!!(cur&&!cur.idUnlocked);
+      const data={photo:S.me.photo||'',name:lk?cur.name:val('pf-name'),metier:val('pf-metier'),pays:lk?cur.pays:val('pf-pays'),ville:val('pf-ville'),phone:val('pf-phone'),rccm:lk&&cur.rccm?cur.rccm:val('pf-rccm'),about:val('pf-about')};
+      if(cur&&cur.idUnlocked){data.idUnlocked=false;}
       if(!data.name||!data.ville||!data.phone){S.err='Remplis le nom, la ville et le téléphone.';return render();}
       if(S.me.proId){await S.db.doc('pros/'+S.me.proId).update(data);}
       else{const ref=await S.db.collection('pros').add(Object.assign(data,{ownerUid:S.uid,verified:false,example:false,reviews:[],createdAt:Date.now()}));await S.db.doc('profiles/'+S.uid).update({proId:ref.id});}
