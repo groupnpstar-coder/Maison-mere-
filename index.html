@@ -15,7 +15,7 @@
 /* Layout: one mobile column, max 480px, black and white like a document; money states carry the only color. */
 :root{
   --bg:#FFFFFF; --fg:#121211; --muted:#5A5955; --line:#E3E2DE; --tile:#F0EFEB;
-  --ink:#121211; --on-ink:#FFFFFF; --accent:#121211;
+  --ink:#121211; --on-ink:#FFFFFF;
   --ok:#1D6B45; --warn:#9A5B05; --bad:#A3271C; --held:#3F4E8C;
   --display:Georgia, 'Times New Roman', serif;
   --body:system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -28,17 +28,9 @@
   --bg:#111110; --fg:#F3F2EE; --muted:#A8A6A0; --line:#2C2B29; --tile:#1D1C1A;
   --ink:#F3F2EE; --on-ink:#111110;
   --ok:#5FC08E; --warn:#E3A94A; --bad:#EE7D70; --held:#9DAAE8; color-scheme:dark }
-/* Une couleur par espace : client noir, pro brun chantier, admin bleu nuit */
-:root[data-mode="pro"]{--ink:#7A3E12;--on-ink:#FFFFFF;--accent:#7A3E12}
-:root[data-mode="admin"]{--ink:#1E3A5F;--on-ink:#FFFFFF;--accent:#1E3A5F}
-:root[data-mode="client"]{--accent:var(--fg)}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"])[data-mode="pro"]{--ink:#E2A066;--on-ink:#111110;--accent:#E2A066}:root:not([data-theme="light"])[data-mode="admin"]{--ink:#8DB4E2;--on-ink:#111110;--accent:#8DB4E2}}
-:root[data-theme="dark"][data-mode="pro"]{--ink:#E2A066;--on-ink:#111110;--accent:#E2A066}
-:root[data-theme="dark"][data-mode="admin"]{--ink:#8DB4E2;--on-ink:#111110;--accent:#8DB4E2}
-#modeTag{color:var(--accent,var(--muted));font-weight:600}
-.top{box-shadow:inset 0 3px 0 var(--accent,transparent)}
-.tabs button[aria-selected="true"]{border-bottom-color:var(--accent,var(--fg))}
-.btn.ghost{border-color:var(--accent,var(--fg))}
+/* Une seule couleur de marque : le jaune chantier, avec le noir */
+#modeTag:not(:empty){background:#FFD400;color:#111;font-weight:600;padding:3px 7px;letter-spacing:.1em}
+.top{box-shadow:inset 0 3px 0 #FFD400}
 html,body{height:100%}
 html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0}
@@ -334,7 +326,6 @@ function render(){
   $main.querySelectorAll('input[id],textarea[id],select[id]').forEach(el=>{if(el.type!=='file') keep[el.id]=el.value;});
   const ae=document.activeElement&&document.activeElement.id;
   document.getElementById('acctBtn').hidden=!S.me;
-  document.documentElement.dataset.mode=S.me&&S.chosen?S.mode:'client';
   document.getElementById('modeTag').textContent=S.me&&S.chosen?({client:'Client',pro:'Pro',admin:'Admin'}[S.mode]||''):'';
   document.getElementById('langSel').value=LANG;
   document.getElementById('testBanner').textContent=t('Version de test : l\'argent est fictif, rien n\'est réellement payé.');
