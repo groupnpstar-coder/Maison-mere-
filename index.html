@@ -1058,7 +1058,7 @@ function suggestForm(){
     <div class="row"><div class="field" style="flex:1;min-width:0"><label class="label" for="sg-pays">Pays</label><select id="sg-pays">${opts(PAYS,'RD Congo')}</select></div>
     <div class="field" style="flex:1;min-width:0"><label class="label" for="sg-ville">Ville</label><input id="sg-ville" required maxlength="40"></div></div>
     <div class="field"><label class="label" for="sg-quartier">Quartier ou adresse</label><input id="sg-quartier" maxlength="80"></div>
-    <div class="field"><label class="label" for="sg-phone">Téléphone du magasin, si tu l'as</label><input id="sg-phone" maxlength="25" inputmode="tel"></div>
+    <div class="field"><label class="label" for="sg-phone">Téléphone du magasin (facultatif)</label><input id="sg-phone" maxlength="25" inputmode="tel"></div>
     <div class="row"><button class="btn sm" type="submit">Ajouter</button><button class="btn ghost sm" type="button" data-a="sg-close">Annuler</button></div></form>`;
 }
 function storeLink(s){return location.origin+location.pathname+'#magasin='+s.id;}
@@ -1334,7 +1334,6 @@ function tCtrl(p,r){
   const busy=vs.some(x=>x.status==='assignee'||x.status==='ouverte');
   return `<div class="stack">
    <div class="stack-s"><span class="label">Visite de contrôle surprise · ${eur(VISIT_PRICE)}</span>
-    <p class="small muted" style="margin:0">Un pro vérifié de ta ville, tiré au sort, passe sur ton chantier un jour choisi au hasard. Ton pro ne sait pas quand. Le visiteur prend des photos avec le code du jour et répond à 3 questions.</p>
     ${vs.map(x=>visitCard(p,x,r)).join('')}
     ${busy?'':`<button class="btn" data-a="v-order">Commander une visite · ${eur(VISIT_PRICE)} bloqués</button>`}
    </div>
@@ -1500,7 +1499,7 @@ const INTRO={
  'project-photos':['photo','<b>Les photos du chantier.</b> Prends une photo « Avant » et une « Après » de chaque étape. Le pro écrit le code du jour à la main sur un papier visible dans la photo : ça prouve qu\'elle est d\'aujourd\'hui.'],
  'home-market':['search','<b>Marché.</b> Compare les prix des quincailleries de ta ville. Un prix non confirmé depuis 30 jours est marqué « à confirmer » et ne peut pas être commandé.'],
  'project-watch':['shield','<b>Tu es proche de confiance.</b> Passe sur le chantier et envoie des photos : le code du jour s\'ajoute tout seul. Le client les voit tout de suite.'],
- 'project-ctrl':['shield','<b>Contrôle sur place.</b> Commande une visite surprise : un pro vérifié de ta ville, tiré au sort, passe sur ton chantier un jour que personne ne connaît à l\'avance.'],
+ 'project-ctrl':['shield','<b>Contrôle sur place.</b> Un regard indépendant, sans préavis. Commandez une visite inopinée : un professionnel vérifié de votre région est désigné aléatoirement pour contrôler votre chantier, sans que la date de son passage soit communiquée à l\'avance.'],
  'project-visit':['search','<b>Ta visite.</b> Va sur place, prends tes photos avec l\'app et réponds aux 3 questions. Tu es payé quand ton rapport est envoyé.'],
  'project-expert':['shield','<b>Le dossier.</b> Regarde les photos et les messages, va sur place, puis décide. Ta décision fait partir l\'argent.'],
  'home-expert':['shield','<b>Espace expert.</b> Tu tranches les litiges de ta ville. Tu es tiré au sort, tu vas sur place, tu décides et tu écris un rapport.'],
