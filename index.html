@@ -502,11 +502,13 @@ function vProject(){
     <button class="link" data-a="home">Retour</button>
     <div class="stack-s"><span class="label">${esc(p.ville)}, ${esc(p.pays)} · ${r==='client'?'pro : '+esc(p.proName||'à choisir'):'client : '+esc(p.clientName)}</span><h1>${esc(p.title)}</h1>
     ${p.stopped?`<span class="pill s-rembourse" style="align-self:flex-start">Contrat arrêté le ${fdate(p.stopped.at)}</span>`:''}</div>
+    <div class="tabs" role="tablist">${tabs.map(x=>`<button role="tab" aria-selected="${x[0]===tab}" data-a="tab" data-v="${x[0]}">${t(x[1])}</button>`).join('')}</div>
+    ${body}
+    <div class="stack" style="border-top:1px solid var(--line);padding-top:20px;margin-top:8px">
     ${r!=='client'?clientCard(p.clientUid,p.clientName):''}
     ${waCall(p,r)}
     ${houseCard(p)}
-    <div class="tabs" role="tablist">${tabs.map(x=>`<button role="tab" aria-selected="${x[0]===tab}" data-a="tab" data-v="${x[0]}">${t(x[1])}</button>`).join('')}</div>
-    ${body}
+    </div>
   </div>`;
 }
 
@@ -612,7 +614,7 @@ function dayCode(pid,t){
 }
 const KIND={avant:'Avant',pendant:'Pendant',apres:'Après'};
 function phCard(ph,p){
-  return `<div class="photo"><img loading="lazy" decoding="async" src="${esc(ph.data)}" alt="Photo ${esc(KIND[ph.kind]||'')} du chantier, ${esc(p.steps[ph.step]?p.steps[ph.step].name:'')}"><span><b style="font-weight:600">${esc(KIND[ph.kind]||'Photo')}</b> · ${esc(p.steps[ph.step]?p.steps[ph.step].name:'')}<br>${ftime(ph.at)} · ${esc(ph.who)}${ph.code?`<br>Code attendu : <b style="font-weight:600">${esc(ph.code)}</b>`:''}${freshBadge(ph)}</span></div>`;
+  return `<div class="photo"><img loading="lazy" decoding="async" src="${esc(ph.data)}" alt="Photo ${esc(KIND[ph.kind]||'')} du chantier, ${esc(p.steps[ph.step]?p.steps[ph.step].name:'')}"><span><b style="font-weight:600">${esc(KIND[ph.kind]||'Photo')}</b> · ${esc(p.steps[ph.step]?p.steps[ph.step].name:'')}<br>${ftime(ph.at)} · ${ph.by==='client'?'Client · ':ph.by==='pro'?'Pro · ':''}${esc(ph.who)}${ph.code?`<br>Code attendu : <b style="font-weight:600">${esc(ph.code)}</b>`:''}${freshBadge(ph)}</span></div>`;
 }
 function photoReqs(p,r){
   const reqs=(p.photoReqs||[]).slice().reverse();
@@ -641,7 +643,7 @@ function tPhotos(p,r){
   }).join('');
   return `<div class="stack">
     <div style="border:1px solid var(--fg);padding:14px;display:flex;justify-content:space-between;align-items:center;gap:12px">
-      <div style="min-width:0"><span class="label">Code du jour</span><div class="small muted" style="margin-top:4px">${r==='client'?'Le pro écrit ce code à la main sur un papier et le tient devant l\'appareil. Si le code écrit à la main est le bon, la photo a bien été prise aujourd\'hui, sur ton chantier.':'Écris ce code à la main sur un papier (ou un carton) et tiens-le bien visible quand tu prends la photo. Ça prouve au client que la photo est d\'aujourd\'hui.'}<br>L\'app ajoute aussi le code, la date et l\'heure en bas de chaque photo.</div></div>
+      <div style="min-width:0"><span class="label">Code du jour</span><div class="small muted" style="margin-top:4px">${r==='client'?'Toi aussi, envoie tes photos : le terrain avant les travaux, un problème, ce que tu vois sur place. Le pro les voit tout de suite.':'Écris ce code à la main sur un papier (ou un carton) et tiens-le bien visible quand tu prends la photo. Ça prouve au client que la photo est d\'aujourd\'hui.'}<br>L\'app ajoute aussi le code, la date et l\'heure en bas de chaque photo.</div></div>
       <span style="font-family:var(--display);font-size:30px;letter-spacing:.04em;white-space:nowrap">${code}</span>
     </div>
     <div class="stack-s"><span class="label">Type de photo</span><div class="chips">${Object.keys(KIND).map(k=>`<button aria-pressed="${k===kind}" data-a="phkind" data-v="${k}">${KIND[k]}</button>`).join('')}</div></div>
@@ -1394,7 +1396,7 @@ async function handleFile(el,file,camShot){
     try{
       const shotAt=camShot||await exifDate(file);
       const data=await shrink(file,720,80000,dayCode(p.id)+' · '+new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · Maison Mère');
-      await S.db.collection('photos').add({projectId:p.id,step:+val('ph-step')||0,kind:S.p.phKind||'pendant',code:dayCode(p.id),shotAt,src:camShot?'camera':'fichier',reqId:S.p.answerReq||null,uid:S.uid,who:myName(p),data,at:Date.now()});
+      await S.db.collection('photos').add({projectId:p.id,step:+val('ph-step')||0,kind:S.p.phKind||'pendant',code:dayCode(p.id),shotAt,src:camShot?'camera':'fichier',reqId:S.p.answerReq||null,uid:S.uid,who:myName(p),by:role(p),data,at:Date.now()});
     }catch(err){S.err='La photo n\'a pas pu être envoyée. Essaie une autre image.';}
     S.busy=false;render();
   }
