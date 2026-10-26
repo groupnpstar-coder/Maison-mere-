@@ -82,8 +82,8 @@ main{flex:1;padding-block:22px}
 .pill{font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;padding:4px 7px;border:1px solid currentColor;white-space:nowrap}
 .s-attente{color:var(--muted)} .s-bloque{color:var(--held)} .s-fait{color:var(--warn)} .s-paye{color:var(--ok)} .s-litige{color:var(--bad)} .s-rembourse{color:var(--muted)}
 .verified{color:var(--ok)} .unverified{color:var(--muted)}
-.tabs{display:flex;gap:16px;border-bottom:1px solid var(--line);overflow-x:auto}
-.tabs button{border:none;background:none;padding:12px 0 10px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;border-bottom:2px solid transparent;white-space:nowrap}
+.tabs{display:flex;gap:12px;justify-content:space-between;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs button{border:none;background:none;padding:12px 0 10px;font-size:12px;letter-spacing:.05em;text-transform:uppercase;border-bottom:2px solid transparent;white-space:nowrap}
 .tabs button[aria-selected="true"]{border-bottom-color:var(--fg);font-weight:600}
 .step{border:1px solid var(--line);padding:16px;display:flex;flex-direction:column;gap:10px}
 .step.current{border-color:var(--fg)}
@@ -122,7 +122,7 @@ footer{font-size:11px;color:var(--muted);text-align:center;padding-top:20px;bord
 .stat b{font-family:var(--display);font-weight:400;font-size:26px;font-variant-numeric:tabular-nums}
 .progress{height:6px;background:var(--tile)}
 .progress span{display:block;height:100%;background:var(--ok)}
-.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;padding-bottom:2px}
 .chips button{flex-shrink:0;min-height:38px;padding:0 14px;border:1px solid var(--fg);background:var(--bg);font-size:12px;letter-spacing:.06em}
 .chips button[aria-pressed="true"]{background:var(--ink);color:var(--on-ink)}
 .badges{display:flex;flex-wrap:wrap;gap:6px}
@@ -165,7 +165,7 @@ footer{font-size:11px;color:var(--muted);text-align:center;padding-top:20px;bord
 <script>
 (function(){
 const PAYS=['RD Congo','Angola','Congo-Brazzaville','Cameroun','Côte d\'Ivoire','Sénégal','Belgique','France','Chine','Russie','Brésil','Autre'];
-const METIERS=['Maçonnerie','Ingénieur civil','Électricité','Plomberie','Menuiserie','Carrelage','Peinture','Toiture','Fournisseur de matériaux','Gardiennage','Installation de caméras','Géomètre','Photographe de chantier'];
+const METIERS=['Maçonnerie','Ingénieur civil','Électricité','Plomberie','Menuiserie','Carrelage','Peinture','Toiture','Fournisseur de matériaux','Installation de caméras','Géomètre','Photographe de chantier'];
 const STATUS_FR={attente:'À bloquer',bloque:'Argent bloqué',fait:'À valider',paye:'Payé',litige:'Litige',rembourse:'Remboursé',livre:'Livré'};
 const CATS=['Ciment','Blocs et briques','Fer à béton','Tôles','Sable et gravier','Bois','Plomberie','Électricité','Autre'];
 const I18N={
@@ -205,7 +205,7 @@ const fdate=t=>t?new Date(t).toLocaleDateString('fr-FR',{day:'numeric',month:'sh
 const ftime=t=>t?new Date(t).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
 const opts=(arr,sel)=>arr.map(x=>`<option${x===sel?' selected':''}>${esc(x)}</option>`).join('');
 const proById=id=>S.pros.find(p=>p.id===id);
-const allProjects=()=>{const m=new Map();[...S.allProjects,...S.myProjects,...S.proProjects,...S.guardProjects].forEach(p=>m.set(p.id,p));return [...m.values()];};
+const allProjects=()=>{const m=new Map();[...S.allProjects,...S.myProjects,...S.proProjects,...(S.watchProjects||[]),...(S.visitProjects||[]),...(S.expertProjects||[])].forEach(p=>m.set(p.id,p));return [...m.values()];};
 const prjById=id=>allProjects().find(p=>p.id===id);
 const isVis=x=>!x.hidden||Date.now()-x.at>14*DAY;
 const vr=r=>(r||[]).filter(isVis);
@@ -243,6 +243,7 @@ function start(u){
     S.me=s.exists?Object.assign({id:s.id},s.data()):null;
     if(first&&S.me){try{S.chosen=sessionStorage.getItem('mm-chosen-'+S.uid)==='1';}catch(e){S.chosen=false;}let m=null;try{m=localStorage.getItem('mm-mode-'+S.uid);}catch(e){}S.mode=m&&(m!=='admin'||S.admin)?m:(S.me.role==='pro'?'pro':'client');}
     if(S.me&&S.me.proId!==before) watchProProjects();
+    watchExtra();
     render();
   },()=>{});
   if(S.admin){
@@ -291,11 +292,10 @@ function watchProProjects(){
   proUnsubs.push(S.db.collection('orders').where('sellerProId','==',S.me.proId).onSnapshot(q=>{S.sellerOrders=q.docs.map(d=>Object.assign({id:d.id},d.data()));autoReleaseOrders();render();},()=>{}));
   proUnsubs.push(S.db.collection('requests').where('status','==','ouverte').onSnapshot(q=>{S.openReqs=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{}));
   proUnsubs.push(S.db.collection('offers').where('proId','==',S.me.proId).onSnapshot(q=>{S.myOffers=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{}));
-  proUnsubs.push(S.db.collection('projects').where('guardProId','==',S.me.proId).onSnapshot(q=>{S.guardProjects=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{}));
 }
 function watchProject(){
   const pid=S.view==='project'?S.p.id:null;
-  const ph=pid&&(S.p.tab==='photos'||S.p.tab==='msgs')?pid:null;
+  const ph=pid&&['photos','msgs','ctrl','visit','expert'].includes(S.p.tab)?pid:null;
   if(ph!==watchedPhotos){
     if(unsubPhotos){unsubPhotos();unsubPhotos=null;}
     S.photos=[];S.photosLoaded=false;watchedPhotos=ph;
@@ -336,9 +336,9 @@ function render(){
   const ae=document.activeElement&&document.activeElement.id;
   const ab=document.getElementById('acctBtn');ab.hidden=!S.me;if(S.me&&S.me.photo&&ab.dataset.ph!==S.me.photo.length+''){ab.dataset.ph=S.me.photo.length+'';ab.innerHTML=avatar(S.me.photo,S.me.name,32);}
   const mt=document.getElementById('modeTag'), sm=document.getElementById('spaceMenu');
-  mt.hidden=!(S.me&&S.chosen); mt.textContent=({client:'Client',pro:'Pro',admin:'Admin'}[S.mode]||'Client');
+  mt.hidden=!(S.me&&S.chosen); mt.textContent=({client:'Client',pro:'Pro',expert:'Expert',admin:'Admin'}[S.mode]||'Client');
   mt.setAttribute('aria-expanded',String(!!S.menuOpen)); sm.hidden=!(S.menuOpen&&S.me&&S.chosen);
-  if(!sm.hidden) sm.innerHTML=[['client','Client','Je fais construire ou réparer',true],['pro','Professionnel','Je propose mon travail',true],['admin','Administration','Je gère l\'application',S.admin]].filter(x=>x[3]).map(x=>`<button role="menuitem" data-a="mode" data-v="${x[0]}"><span><b style="font-weight:500;display:block">${x[1]}</b><span class="small muted">${x[2]}</span></span>${S.mode===x[0]?'<span class="on">ICI</span>':''}</button>`).join('');
+  if(!sm.hidden) sm.innerHTML=[['client','Client','Je fais construire ou réparer',true],['pro','Professionnel','Je propose mon travail',true],['expert','Expert','Je tranche les litiges',true],['admin','Administration','Je gère l\'application',S.admin]].filter(x=>x[3]).map(x=>`<button role="menuitem" data-a="mode" data-v="${x[0]}"><span><b style="font-weight:500;display:block">${x[1]}</b><span class="small muted">${x[2]}</span></span>${S.mode===x[0]?'<span class="on">ICI</span>':''}</button>`).join('');
   document.getElementById('langSel').value=LANG;
   document.getElementById('testBanner').textContent=t('Version de test : l\'argent est fictif, rien n\'est réellement payé.');
   document.getElementById('footRule').textContent=t('Chacun peut noter l\'autre et arrêter le contrat si l\'accord n\'est pas respecté.');
@@ -348,7 +348,7 @@ function render(){
   else if(!S.me.photo&&!TEST) html=vPhotoGate();
   else if(!S.chosen) html=vChoose();
   else {
-    const v={home:vHome,dir:vDir,pro:vProFiche,newp:vNewProject,project:vProject,myfiche:vMyFiche,account:vAccount,plan:vPlan,market:vMarket,estim:vEstim,orders:vOrders,client:vClient,reqnew:vReqNew,reqs:vReqs,req:vReq,myclients:vMyClients}[S.view]||vHome;
+    const v={home:vHome,dir:vDir,pro:vProFiche,newp:vNewProject,project:vProject,myfiche:vMyFiche,account:vAccount,plan:vPlan,market:vMarket,estim:vEstim,orders:vOrders,client:vClient,reqnew:vReqNew,reqs:vReqs,req:vReq,myclients:vMyClients,visits:vVisits}[S.view]||vHome;
     html=v();
   }
   const ih=introHtml();
@@ -368,6 +368,7 @@ function vChoose(){
     <div class="stack-s"><span class="label">Bonjour ${esc(first)}</span><h1>Choisis ton espace</h1></div>
     ${card('client','Je suis client','Je fais construire ou réparer','<path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path><path d="M10 20v-6h4v6"></path>')}
     ${card('pro','Je suis professionnel','Je propose mon travail','<rect x="3" y="7" width="18" height="13" rx="1"></rect><path d="M9 7V4h6v3"></path><path d="M3 13h18"></path>')}
+    ${card('expert','Je suis expert','Ingénieur, je tranche les litiges','<circle cx="12" cy="12" r="9"></circle><path d="M15.5 8.5l-2 5-5 2 2-5z"></path>')}
     ${S.admin?card('admin','Administration','Je gère l\'application','<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path><path d="M9 12l2 2 4-4"></path>'):''}
     <p class="small muted" style="margin:0">Tu peux changer à tout moment avec l'étiquette jaune en haut.</p>
   </div>`;
@@ -382,7 +383,7 @@ function vSignup(){
     <div class="field"><label class="label" for="su-ville">Ville</label><input id="su-ville" required maxlength="40"></div>
     <div class="stack-s"><span class="label">Tu es…</span>
       <button type="button" class="check" aria-pressed="${(S.p.role||'client')==='client'}" data-a="role" data-v="client"><span class="box" aria-hidden="true">${(S.p.role||'client')==='client'?'✓':''}</span><span><b style="font-weight:500">Je suis client</b><br><span class="small muted">Je fais construire ou réparer</span></span></button>
-      <button type="button" class="check" aria-pressed="${S.p.role==='pro'}" data-a="role" data-v="pro"><span class="box" aria-hidden="true">${S.p.role==='pro'?'✓':''}</span><span><b style="font-weight:500">Je suis professionnel</b><br><span class="small muted">Maçon, électricien, vendeur, gardien, ingénieur…</span></span></button>
+      <button type="button" class="check" aria-pressed="${S.p.role==='pro'}" data-a="role" data-v="pro"><span class="box" aria-hidden="true">${S.p.role==='pro'?'✓':''}</span><span><b style="font-weight:500">Je suis professionnel</b><br><span class="small muted">Maçon, électricien, vendeur, ingénieur…</span></span></button>
     </div>
     ${S.err?`<p class="err">${esc(S.err)}</p>`:''}
     <button class="btn" type="submit">Créer mon compte</button>
@@ -399,6 +400,7 @@ function stepSummary(p){
 
 function vHome(){
   if(S.mode==='admin'&&S.admin) return vAdmin();
+  if(S.mode==='expert') return vExpertHome();
   if(S.mode==='pro'){
     if(!S.me.proId) return `<div class="stack">
       <h1>Espace pro</h1>
@@ -413,10 +415,10 @@ function vHome(){
       <div class="stack-s">
       ${box('reqs','Demandes de travaux',nR||nO?`${nR} pour ton métier · ${nO} autre${nO>1?'s':''}`:'Aucune demande pour l\'instant',nR)}
       ${box('myclients','Mes clients',nC?nC+' client'+(nC>1?'s':''):'Pas encore de client',0)}
+      ${me&&me.inspector?(()=>{const n=allProjects().filter(p=>myVisit(p)).length;return box('visits','Visites de contrôle',n?n+' à faire':'Aucune visite pour l\'instant',n);})():''}
       ${box('myfiche','Ma fiche',me?esc(me.metier)+' · '+esc(me.ville)+(me.verified?' · Vérifié':' · Pas encore vérifié'):'À compléter',0)}
       </div>
       ${me&&me.metier==='Fournisseur de matériaux'?sellerBlock(me):''}
-      ${S.guardProjects.length?`<span class="label">${t('Gardien')}</span><div class="list">${S.guardProjects.map(p=>`<button class="item" data-a="open" data-v="${p.id}" data-t="guard"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)} · client : ${esc(p.clientName)} · ${eur(p.guard?p.guard.salary:0)} / mois</div></div><span class="pill s-bloque">${t('Gardien')}</span></button>`).join('')}</div>`:''}
       <span class="label">${t('Mes chantiers')}</span>
       ${list.length?`<div class="list">${list.map(p=>`<button class="item" data-a="open" data-v="${p.id}"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)} · client : ${esc(p.clientName)}</div></div>${stepSummary(p)}</button>`).join('')}</div>`
       :`<div class="empty">Aucun chantier pour l'instant. Quand un client te choisit, son projet apparaît ici.</div>`}
@@ -429,6 +431,7 @@ function vHome(){
     ${(S.myReqs||[]).filter(x=>x.status==='ouverte').length?`<span class="label">Mes demandes en cours</span><div class="list">${(S.myReqs||[]).filter(x=>x.status==='ouverte').sort((a,b)=>b.at-a.at).map(x=>`<button class="item" data-a="openreq" data-v="${x.id}"><div><div class="t">${esc(x.title)}</div><div class="small muted">${esc(x.metier)} · ${esc(x.ville)}</div></div><span class="pill s-fait">${x.offerCount||0} proposition${(x.offerCount||0)>1?'s':''}</span></button>`).join('')}</div>`:''}
     ${list.length?`<div class="list">${list.map(p=>`<button class="item" data-a="open" data-v="${p.id}"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)}, ${esc(p.pays)} · ${esc(p.proName||'Pro à choisir')}</div></div>${stepSummary(p)}</button>`).join('')}</div>`
     :`<div class="empty">Pas encore de projet. Crée ton premier : choisis un pro vérifié, découpe le travail en étapes et bloque l'argent étape par étape.</div>`}
+    ${(S.watchProjects||[]).filter(p=>p.clientUid!==S.uid).length?`<span class="label">Chantiers que je surveille</span><div class="list">${S.watchProjects.filter(p=>p.clientUid!==S.uid).map(p=>`<button class="item" data-a="open" data-v="${p.id}" data-t="photos"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)} · pour ${esc(p.clientName)}</div></div><span class="pill">Proche</span></button>`).join('')}</div>`:''}
     <div class="tiles">
       <button class="tile" data-a="go" data-v="dir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">${IC.search}</svg>Trouver un pro</button>
       <button class="tile" data-a="go" data-v="market"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC.cart}</svg>Matériaux</button>
@@ -491,19 +494,33 @@ function vNewProject(){
   </form>`;
 }
 
-function role(p){if(S.mode==='pro'&&S.me.proId){if(p.proId===S.me.proId)return 'pro';if(p.guardProId===S.me.proId)return 'guard';}return p.clientUid===S.uid?'client':(S.me.proId&&p.proId===S.me.proId?'pro':(S.me.proId&&p.guardProId===S.me.proId?'guard':'none'));}
+function role(p){
+  const as=S.p&&S.p.as, u=S.uid, pid=S.me.proId;
+  if(as==='expert'&&isExpertOn(p)) return 'expert';
+  if(as==='inspector'&&(p.inspectorUids||[]).includes(u)) return 'inspector';
+  if(S.mode==='expert'&&isExpertOn(p)) return 'expert';
+  if(S.mode==='pro'&&pid&&p.proId===pid) return 'pro';
+  if(p.clientUid===u) return 'client';
+  if(pid&&p.proId===pid) return 'pro';
+  if(isWatcher(p)) return 'watcher';
+  if((p.inspectorUids||[]).includes(u)) return 'inspector';
+  if(isExpertOn(p)) return 'expert';
+  return 'none';
+}
 
 function vProject(){
   const p=prjById(S.p.id); if(!p) return `<div class="stack"><button class="link" data-a="home">Retour</button><p class="muted">Chargement du projet…</p></div>`;
   const r=role(p);
-  const tabs=r==='guard'?[['guard','Gardiennage'],['photos','Photos'],['msgs','Messages']]
-    :r==='client'?[['steps','Étapes'],['photos','Photos'],['msgs','Messages'],['pay','Paiement'],['guard','Gardien']]
-    :[['steps','Étapes'],['photos','Photos'],['msgs','Messages'],['pay','Paiement']];
-  const tab=tabs.some(x=>x[0]===S.p.tab)?S.p.tab:tabs[0][0];S.p.tab=tab;
-  let body={steps:tSteps,photos:tPhotos,guard:tGuard,msgs:tMsgs,pay:tPay}[tab](p,r);
+  const tabs={client:[['steps','Étapes'],['photos','Photos'],['msgs','Messages'],['pay','Paiement'],['ctrl','Contrôle']],
+    pro:[['steps','Étapes'],['photos','Photos'],['msgs','Messages'],['pay','Paiement']],
+    watcher:[['steps','Étapes'],['photos','Photos'],['msgs','Messages']],
+    inspector:[['visit','Visite'],['steps','Étapes']],
+    expert:[['expert','Dossier'],['photos','Photos'],['msgs','Messages'],['steps','Étapes']]}[r]||[['steps','Étapes'],['photos','Photos'],['msgs','Messages'],['pay','Paiement'],['ctrl','Contrôle']];
+  const tab=tabs.some(x=>x[0]===S.p.tab)?S.p.tab:tabs[0][0];if(S.p.tab!==tab){S.p.tab=tab;setTimeout(watchProject,0);}
+  let body={steps:tSteps,photos:tPhotos,guard:tGuard,msgs:tMsgs,pay:tPay,ctrl:tCtrl,visit:tVisit,expert:tExpert}[tab](p,r);
   return `<div class="stack">
     <button class="link" data-a="home">Retour</button>
-    <div class="stack-s"><span class="label">${esc(p.ville)}, ${esc(p.pays)} · ${r==='client'?'pro : '+esc(p.proName||'à choisir'):'client : '+esc(p.clientName)}</span><h1>${esc(p.title)}</h1>
+    <div class="stack-s"><span class="label">${esc(p.ville)}, ${esc(p.pays)} · ${r==='client'?'pro : '+esc(p.proName||'à choisir'):r==='watcher'?'tu es proche de confiance':r==='inspector'?'visite de contrôle':r==='expert'?'dossier d\'expert':'client : '+esc(p.clientName)}</span><h1>${esc(p.title)}</h1>
     ${p.stopped?`<span class="pill s-rembourse" style="align-self:flex-start">Contrat arrêté le ${fdate(p.stopped.at)}</span>`:''}</div>
     <div class="tabs" role="tablist">${tabs.map(x=>`<button role="tab" aria-selected="${x[0]===tab}" data-a="tab" data-v="${x[0]}">${t(x[1])}</button>`).join('')}</div>
     ${body}
@@ -569,23 +586,24 @@ function tSteps(p,r){
       if(r==='client'&&canBlock(p,i)&&!pricesOk(p)) actions=st.amount?'<p class="small muted" style="margin:0">Le blocage sera possible quand vous serez d\'accord sur les prix (voir en haut).</p>':amtForm(i);
       else if(r==='client'&&canBlock(p,i)) actions=st.amount?`<button class="btn" data-a="block" data-v="${i}">Bloquer ${eur(st.amount)}</button><button class="link" data-a="editamt" data-v="${i}">Changer le montant</button>`:amtForm(i);
       if(r==='client'&&S.p.editAmt===i&&st.amount) actions=amtForm(i,st.amount);
-      info=r==='pro'?'Le client n\'a pas encore bloqué l\'argent. Ne commence pas avant.':(canBlock(p,i)?'Bloque l\'argent pour que le travail commence.':'Disponible quand l\'étape précédente est payée.');
+      info=r!=='client'&&r!=='pro'?'Le client n\'a pas encore bloqué l\'argent de cette étape.':r==='pro'?'Le client n\'a pas encore bloqué l\'argent. Ne commence pas avant.':(canBlock(p,i)?'Bloque l\'argent pour que le travail commence.':'Disponible quand l\'étape précédente est payée.');
     }
     if(st.status==='bloque'){
-      info=r==='pro'?`${eur(st.amount)} bloqués pour toi. Envoie tes photos puis signale la fin de l'étape.`:'Le pro travaille. L\'argent attend ta validation.';
+      info=r==='pro'?`${eur(st.amount)} bloqués pour toi. Envoie tes photos puis signale la fin de l'étape.`:r==='client'?'Le pro travaille. L\'argent attend ta validation.':'Le pro travaille. L\'argent est bloqué et attend la validation du client.';
       if(r==='pro') actions=`<button class="btn" data-a="done" data-v="${i}">Étape terminée</button>`;
       if(r==='client') actions=`<button class="btn ghost sm" data-a="dispute" data-v="${i}">Signaler un problème</button>`;
     }
     if(st.status==='fait'){
       const auto=st.doneAt+7*DAY;
-      info=r==='client'?`Le pro dit que c'est fait. Vérifie les photos. Sans réponse de ta part, l'argent part automatiquement le ${fdate(auto)}.`:`En attente de la validation du client. Sans réponse, l'argent part automatiquement le ${fdate(auto)}.`;
+      info=r!=='client'&&r!=='pro'?'Le pro dit que c\'est fait. Le client doit vérifier et valider.':r==='client'?`Le pro dit que c'est fait. Vérifie les photos. Sans réponse de ta part, l'argent part automatiquement le ${fdate(auto)}.`:`En attente de la validation du client. Sans réponse, l'argent part automatiquement le ${fdate(auto)}.`;
       if(r==='client') actions=`<button class="btn" data-a="pay" data-v="${i}">Valider et payer ${eur(st.amount)}</button><button class="btn ghost" data-a="dispute" data-v="${i}">Signaler un problème</button>`;
     }
     if(st.status==='paye') info=`Payé le ${fdate(st.paidAt)}${st.auto?' (automatiquement après 7 jours)':''}${st.expert?' après décision de l\'expert':''}.`;
     if(st.status==='rembourse') info=`Remboursé au client le ${fdate(st.paidAt)}.`;
     if(st.status==='litige'){
-      info=`Litige : ${esc(st.dispute.reason)}${st.dispute.text?' · « '+esc(st.dispute.text)+' »':''}. L'argent reste bloqué. Un ingénieur indépendant, tiré au sort, va vérifier sur place. Celui qui a tort paie sa visite.`;
-      actions=`<span class="label">Test : simuler la décision de l'expert</span><div class="row"><button class="btn ghost sm" data-a="expert" data-v="${i}" data-d="ok">Travail conforme</button><button class="btn ghost sm" data-a="expert" data-v="${i}" data-d="redo">À refaire</button><button class="btn ghost sm" data-a="expert" data-v="${i}" data-d="refund">Rembourser</button></div>`;
+      const d=st.dispute||{};
+      info=`Litige : ${esc(d.reason)}${d.text?' · « '+esc(d.text)+' »':''}. L'argent reste bloqué. ${d.expertUid?`Expert tiré au sort : <b style="font-weight:600">${esc(d.expertName)}</b>. Il regarde les photos, vient sur place et décide.`:'On cherche un expert indépendant dans la ville.'} Celui qui a tort paie sa visite (${eur(EXPERT_PRICE)}).`;
+      actions=(S.admin||(TEST&&!d.expertUid&&(r==='client'||r==='pro')))?`<span class="label">${S.admin?'Admin':'Test'} : décider à la place de l'expert</span><div class="row"><button class="btn ghost sm" data-a="expert" data-v="${i}" data-d="ok">Travail conforme</button><button class="btn ghost sm" data-a="expert" data-v="${i}" data-d="redo">À refaire</button><button class="btn ghost sm" data-a="expert" data-v="${i}" data-d="refund">Rembourser</button></div>`:'';
     }
     if(S.p.disputeIdx===i){
       actions=`<form class="stack-s" data-f="dispute" data-v="${i}">
@@ -616,8 +634,9 @@ function dayCode(pid,t){
   return L[h%24]+(Math.floor(h/24)%10)+'-'+String(Math.floor(h/240)%100).padStart(2,'0');
 }
 const KIND={avant:'Avant',pendant:'Pendant',apres:'Après'};
+const KIND2=Object.assign({controle:'Visite de contrôle',expert:'Constat d\'expert'},KIND);
 function phCard(ph,p){
-  return `<div class="photo"><img loading="lazy" decoding="async" src="${esc(ph.data)}" alt="Photo ${esc(KIND[ph.kind]||'')} du chantier, ${esc(p.steps[ph.step]?p.steps[ph.step].name:'')}"><span><b style="font-weight:600">${esc(KIND[ph.kind]||'Photo')}</b> · ${esc(p.steps[ph.step]?p.steps[ph.step].name:'')}<br>${ftime(ph.at)} · ${ph.by==='client'?'Client · ':ph.by==='pro'?'Pro · ':''}${esc(ph.who)}${ph.code?`<br>Code attendu : <b style="font-weight:600">${esc(ph.code)}</b>`:''}${freshBadge(ph)}</span></div>`;
+  return `<div class="photo"><img loading="lazy" decoding="async" src="${esc(ph.data)}" alt="Photo ${esc(KIND2[ph.kind]||'')} du chantier, ${esc(p.steps[ph.step]?p.steps[ph.step].name:'')}"><span><b style="font-weight:600">${esc(KIND2[ph.kind]||'Photo')}</b> · ${esc(p.steps[ph.step]?p.steps[ph.step].name:'')}<br>${ftime(ph.at)} · ${({client:'Client · ',pro:'Pro · ',watcher:'Proche · ',inspector:'Visiteur · ',expert:'Expert · '})[ph.by]||''}${esc(ph.who)}${ph.code?`<br>Code attendu : <b style="font-weight:600">${esc(ph.code)}</b>`:''}${freshBadge(ph)}</span></div>`;
 }
 function photoReqs(p,r){
   const reqs=(p.photoReqs||[]).slice().reverse();
@@ -718,6 +737,7 @@ function vMyFiche(){
     <div class="field"><label class="label" for="pf-phone">Téléphone WhatsApp, avec l'indicatif (+243…)</label><input id="pf-phone" required maxlength="25" value="${esc(p?p.phone:S.me.phone)}"></div>
     ${lk&&p.rccm?'':`<div class="field"><label class="label" for="pf-rccm">Numéro d'entreprise (RCCM ou autre)</label><input id="pf-rccm" maxlength="40" value="${esc(p?p.rccm:'')}"></div>${!p?'<p class="small muted" style="margin:-8px 0 0">Attention : ton nom, ton pays et ton numéro d\'entreprise seront verrouillés après l\'enregistrement.</p>':''}`}
     <div class="field"><label class="label" for="pf-about">Présentation</label><textarea id="pf-about" rows="3" maxlength="300">${esc(p?p.about:'')}</textarea></div>
+    <label style="display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);padding:14px 16px;cursor:pointer"><input type="checkbox" id="pf-insp" ${p&&p.inspector?'checked':''} style="width:20px;height:20px;margin:2px 0 0;flex-shrink:0;accent-color:#FFD400"><span><b style="font-weight:500">Je fais aussi des visites de contrôle</b><br><span class="small muted">Tu passes sur le chantier d'un autre pro de ta ville, tu prends des photos et tu réponds à 3 questions. ${eur(VISIT_PRICE)} par visite.</span></span></label>
     ${S.err?`<p class="err">${esc(S.err)}</p>`:''}
     <button class="btn" type="submit">Enregistrer</button>
     ${p&&!p.verified?`<div class="stack-s"><p class="notice">Dans la vraie app, la vérification passe par la pièce d'identité, un selfie et le numéro d'entreprise. Ici, tu peux la simuler.</p><button class="btn ghost" type="button" data-a="verify">Vérifier mon compte (test)</button></div>`:''}
@@ -737,7 +757,7 @@ function vAccount(){
     <button class="btn" type="submit">Enregistrer</button>
     <p class="small muted" style="margin:0">Connecté avec ${esc(S.email||'')}</p>
     <div class="stack-s"><span class="label">Changer d'espace</span><div class="list">
-      ${[['client','Client','Je fais construire ou réparer',true],['pro','Professionnel','Je propose mon travail',true],['admin','Administration','Visible seulement par toi',S.admin]].filter(x=>x[3]).map(x=>`<button type="button" class="item" data-a="mode" data-v="${x[0]}"><div><div class="t">${x[1]}</div><div class="small muted">${x[2]}</div></div>${S.mode===x[0]?'<span class="pill s-paye">Actuel</span>':'<span aria-hidden="true">›</span>'}</button>`).join('')}
+      ${[['client','Client','Je fais construire ou réparer',true],['pro','Professionnel','Je propose mon travail',true],['expert','Expert','Je tranche les litiges',true],['admin','Administration','Visible seulement par toi',S.admin]].filter(x=>x[3]).map(x=>`<button type="button" class="item" data-a="mode" data-v="${x[0]}"><div><div class="t">${x[1]}</div><div class="small muted">${x[2]}</div></div>${S.mode===x[0]?'<span class="pill s-paye">Actuel</span>':'<span aria-hidden="true">›</span>'}</button>`).join('')}
     </div></div>
     <button type="button" class="item" data-a="go" data-v="plan"><div><div class="t">Plan de test</div><div class="small muted">${planCount()[0]} sur ${planCount()[1]} testés</div></div><span aria-hidden="true">›</span></button>
     <button class="link" type="button" data-a="showintros">Réafficher les explications</button>
@@ -1087,6 +1107,186 @@ function tGuard(p,r){
 }
 
 
+/* ---------- contrôle : proche de confiance, visites surprises, experts ---------- */
+const VISIT_PRICE=15, EXPERT_PRICE=50;
+const key9=x=>{const d=String(x||'').replace(/\D/g,'');return d.length>=8?d.slice(-9):'';};
+const myKey=()=>key9(S.me&&S.me.phone);
+const isWatcher=p=>!!myKey()&&(p.watchKeys||[]).includes(myKey());
+const myVisit=p=>(p.visits||[]).find(x=>x.inspectorUid===S.uid&&x.status==='assignee'&&(x.showAt||0)<=Date.now());
+const isExpertOn=p=>(p.expertUids||[]).includes(S.uid);
+const expertOk=()=>!!(S.me&&S.me.expert&&S.me.expert.status==='ok');
+const rid=()=>Math.random().toString(36).slice(2,10);
+const sameCity=(a,b)=>{const n=x=>String(x||'').toLowerCase().split(/[ ,]/)[0];return !!n(a)&&n(a)===n(b);};
+const pick=arr=>arr[Math.floor(Math.random()*arr.length)];
+const yn=(v,l)=>`<div class="between small"><span>${l}</span><b style="font-weight:600" class="${v==='oui'?'verified':'unverified'}">${v==='oui'?'Oui':'Non'}</b></div>`;
+
+let extraUnsubs=[], extraSig='';
+function watchExtra(){
+  if(!S.me||!S.db) return;
+  const sig=[myKey(),!!S.me.proId,expertOk()].join('|'); if(sig===extraSig) return; extraSig=sig;
+  extraUnsubs.forEach(u=>u());extraUnsubs=[];S.watchProjects=[];S.visitProjects=[];S.expertProjects=[];S.openVisits=[];S.needExpert=[];
+  const sub=(q,k)=>extraUnsubs.push(q.onSnapshot(x=>{S[k]=x.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{}));
+  const P=S.db.collection('projects');
+  if(myKey()) sub(P.where('watchKeys','array-contains',myKey()),'watchProjects');
+  sub(P.where('inspectorUids','array-contains',S.uid),'visitProjects');
+  sub(P.where('expertUids','array-contains',S.uid),'expertProjects');
+  if(S.me.proId) sub(P.where('openVisit','==',true),'openVisits');
+  if(expertOk()) sub(P.where('needExpert','==',true),'needExpert');
+}
+
+function inviteText(p,name){return `Salut ${name}, je t'ai ajouté comme proche de confiance sur mon chantier « ${p.title} » (${p.ville}) sur Maison Mère. Inscris-toi avec ce numéro pour voir le chantier et envoyer des photos : ${location.origin+location.pathname}`;}
+
+function tCtrl(p,r){
+  const ws=p.watchers||[], vs=(p.visits||[]).slice().reverse();
+  const busy=vs.some(x=>x.status==='assignee'||x.status==='ouverte');
+  return `<div class="stack">
+   <div class="stack-s"><span class="label">Proche de confiance · gratuit</span>
+    <p class="small muted" style="margin:0">Quelqu'un de ta famille ou un ami qui vit sur place. Il voit le chantier, envoie des photos et écrit dans les messages. Il ne touche jamais à l'argent.</p>
+    ${ws.length?`<div class="list">${ws.map((w,i)=>`<div class="item"><div class="who">${avatar('',w.name,40)}<div style="min-width:0"><div class="t">${esc(w.name)}</div><div class="small muted">${esc(w.phone)}</div></div></div><span class="row" style="gap:14px;flex-shrink:0">${waNum(w.phone)?`<a class="link" target="_blank" rel="noopener" href="https://wa.me/${waNum(w.phone)}?text=${encodeURIComponent(inviteText(p,w.name))}">Prévenir</a>`:''}<button class="link" data-a="w-del" data-v="${i}">Retirer</button></span></div>`).join('')}</div>`:''}
+    ${ws.length<3?`<form class="stack-s" data-f="watcher" style="border:1px solid var(--line);padding:14px 16px">
+      <div class="field"><label class="label" for="w-name">Son prénom et son nom</label><input id="w-name" required maxlength="50"></div>
+      <div class="field"><label class="label" for="w-phone">Son numéro WhatsApp, avec l'indicatif (+243…)</label><input id="w-phone" required maxlength="25" inputmode="tel" placeholder="+243 …"></div>
+      <button class="btn sm" type="submit">Ajouter ce proche</button>
+      <p class="small muted" style="margin:0">Il s'inscrit sur Maison Mère avec ce même numéro, et le chantier apparaît chez lui.</p>
+    </form>`:''}</div>
+   <div class="stack-s"><span class="label">Visite de contrôle surprise · ${eur(VISIT_PRICE)}</span>
+    <p class="small muted" style="margin:0">Un pro vérifié de ta ville, tiré au sort, passe sur ton chantier un jour choisi au hasard. Ton pro ne sait pas quand. Le visiteur prend des photos avec le code du jour et répond à 3 questions.</p>
+    ${vs.map(x=>visitCard(p,x,r)).join('')}
+    ${busy?'':`<button class="btn" data-a="v-order">Commander une visite · ${eur(VISIT_PRICE)} bloqués</button>`}
+   </div>
+   ${S.err?`<p class="err">${esc(S.err)}</p>`:''}
+  </div>`;
+}
+function visitCard(p,x,r){
+  const late=x.status==='assignee'&&Date.now()>x.deadline;
+  const st=x.status==='faite'?'Faite le '+fdate(x.doneAt):x.status==='ouverte'?'On cherche un visiteur':late?'En retard':'Prévue · jour surprise';
+  const phs=S.photos.filter(y=>y.visitId===x.id);
+  return `<div class="step${x.status==='faite'?'':' current'}">
+   <div class="between"><span class="t" style="font-weight:500">${x.status==='faite'?esc(x.inspectorName):'Visite commandée le '+fdate(x.at)}</span><span class="pill ${x.status==='faite'?'s-paye':late?'s-litige':'s-bloque'}">${st}</span></div>
+   ${x.answers?yn(x.answers.avance,'Le chantier avance')+yn(x.answers.materiaux,'Les matériaux sont là')+yn(x.answers.ouvriers,'Quelqu\'un travaille sur place'):''}
+   ${x.note?`<p class="small" style="margin:0">« ${esc(x.note)} »</p>`:''}
+   ${phs.length?`<div class="grid3">${phs.map(ph=>phCard(ph,p)).join('')}</div>`:''}
+   ${r==='client'&&late?`<button class="btn ghost sm" data-a="v-retry" data-v="${x.id}">Choisir un autre visiteur</button>`:''}
+   ${r==='client'&&x.status==='faite'&&!x.rated?`<div class="row" style="align-items:center"><span class="small muted">Cette visite t'a aidé ?</span><button class="btn ghost sm" data-a="v-rate" data-v="${x.id}" data-d="5">Oui</button><button class="btn ghost sm" data-a="v-rate" data-v="${x.id}" data-d="2">Non</button></div>`:''}
+  </div>`;
+}
+function pickInspector(p,exclude){
+  const all=S.pros.filter(x=>x.inspector&&OK(x)&&x.ownerUid&&x.id!==p.proId&&!(exclude||[]).includes(x.ownerUid)&&(TEST||x.ownerUid!==p.clientUid));
+  const city=all.filter(x=>sameCity(x.ville,p.ville)), land=all.filter(x=>x.pays===p.pays);
+  return city.length?pick(city):land.length?pick(land):(TEST&&all.length?pick(all):null);
+}
+async function saveVisits(p,visits){
+  await S.db.doc('projects/'+p.id).update({visits,inspectorUids:[...new Set(visits.filter(x=>x.inspectorUid).map(x=>x.inspectorUid))],openVisit:visits.some(x=>x.status==='ouverte')});
+}
+function assignVisit(x,pr){
+  const now=Date.now(), show=TEST?now:now+Math.floor(Math.random()*3*DAY);
+  return Object.assign({},x,pr?{status:'assignee',inspectorUid:pr.ownerUid,inspectorName:pr.name,inspectorProId:pr.id,showAt:show,deadline:show+DAY}:{status:'ouverte',inspectorUid:null,inspectorName:'',inspectorProId:null,showAt:null,deadline:null});
+}
+
+function tVisit(p,r){
+  const x=myVisit(p);
+  if(!x){const done=(p.visits||[]).filter(y=>y.inspectorUid===S.uid&&y.status==='faite');return `<div class="stack">${done.length?done.map(y=>visitCard(p,y,r)).join(''):'<div class="empty">Pas de visite à faire ici pour l\'instant.</div>'}</div>`;}
+  const phs=S.photos.filter(y=>y.visitId===x.id), a=S.p.ans||{};
+  const q=(k,l)=>`<div class="stack-s"><span class="small">${l}</span><div class="chips"><button type="button" aria-pressed="${a[k]==='oui'}" data-a="v-ans" data-k="${k}" data-v="oui">Oui</button><button type="button" aria-pressed="${a[k]==='non'}" data-a="v-ans" data-k="${k}" data-v="non">Non</button></div></div>`;
+  return `<div class="stack">
+    <div style="border:1px solid var(--fg);padding:14px;display:flex;justify-content:space-between;align-items:center;gap:12px"><div style="min-width:0"><span class="label">Visite de contrôle</span><div class="small muted" style="margin-top:4px">À faire avant le ${ftime(x.deadline)}<br>${esc(p.ville)}, ${esc(p.pays)} · payée ${eur(x.price||VISIT_PRICE)}</div></div><span style="font-family:var(--display);font-size:30px;white-space:nowrap">${dayCode(p.id)}</span></div>
+    <p class="small muted" style="margin:0">1. Va sur place. 2. Prends au moins 2 photos avec l'app : le code du jour s'ajoute tout seul. 3. Réponds aux 3 questions et envoie.</p>
+    <label class="btn ghost" style="display:flex;align-items:center;justify-content:center" for="vi-file">Prendre une photo sur place</label><input id="vi-file" type="file" accept="image/*" capture="environment" hidden data-v="${x.id}">
+    ${S.busy?'<p class="small muted" style="margin:0">Envoi…</p>':''}
+    ${phs.length?`<div class="grid3">${phs.map(ph=>phCard(ph,p)).join('')}</div>`:`<p class="small muted" style="margin:0">0 photo pour l'instant.</p>`}
+    <form class="stack" data-f="visit" data-v="${x.id}">
+      ${q('avance','Le chantier avance ?')}${q('materiaux','Les matériaux sont là ?')}${q('ouvriers','Quelqu\'un travaille sur place ?')}
+      <div class="field"><label class="label" for="vi-note">Ce que tu as vu</label><textarea id="vi-note" rows="3" maxlength="400"></textarea></div>
+      ${S.err?`<p class="err" style="margin:0">${esc(S.err)}</p>`:''}
+      <button class="btn" type="submit">Envoyer mon rapport</button></form>
+  </div>`;
+}
+function vVisits(){
+  const me=proById(S.me.proId);
+  const vis=allProjects().flatMap(p=>(p.visits||[]).filter(x=>x.inspectorUid===S.uid).map(x=>({p,x})));
+  const todo=vis.filter(({x})=>x.status==='assignee'&&(x.showAt||0)<=Date.now()), done=vis.filter(({x})=>x.status==='faite');
+  const pool=(S.openVisits||[]).filter(p=>p.proId!==S.me.proId&&(TEST||p.clientUid!==S.uid)&&(TEST||!me||p.pays===me.pays));
+  return `<div class="stack">
+    <button class="link" data-a="home">${t('Retour')}</button>
+    <h1>Visites de contrôle</h1>
+    ${me&&!me.inspector?`<div class="step"><p class="small" style="margin:0">Tu ne fais pas encore de visites. Active-les dans ta fiche.</p><button class="btn ghost sm" data-a="go" data-v="myfiche" style="align-self:flex-start">Ouvrir ma fiche</button></div>`:''}
+    <span class="label">À faire</span>
+    ${todo.length?`<div class="list">${todo.map(({p,x})=>`<button class="item" data-a="open" data-v="${p.id}" data-t="visit"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)}, ${esc(p.pays)} · avant le ${ftime(x.deadline)}</div></div><span class="pill s-bloque">${eur(x.price||VISIT_PRICE)}</span></button>`).join('')}</div>`:'<div class="empty">Aucune visite pour l\'instant. Quand un client commande une visite dans ta ville, tu peux être tiré au sort.</div>'}
+    ${pool.length?`<span class="label">Visites libres</span><div class="list">${pool.map(p=>`<div class="item"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)}, ${esc(p.pays)}</div></div><button class="btn ghost sm" data-a="v-take" data-v="${p.id}">Je la fais</button></div>`).join('')}</div>`:''}
+    ${done.length?`<span class="label">Faites</span><div class="list">${done.map(({p,x})=>`<div class="item"><div><div class="t">${esc(p.title)}</div><div class="small muted">${fdate(x.doneAt)}${x.rated?' · '+(x.rated>=4?'client satisfait':'client pas satisfait'):''}</div></div><span class="money s-paye">${eur(x.price||VISIT_PRICE)}</span></div>`).join('')}</div>`:''}
+    <p class="small muted" style="margin:0">Tu ne contrôles jamais un chantier où tu travailles. Le jour de la visite est tiré au sort : personne ne le connaît à l'avance.</p>
+  </div>`;
+}
+
+function tExpert(p,r){
+  const mine=p.steps.map((st,i)=>[st,i]).filter(([st])=>st.dispute&&st.dispute.expertUid===S.uid);
+  if(!mine.length) return '<div class="empty">Pas de litige pour toi sur ce chantier.</div>';
+  return `<div class="stack">${mine.map(([st,i])=>{const d=st.dispute, dec=d.decision;
+   const phs=S.photos.filter(y=>y.by==='expert'&&y.step===i);
+   return `<div class="step current">
+    <div class="between"><span class="t" style="font-weight:500">${i+1}. ${esc(st.name)}</span><span class="money">${eur(st.amount)}</span></div>
+    <div class="small"><b style="font-weight:600">Plainte du client :</b> ${esc(d.reason)}${d.text?' · « '+esc(d.text)+' »':''}</div>
+    <div class="small muted">Client : ${esc(p.clientName)} · Pro : ${esc(p.proName)} · ouvert le ${fdate(d.at)}</div>
+    ${dec?`<div class="stack-s"><span class="pill s-paye" style="align-self:flex-start">${{ok:'Travail conforme',redo:'À refaire',refund:'Client remboursé'}[dec.d]}</span><p class="small" style="margin:0">${esc(dec.report)}</p></div>`:`
+    <p class="small muted" style="margin:0">1. Regarde les onglets Photos et Messages. 2. Va sur place et prends tes photos (code du jour : <b style="font-weight:600;color:var(--fg)">${dayCode(p.id)}</b>). 3. Décide et écris ton rapport.</p>
+    <label class="btn ghost sm" style="display:flex;align-items:center;justify-content:center" for="ex-file-${i}">Prendre une photo sur place</label><input id="ex-file-${i}" class="ex-file" type="file" accept="image/*" capture="environment" hidden data-v="${i}">
+    ${S.busy?'<p class="small muted" style="margin:0">Envoi…</p>':''}
+    ${phs.length?`<div class="grid3">${phs.map(ph=>phCard(ph,p)).join('')}</div>`:''}
+    <form class="stack-s" data-f="decide" data-v="${i}">
+      <span class="label">Ta décision</span>
+      <div class="chips">${[['ok','Travail conforme'],['redo','À refaire'],['refund','Rembourser le client']].map(([k,l])=>`<button type="button" aria-pressed="${S.p.dec===k}" data-a="ex-dec" data-v="${k}">${l}</button>`).join('')}</div>
+      <div class="field"><label class="label" for="ex-rep">Ton rapport</label><textarea id="ex-rep" rows="4" maxlength="800" placeholder="Ce que tu as constaté sur place"></textarea></div>
+      ${S.err?`<p class="err" style="margin:0">${esc(S.err)}</p>`:''}
+      <button class="btn" type="submit">Rendre ma décision</button>
+      <p class="small muted" style="margin:0">Ta décision est définitive. Ta visite (${eur(EXPERT_PRICE)}) est payée par celui qui a tort.</p></form>`}
+   </div>`;}).join('')}</div>`;
+}
+function vExpertHome(){
+  const ex=S.me.expert;
+  if(!ex||ex.status==='refuse') return `<form class="stack" data-f="expertapply">
+    <div class="stack-s"><span class="label">Espace expert</span><h1>Devenir expert</h1></div>
+    <p style="margin:0">Quand un client et un pro ne sont pas d'accord, un expert de la ville est tiré au sort. Il regarde les photos, va sur place et décide. Il est payé ${eur(EXPERT_PRICE)} par dossier, par celui qui a tort.</p>
+    ${ex&&ex.status==='refuse'?'<p class="small unverified" style="margin:0">Ta demande précédente a été refusée. Tu peux en envoyer une nouvelle.</p>':''}
+    <div class="field"><label class="label" for="ea-metier">Ton métier</label><select id="ea-metier">${opts(['Ingénieur civil','Architecte','Technicien du bâtiment','Chef de chantier'],'Ingénieur civil')}</select></div>
+    <div class="field"><label class="label" for="ea-pays">Pays</label><select id="ea-pays">${opts(PAYS,S.me.pays)}</select></div>
+    <div class="field"><label class="label" for="ea-ville">Ville où tu peux te déplacer</label><input id="ea-ville" required maxlength="40" value="${esc(S.me.ville||'')}"></div>
+    <div class="field"><label class="label" for="ea-dip">Ton diplôme ou ton numéro d'ordre</label><input id="ea-dip" required maxlength="80"></div>
+    <button class="btn" type="submit">Envoyer ma demande</button>
+    <p class="small muted" style="margin:0">L'administration vérifie ton diplôme avant de t'envoyer des dossiers.</p></form>`;
+  if(ex.status==='demande') return `<div class="stack"><div class="stack-s"><span class="label">Espace expert</span><h1>Demande envoyée</h1></div><p style="margin:0">L'administration vérifie ton diplôme (${esc(ex.dip)}). Tu recevras des dossiers dès que c'est validé.</p>${TEST?'<button class="btn ghost" data-a="ex-selfok">Valider ma demande (test)</button>':''}</div>`;
+  const prj=allProjects().filter(isExpertOn);
+  const mine=prj.map(p=>({p,n:p.steps.filter(s=>s.status==='litige'&&s.dispute&&s.dispute.expertUid===S.uid).length})).filter(x=>x.n);
+  const done=prj.flatMap(p=>p.steps.filter(s=>s.dispute&&s.dispute.expertUid===S.uid&&s.dispute.decision).map(s=>({p,s})));
+  const pool=(S.needExpert||[]).filter(p=>(TEST||(p.clientUid!==S.uid&&!(S.me.proId&&p.proId===S.me.proId)))&&(TEST||p.pays===ex.pays));
+  return `<div class="stack">
+   <div class="stack-s"><span class="label">${esc(ex.metier)} · ${esc(ex.ville)}</span><h1>Mes dossiers</h1></div>
+   ${mine.length?`<div class="list">${mine.map(({p,n})=>`<button class="item" data-a="open" data-v="${p.id}" data-t="expert"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)}, ${esc(p.pays)} · ${esc(p.clientName)} et ${esc(p.proName)}</div></div><span class="pill s-litige">${n} à trancher</span></button>`).join('')}</div>`:'<div class="empty">Aucun litige pour toi en ce moment. Quand un client et un pro ne sont pas d\'accord dans ta ville, tu peux être tiré au sort.</div>'}
+   ${pool.length?`<span class="label">Litiges sans expert</span><div class="list">${pool.map(p=>`<div class="item"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)}, ${esc(p.pays)}</div></div><button class="btn ghost sm" data-a="ex-take" data-v="${p.id}">Prendre</button></div>`).join('')}</div>`:''}
+   ${done.length?`<span class="label">Décisions rendues</span><div class="list">${done.map(({p,s})=>`<button class="item" data-a="open" data-v="${p.id}" data-t="expert"><div><div class="t">${esc(p.title)} · ${esc(s.name)}</div><div class="small muted">${fdate(s.dispute.decision.at)} · ${{ok:'Travail conforme',redo:'À refaire',refund:'Client remboursé'}[s.dispute.decision.d]}</div></div><span aria-hidden="true">›</span></button>`).join('')}</div>`:''}
+  </div>`;
+}
+async function findExpert(p){
+  let list=[];try{const q=await S.db.collection('profiles').where('expertOk','==',true).get();list=q.docs.map(d=>Object.assign({id:d.id},d.data()));}catch(e){}
+  const owner=(proById(p.proId)||{}).ownerUid;
+  const fair=list.filter(x=>x.id!==p.clientUid&&x.id!==owner);
+  const pool=fair.length?fair:(TEST?list:[]);
+  const city=pool.filter(x=>x.expert&&sameCity(x.expert.ville,p.ville)), land=pool.filter(x=>x.expert&&x.expert.pays===p.pays);
+  return city.length?pick(city):land.length?pick(land):(pool.length?pick(pool):null);
+}
+function needExp(steps){return steps.some(s=>s.status==='litige'&&s.dispute&&!s.dispute.expertUid);}
+async function applyDecision(p,i,d,dec){
+  const st=p.steps[i], now=Date.now();
+  const dispute=Object.assign({},st.dispute||{},dec?{decision:dec}:{});
+  const patch=d==='ok'?{status:'paye',paidAt:now,expert:true,dispute}:d==='redo'?{status:'bloque',dispute}:{status:'rembourse',paidAt:now,dispute};
+  const steps=p.steps.map((s,k)=>k===i?Object.assign({},s,patch):s);
+  await S.db.doc('projects/'+p.id).update({steps,needExpert:needExp(steps)});
+  const who=dec?`L'expert ${dec.expertName}`:'L\'expert';
+  const rep=dec&&dec.report?` Rapport : « ${dec.report} »`:'';
+  if(d==='ok'){await sysMsg(p.id,`${st.name} : ${who} juge le travail conforme. Le pro est payé, le client paie la visite.${rep}`);await bumpPro(p.proId,'paid');}
+  if(d==='redo'){await sysMsg(p.id,`${st.name} : ${who} demande de refaire le travail. L'argent reste bloqué, le pro paie la visite.${rep}`);await bumpPro(p.proId,'lost');}
+  if(d==='refund'){await sysMsg(p.id,`${st.name} : ${who} donne raison au client. ${eur(st.amount)} remboursés, le pro paie la visite.${rep}`);await bumpPro(p.proId,'lost');}
+}
+
 /* ---------- petites explications ---------- */
 const IC={
  home:'<path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path><path d="M10 20v-6h4v6"></path>',
@@ -1114,7 +1314,11 @@ const INTRO={
  'newp':['steps','<b>Nouveau projet.</b> Donne-lui un nom et découpe-le en étapes. Les montants et le pro peuvent être ajoutés plus tard.'],
  'project-steps':['lock','<b>Comment ça marche :</b> 1. tu bloques l\'argent de l\'étape, 2. le pro travaille et envoie des photos, 3. tu valides et il est payé.'],
  'project-photos':['photo','<b>Les photos du chantier.</b> Prends une photo « Avant » et une « Après » de chaque étape. Le pro écrit le code du jour à la main sur un papier visible dans la photo : ça prouve qu\'elle est d\'aujourd\'hui.'],
- 'project-guard':['shield','<b>Le gardien.</b> Il pointe matin et soir avec une photo. Il est payé en fin de mois, selon ses pointages.'],
+ 'project-watch':['shield','<b>Tu es proche de confiance.</b> Tu vois le chantier, tu envoies des photos avec le code du jour et tu écris au client et au pro. Tu ne touches jamais à l\'argent.'],
+ 'project-ctrl':['shield','<b>Tes yeux sur place.</b> Ajoute un proche de confiance (gratuit) ou commande une visite surprise faite par un pro vérifié tiré au sort.'],
+ 'project-visit':['search','<b>Ta visite.</b> Va sur place, prends tes photos avec l\'app et réponds aux 3 questions. Tu es payé quand ton rapport est envoyé.'],
+ 'project-expert':['shield','<b>Le dossier.</b> Regarde les photos et les messages, va sur place, puis décide. Ta décision fait partir l\'argent.'],
+ 'home-expert':['shield','<b>Espace expert.</b> Tu tranches les litiges de ta ville. Tu es tiré au sort, tu vas sur place, tu décides et tu écris un rapport.'],
  'project-msgs':['chat','<b>Les messages.</b> Écris ou envoie une photo avec l\'appareil 📷. Tout est gardé comme preuve et ne peut pas être effacé.'],
  'project-pay':['coin','<b>Ton argent.</b> Ce qui est payé, ce qui est bloqué et ce qui reste à bloquer.'],
  'market':['cart','<b>Le marché.</b> Achète tes matériaux. L\'argent est bloqué jusqu\'à ce que la livraison soit photographiée et que tu confirmes.'],
@@ -1131,8 +1335,8 @@ const INTRO={
 };
 function introKey(){
   if(!S.uid||!S.me||!S.chosen) return null;
-  if(S.view==='home') return 'home-'+(S.mode==='admin'&&S.admin?'admin':S.mode==='pro'?'pro':'client');
-  if(S.view==='project') return 'project-'+(S.p.tab||'steps');
+  if(S.view==='home') return 'home-'+(S.mode==='admin'&&S.admin?'admin':S.mode==='pro'?'pro':S.mode==='expert'?'expert':'client');
+  if(S.view==='project'){const pp=prjById(S.p.id);if(pp&&role(pp)==='watcher')return 'project-watch';return 'project-'+(S.p.tab||'steps');}
   return S.view;
 }
 function hiddenIntros(){try{return JSON.parse(localStorage.getItem('mm-intro')||'{}');}catch(e){return {};}}
@@ -1159,9 +1363,9 @@ function houseCard(p){
 
 /* ---------- plan de test ---------- */
 const PLAN=[
-  ['Client',[['c1','Créer mon compte'],['c2','Trouver un pro dans l\'annuaire'],['c3','Créer un projet avec 3 étapes'],['c4','Bloquer l\'argent d\'une étape'],['c5','Voir la photo envoyée par le pro'],['c6','Valider et payer une étape'],['c7','Ouvrir un litige'],['c8','Laisser un avis après chaque étape payée'],['c9','Arrêter un contrat'],['c10','Commander des matériaux'],['c11','Estimer le prix d\'une maison'],['c12','Engager un gardien et payer le mois'],['c13','Changer de langue'],['c14','Publier une demande de devis'],['c15','Discuter avec un pro et accepter sa proposition']]],
-  ['Pro',[['p1','Créer ma fiche pro'],['p2','Vérifier mon compte (test)'],['p3','Envoyer une photo du chantier'],['p4','Appuyer sur « Étape terminée »'],['p5','Écrire au client dans Messages'],['p6','Noter le client et voir son profil'],['p11','Envoyer une proposition à une demande'],['p10','Vérifier que les avis restent cachés jusqu\'à ce que les deux aient noté'],['p7','Fournisseur : publier un produit'],['p8','Fournisseur : livrer une commande avec photo'],['p9','Gardien : pointer matin et soir']]],
-  ['Admin',[['a1','Voir les comptes et les projets'],['a2','Ajouter un pro à l\'annuaire'],['a3','Décider un litige comme expert'],['a4','Lire les bugs signalés']]]
+  ['Client',[['c1','Créer mon compte'],['c2','Trouver un pro dans l\'annuaire'],['c3','Créer un projet avec 3 étapes'],['c4','Bloquer l\'argent d\'une étape'],['c5','Voir la photo envoyée par le pro'],['c6','Valider et payer une étape'],['c7','Ouvrir un litige'],['c8','Laisser un avis après chaque étape payée'],['c9','Arrêter un contrat'],['c10','Commander des matériaux'],['c11','Estimer le prix d\'une maison'],['c12','Ajouter un proche de confiance'],['c16','Commander une visite de contrôle'],['c13','Changer de langue'],['c14','Publier une demande de devis'],['c15','Discuter avec un pro et accepter sa proposition']]],
+  ['Pro',[['p1','Créer ma fiche pro'],['p2','Vérifier mon compte (test)'],['p3','Envoyer une photo du chantier'],['p4','Appuyer sur « Étape terminée »'],['p5','Écrire au client dans Messages'],['p6','Noter le client et voir son profil'],['p11','Envoyer une proposition à une demande'],['p10','Vérifier que les avis restent cachés jusqu\'à ce que les deux aient noté'],['p7','Fournisseur : publier un produit'],['p8','Fournisseur : livrer une commande avec photo'],['p9','Faire une visite de contrôle']]],
+  ['Admin',[['a1','Voir les comptes et les projets'],['a2','Ajouter un pro à l\'annuaire'],['a3','Valider un expert'],['e1','Expert : trancher un litige avec un rapport'],['a4','Lire les bugs signalés']]]
 ];
 const LATER=['Lingala : corriger les traductions dans Admin › Lingala','Traduction complète de tous les textes','Règles d\'utilisation et protection des données','Vrai argent (Mangopay) et vraie vérification d\'identité (Smile ID)','Position GPS sur les photos','Carnet souvenir'];
 function planCount(){const c=(S.me&&S.me.checks)||{};const all=PLAN.flatMap(g=>g[1]);return [all.filter(x=>c[x[0]]).length,all.length];}
@@ -1205,6 +1409,7 @@ function vAdmin(){
       <div class="stat"><span class="label">Payé aux pros</span><b class="s-paye">${eur(sum(['paye']))}</b></div>
     </div>
     <p class="small muted" style="margin:0">Ta commission à 4 % sur les paiements validés : <span class="money">${eur(Math.round(sum(['paye'])*0.04))}</span> (fictif).</p>
+    ${(S.allProfiles||[]).filter(x=>x.expert&&x.expert.status==='demande').length?`<span class="label">Experts à valider</span><div class="list">${S.allProfiles.filter(x=>x.expert&&x.expert.status==='demande').map(x=>`<div class="item"><div><div class="t">${esc(x.name)}</div><div class="small muted">${esc(x.expert.metier)} · ${esc(x.expert.ville)}, ${esc(x.expert.pays)} · ${esc(x.expert.dip)}</div></div><div class="stack-s" style="flex-shrink:0"><button class="btn sm" data-a="adm-exok" data-v="${x.id}">Valider</button><button class="link" data-a="adm-exno" data-v="${x.id}">Refuser</button></div></div>`).join('')}</div>`:''}
     <span class="label">Litiges à décider</span>
     ${lit.length?`<div class="list">${lit.map(p=>`<button class="item" data-a="open" data-v="${p.id}"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.clientName)} contre ${esc(p.proName)}</div></div><span class="pill s-litige">Décider</span></button>`).join('')}</div>`:'<div class="empty">Aucun litige en cours.</div>'}
     ${S.adminOrders&&S.adminOrders.filter(o=>o.status==='litige').length?`<span class="label">Commandes en litige</span>${S.adminOrders.filter(o=>o.status==='litige').map(o=>orderRow(o,'admin')).join('')}`:''}
@@ -1295,7 +1500,7 @@ document.addEventListener('click',async e=>{
     if(a==='choose'){if(v==='admin'&&!S.admin)return;S.chosen=true;try{sessionStorage.setItem('mm-chosen-'+S.uid,'1');localStorage.setItem('mm-mode-'+S.uid,v);}catch(e){}S.mode=v;if(v==='pro'&&!S.me.proId)return go('myfiche');return go('home');}
     if(a==='spacemenu'){S.menuOpen=!S.menuOpen;return render();}
     if(a==='mode'){S.menuOpen=false;if(v==='admin'&&!S.admin)return;S.mode=v;try{localStorage.setItem('mm-mode-'+S.uid,v);}catch(e){}if(v==='pro'&&!S.me.proId)return go('myfiche');return go('home');}
-    if(a==='open') return go('project',{id:v,tab:b.dataset.t||'steps'});
+    if(a==='open'){const tt=b.dataset.t;return go('project',{id:v,tab:tt||'',as:tt==='visit'?'inspector':tt==='expert'?'expert':undefined});}
     if(a==='pro') return go('pro',{id:v});
     if(a==='newwith'){S.mode='client';return go('newp',{proId:v});}
     if(a==='tab'){S.p.tab=v;S.p.disputeIdx=null;S.err='';watchProject();return render();}
@@ -1305,6 +1510,23 @@ document.addEventListener('click',async e=>{
     if(a==='atab'){S.p.atab=v;return render();}
     if(a==='mkpro'){S.mode='pro';return go('myfiche');}
     if(a==='avpick'){const i=document.getElementById('av-file');if(i)i.click();return;}
+    if(a==='v-order'&&p){const pr=pickInspector(p);const x=assignVisit({id:rid(),at:Date.now(),price:VISIT_PRICE},pr);await saveVisits(p,[...(p.visits||[]),x]);return;}
+    if(a==='v-retry'&&p){const x=(p.visits||[]).find(y=>y.id===v);if(!x)return;const pr=pickInspector(p,[x.inspectorUid]);await saveVisits(p,p.visits.map(y=>y.id===v?assignVisit(y,pr):y));return;}
+    if(a==='v-rate'&&p){await saveVisits(p,p.visits.map(y=>y.id===v?Object.assign({},y,{rated:+b.dataset.d}):y));return;}
+    if(a==='v-ans'){S.p.ans=Object.assign({},S.p.ans,{[b.dataset.k]:v});return render();}
+    if(a==='v-take'){const pp=(S.openVisits||[]).find(y=>y.id===v);const me=proById(S.me.proId);if(!pp||!me)return;let done=false;const now=Date.now();
+      const visits=pp.visits.map(y=>{if(done||y.status!=='ouverte')return y;done=true;return Object.assign(assignVisit(y,me),{showAt:now,deadline:now+DAY});});
+      await saveVisits(pp,visits);return go('project',{id:v,tab:'visit',as:'inspector'});}
+    if(a==='w-del'&&p){const watchers=(p.watchers||[]).filter((w,k)=>k!==+v);await S.db.doc('projects/'+p.id).update({watchers,watchKeys:watchers.map(w=>w.key)});return;}
+    if(a==='ex-dec'){S.p.dec=v;return render();}
+    if(a==='ex-selfok'){await S.db.doc('profiles/'+S.uid).update({'expert.status':'ok',expertOk:true});return;}
+    if(a==='ex-take'){const pp=(S.needExpert||[]).find(y=>y.id===v);if(!pp)return;
+      const steps=pp.steps.map(x=>x.status==='litige'&&x.dispute&&!x.dispute.expertUid?Object.assign({},x,{dispute:Object.assign({},x.dispute,{expertUid:S.uid,expertName:S.me.name})}):x);
+      await S.db.doc('projects/'+pp.id).update({steps,needExpert:false,expertUids:[...new Set([...(pp.expertUids||[]),S.uid])]});
+      await sysMsg(pp.id,`L'expert ${S.me.name} prend le dossier. Il va regarder les photos et venir sur place.`);
+      return go('project',{id:v,tab:'expert',as:'expert'});}
+    if(a==='adm-exok'&&S.admin){await S.db.doc('profiles/'+v).update({'expert.status':'ok',expertOk:true});return;}
+    if(a==='adm-exno'&&S.admin){await S.db.doc('profiles/'+v).update({'expert.status':'refuse',expertOk:false});return;}
     if(a==='cprof'){const d=await S.db.doc('profiles/'+v).get();const back={view:S.view,p:S.p};S.back=back;return go('client',{data:d.exists?d.data():null});}
     if(a==='back'&&S.back){const bk=S.back;S.back=null;S.view=bk.view;S.p=bk.p;watchProject();return render();}
     if(a==='cat'){S.p.cat=v;S.p.buy=null;return render();}
@@ -1330,12 +1552,7 @@ document.addEventListener('click',async e=>{
     if(a==='block'){if(!p.steps[+v].amount||!pricesOk(p))return;await setSteps(p,+v,{status:'bloque',blockedAt:Date.now()});await sysMsg(p.id,`${p.steps[+v].name} : ${eur(p.steps[+v].amount)} bloqués par le client.`);}
     if(a==='done'){await setSteps(p,+v,{status:'fait',doneAt:Date.now()});await sysMsg(p.id,`${p.steps[+v].name} : le pro indique que l'étape est terminée.`);}
     if(a==='pay'){await setSteps(p,+v,{status:'paye',paidAt:Date.now()});await sysMsg(p.id,`${p.steps[+v].name} : validé par le client, ${eur(p.steps[+v].amount)} versés au pro.`);await bumpPro(p.proId,'paid');}
-    if(a==='expert'){
-      const d=b.dataset.d, i=+v, st=p.steps[i];
-      if(d==='ok'){await setSteps(p,i,{status:'paye',paidAt:Date.now(),expert:true});await sysMsg(p.id,`${st.name} : l'expert juge le travail conforme. Le pro est payé, le client paie la visite.`);await bumpPro(p.proId,'paid');}
-      if(d==='redo'){await setSteps(p,i,{status:'bloque',dispute:null});await sysMsg(p.id,`${st.name} : l'expert demande de refaire le travail. L'argent reste bloqué, le pro paie la visite.`);await bumpPro(p.proId,'lost');}
-      if(d==='refund'){await setSteps(p,i,{status:'rembourse',paidAt:Date.now()});await sysMsg(p.id,`${st.name} : l'expert donne raison au client. ${eur(st.amount)} remboursés, le pro paie la visite.`);await bumpPro(p.proId,'lost');}
-    }
+    if(a==='expert'&&p){await applyDecision(p,+v,b.dataset.d,S.admin?{d:b.dataset.d,report:'Décision prise par l\'administration.',at:Date.now(),expertName:'Administration'}:null);return;}
     if(a==='stopyes'){
       const steps=p.steps.map(s=>['bloque','fait'].includes(s.status)?Object.assign({},s,{status:'rembourse',paidAt:Date.now()}):s);
       await S.db.doc('projects/'+p.id).update({steps,stopped:{by:S.uid,at:Date.now()}});
@@ -1359,6 +1576,16 @@ document.addEventListener('change',async e=>{
 });
 
 async function handleFile(el,file,camShot){
+  if((el.id==='vi-file'||el.classList.contains('ex-file'))&&file){
+    const p=prjById(S.p.id); if(!p) return;
+    S.busy=true;S.err='';render();
+    try{
+      const shotAt=camShot||await exifDate(file), isV=el.id==='vi-file';
+      const data=await shrink(file,720,80000,dayCode(p.id)+' · '+new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · Maison Mère');
+      await S.db.collection('photos').add({projectId:p.id,step:isV?0:+el.dataset.v,kind:isV?'controle':'expert',visitId:isV?el.dataset.v:null,code:dayCode(p.id),shotAt,src:camShot?'camera':'fichier',uid:S.uid,who:S.me.name,by:isV?'inspector':'expert',data,at:Date.now()});
+    }catch(err){S.err='La photo n\'a pas pu être envoyée. Réessaie.';}
+    S.busy=false;render();return;
+  }
   if(el.id==='av-file'&&file){
     S.busy=true;S.err='';render();
     try{const ph=await avatarData(file);await S.db.doc('profiles/'+S.uid).update({photo:ph});if(S.me.proId)await S.db.doc('pros/'+S.me.proId).update({photo:ph});}
@@ -1546,7 +1773,7 @@ document.addEventListener('submit',async e=>{
     }
     if(f==='fiche'){
       const cur=S.me.proId?proById(S.me.proId):null, lk=!!(cur&&!cur.idUnlocked);
-      const data={photo:S.me.photo||'',name:lk?cur.name:val('pf-name'),metier:val('pf-metier'),pays:lk?cur.pays:val('pf-pays'),ville:val('pf-ville'),phone:val('pf-phone'),rccm:lk&&cur.rccm?cur.rccm:val('pf-rccm'),about:val('pf-about')};
+      const data={photo:S.me.photo||'',name:lk?cur.name:val('pf-name'),metier:val('pf-metier'),pays:lk?cur.pays:val('pf-pays'),ville:val('pf-ville'),phone:val('pf-phone'),rccm:lk&&cur.rccm?cur.rccm:val('pf-rccm'),about:val('pf-about'),inspector:!!(document.getElementById('pf-insp')||{}).checked};
       if(cur&&cur.idUnlocked){data.idUnlocked=false;}
       if(!data.name||!data.ville||!data.phone){S.err='Remplis le nom, la ville et le téléphone.';return render();}
       if(S.me.proId){await S.db.doc('pros/'+S.me.proId).update(data);}
@@ -1554,10 +1781,44 @@ document.addEventListener('submit',async e=>{
       S.mode='pro';go('home');
     }
     if(f==='dispute'&&p){
-      const i=+e.target.dataset.v;
-      await setSteps(p,i,{status:'litige',dispute:{reason:val('dp-reason'),text:val('dp-text'),at:Date.now()}});
-      await sysMsg(p.id,`${p.steps[i].name} : litige ouvert par le client (${val('dp-reason')}). L'argent reste bloqué, un expert va vérifier.`);
+      const i=+e.target.dataset.v, reason=val('dp-reason'), text=val('dp-text');
+      const ex=await findExpert(p);
+      const dispute={reason,text,at:Date.now(),expertUid:ex?ex.id:null,expertName:ex?ex.name:''};
+      const steps=p.steps.map((x,k)=>k===i?Object.assign({},x,{status:'litige',dispute}):x);
+      await S.db.doc('projects/'+p.id).update({steps,needExpert:needExp(steps),expertUids:ex?[...new Set([...(p.expertUids||[]),ex.id])]:(p.expertUids||[])});
+      await sysMsg(p.id,`${p.steps[i].name} : litige ouvert par le client (${reason}). L'argent reste bloqué. ${ex?'Expert tiré au sort : '+ex.name+'.':'On cherche un expert indépendant.'}`);
       S.p.disputeIdx=null;render();
+    }
+    if(f==='watcher'&&p){
+      const name=val('w-name'), phone=val('w-phone'), k=key9(phone);
+      if(!name||!k||!waNum(phone)){S.err='Écris son numéro avec l\'indicatif, par exemple +243 81 234 5678.';return render();}
+      if((p.watchKeys||[]).includes(k)){S.err='Ce numéro est déjà ajouté.';return render();}
+      const watchers=[...(p.watchers||[]),{name,phone,key:k,at:Date.now()}];
+      await S.db.doc('projects/'+p.id).update({watchers,watchKeys:watchers.map(w=>w.key)});
+      await sysMsg(p.id,`${S.me.name} a ajouté ${name} comme proche de confiance. Il peut voir le chantier et envoyer des photos.`);
+      ['w-name','w-phone'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});render();
+    }
+    if(f==='visit'&&p){
+      const id=e.target.dataset.v, a0=S.p.ans||{}, note=val('vi-note');
+      if(!a0.avance||!a0.materiaux||!a0.ouvriers){S.err='Réponds aux 3 questions.';return render();}
+      const n=S.photos.filter(y=>y.visitId===id).length;
+      if(n<(TEST?1:2)){S.err=TEST?'Prends au moins 1 photo sur place.':'Prends au moins 2 photos sur place.';return render();}
+      const visits=(p.visits||[]).map(x=>x.id===id?Object.assign({},x,{status:'faite',answers:a0,note,doneAt:Date.now(),paid:true}):x);
+      await saveVisits(p,visits);
+      const vx=(p.visits||[]).find(y=>y.id===id)||{};
+      await sysMsg(p.id,`Visite de contrôle faite par ${vx.inspectorName||S.me.name} : le chantier avance ${a0.avance} · matériaux sur place ${a0.materiaux} · quelqu'un travaille ${a0.ouvriers}.${note?' « '+note+' »':''}`);
+      S.p.ans={};render();
+    }
+    if(f==='decide'&&p){
+      const i=+e.target.dataset.v, d=S.p.dec, report=val('ex-rep');
+      if(!d){S.err='Choisis ta décision.';return render();}
+      if(report.length<10){S.err='Écris ton rapport : au moins une phrase sur ce que tu as vu.';return render();}
+      await applyDecision(p,i,d,{d,report,at:Date.now(),expertName:S.me.name,expertUid:S.uid});
+      S.p.dec=null;render();
+    }
+    if(f==='expertapply'){
+      await S.db.doc('profiles/'+S.uid).update({expert:{status:'demande',metier:val('ea-metier'),pays:val('ea-pays'),ville:val('ea-ville'),dip:val('ea-dip'),at:Date.now()},expertOk:false});
+      render();
     }
     if(f==='order'){
       const x=S.products.find(y=>y.id===e.target.dataset.v); if(!x) return;
