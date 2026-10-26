@@ -424,6 +424,7 @@ function vHome(){
       ${me&&me.inspector?(()=>{const n=allProjects().filter(p=>myVisit(p)).length;return box('visits','Visites de contrôle',n?n+' à faire':'Aucune visite pour l\'instant',n);})():''}
       ${box('myfiche','Ma fiche',me?esc(me.metier)+' · '+esc(me.ville)+(me.verified?' · Vérifié':' · Pas encore vérifié'):'À compléter',0)}
       </div>
+      ${box('market','Quincailleries','Comparer les prix des matériaux',0)}
       ${me&&(me.metier==='Fournisseur de matériaux'||myStores().length)?(()=>{ensureStores();if(me.metier==='Fournisseur de matériaux')ensureMyStore();const st=myStores()[0];const ps=st?S.products.filter(x=>prodStore(x)===st):[];const sl=ps.filter(isStale).length;return `<div class="stack-s">${box('mystore','Mon magasin',st?`${ps.length} produit${ps.length>1?'s':''}${sl?' · '+sl+' prix à confirmer':''} · ${(st.views||0)} vue${(st.views||0)>1?'s':''}`:'Création…',sl)}</div>`;})():''}
       <span class="label">${t('Mes chantiers')}</span>
       ${list.length?`<div class="list">${list.map(p=>`<button class="item" data-a="open" data-v="${p.id}"${unreadOf(p)?' data-t="msgs"':''}><div><div class="t">${tnb(esc(p.title),unreadOf(p))}</div><div class="small muted">${esc(p.ville)} · client : ${esc(p.clientName)}</div></div>${stepSummary(p)}</button>`).join('')}</div>`
@@ -440,7 +441,7 @@ function vHome(){
     ${(S.watchProjects||[]).filter(p=>p.clientUid!==S.uid).length?`<span class="label">Chantiers que je surveille</span><div class="list">${S.watchProjects.filter(p=>p.clientUid!==S.uid).map(p=>`<button class="item" data-a="open" data-v="${p.id}" data-t="photos"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)} · pour ${esc(p.clientName)}</div></div><span class="pill">Envoyer des photos</span></button>`).join('')}</div>`:''}
     <div class="tiles">
       <button class="tile" data-a="go" data-v="dir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">${IC.search}</svg>Trouver un pro</button>
-      <button class="tile" data-a="go" data-v="market"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC.cart}</svg>Matériaux</button>
+      <button class="tile" data-a="go" data-v="market"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC.cart}</svg>Quincailleries</button>
       <button class="tile" data-a="go" data-v="estim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">${IC.calc}</svg>Estimer un prix</button>
     </div>
     ${S.myOrders.length?`<button class="item" data-a="go" data-v="orders"><span class="t">${t('Mes commandes')}</span><span class="small muted">${S.myOrders.length} · ${S.myOrders.filter(o=>o.status==='livre').length} ${t('À valider').toLowerCase()}</span></button>`:''}
@@ -766,10 +767,6 @@ function vAccount(){
     <div class="field"><label class="label" for="ac-ville">Ville</label><input id="ac-ville" required maxlength="40" value="${esc(S.me.ville)}"></div>
     <button class="btn" type="submit">Enregistrer</button>
     <p class="small muted" style="margin:0">Connecté avec ${esc(S.email||'')}</p>
-    <div class="stack-s"><span class="label">Changer d'espace</span><div class="list">
-      ${[['client','Client','Je fais construire ou réparer',true],['pro','Professionnel','Je propose mon travail',true],['expert','Expert','Je tranche les litiges',true],['admin','Administration','Visible seulement par toi',S.admin]].filter(x=>x[3]).map(x=>`<button type="button" class="item" data-a="mode" data-v="${x[0]}"><div><div class="t">${x[1]}</div><div class="small muted">${x[2]}</div></div>${S.mode===x[0]?'<span class="pill s-paye">Actuel</span>':'<span aria-hidden="true">›</span>'}</button>`).join('')}
-    </div></div>
-    ${myStores().length?`<button type="button" class="item" data-a="go" data-v="mystore"><div><div class="t">Mon magasin</div><div class="small muted">${esc(myStores()[0].name)}</div></div><span aria-hidden="true">›</span></button>`:''}
     <button type="button" class="item" data-a="go" data-v="plan"><div><div class="t">Plan de test</div><div class="small muted">${planCount()[0]} sur ${planCount()[1]} testés</div></div><span aria-hidden="true">›</span></button>
     <button class="link" type="button" data-a="showintros">Réafficher les explications</button>
     <button class="btn ghost" type="button" data-a="logout">Se déconnecter</button>
@@ -1729,9 +1726,12 @@ document.addEventListener('click',async e=>{
     if(a==='pconf'){const x=S.products.find(y=>y.id===v);if(!x)return;const now=Date.now();await S.db.doc('products/'+v).update({confirmedAt:now,history:[...(x.history||[{price:x.price,cur:x.cur||'EUR',at:x.at}]),{price:x.price,cur:x.cur||'EUR',at:now}].slice(-20)});return;}
     if(a==='qr'){const st=storeById(v);S.p.qr=1;render();if(st)setTimeout(()=>showQR(st),0);return;}
     if(a==='claim'){const st=storeById(v);if(!st||st.ownerUid)return;
-      if(TEST){await S.db.doc('stores/'+v).update({ownerUid:S.uid,claim:{uid:S.uid,name:S.me.name,phone:S.me.phone||'',at:Date.now(),status:'ok'},status:st.status==='suggeree'?'a_verifier':st.status});return go('mystore',{sid:v});}
-      await S.db.doc('stores/'+v).update({claim:{uid:S.uid,name:S.me.name,phone:S.me.phone||'',at:Date.now(),status:'attente'}});return;}
-    if(a==='adm-claim'&&S.admin){const st=storeById(v);if(!st||!st.claim)return;if(b.dataset.d==='ok')await S.db.doc('stores/'+v).update({ownerUid:st.claim.uid,claim:Object.assign({},st.claim,{status:'ok'}),status:st.status==='suggeree'?'a_verifier':st.status});else await S.db.doc('stores/'+v).update({claim:null});return;}
+      let pid=S.me.proId; S._mkStore=1;
+      if(!pid){const ref=await S.db.collection('pros').add({name:st.name,metier:'Fournisseur de matériaux',pays:st.pays,ville:st.ville,phone:st.phone||S.me.phone||'',rccm:'',about:'',photo:S.me.photo||'',ownerUid:S.uid,verified:false,example:false,reviews:[],createdAt:Date.now()});pid=ref.id;await S.db.doc('profiles/'+S.uid).update({proId:pid});}
+      const own={ownerUid:S.uid,proId:st.proId||pid};
+      if(TEST){await S.db.doc('stores/'+v).update(Object.assign(own,{claim:{uid:S.uid,name:S.me.name,phone:S.me.phone||'',at:Date.now(),status:'ok'},status:st.status==='suggeree'?'a_verifier':st.status}));S.mode='pro';try{localStorage.setItem('mm-mode-'+S.uid,'pro');}catch(e){}return go('mystore',{sid:v});}
+      await S.db.doc('stores/'+v).update({claim:{uid:S.uid,name:S.me.name,phone:S.me.phone||'',proId:pid,at:Date.now(),status:'attente'}});return;}
+    if(a==='adm-claim'&&S.admin){const st=storeById(v);if(!st||!st.claim)return;if(b.dataset.d==='ok')await S.db.doc('stores/'+v).update({ownerUid:st.claim.uid,proId:st.proId||st.claim.proId||null,claim:Object.assign({},st.claim,{status:'ok'}),status:st.status==='suggeree'?'a_verifier':st.status});else await S.db.doc('stores/'+v).update({claim:null});return;}
     if(a==='adm-sstat'&&S.admin){await S.db.doc('stores/'+v).update({status:b.dataset.d});return;}
     if(a==='adm-sver'&&S.admin){const st=storeById(v);if(!st)return;const k=b.dataset.d,ver=Object.assign({},st.verified||{});ver[k]=!ver[k];ver[k+'At']=Date.now();await S.db.doc('stores/'+v).update({verified:ver});return;}
     if(a==='adm-rates'&&S.admin){const n=id=>parseFloat((val(id)||'').replace(',','.'))||0;const c=n('rt-cdf'),o=n('rt-aoa'),u=n('rt-usd');if(!c||!o||!u)return;await S.db.doc('config/rates').set({r:{CDF:1/c,AOA:1/o,USD:1/u},at:Date.now()});return;}
