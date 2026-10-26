@@ -536,19 +536,43 @@ function reviewForm(id,title){
     <button class="btn sm" type="submit"${n?'':' disabled'}>Publier l'avis</button></form>`;
 }
 
+function dayCode(pid,t){
+  const d=new Date(t||Date.now()); const key=pid+'|'+d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+  let h=2166136261; for(let i=0;i<key.length;i++){h^=key.charCodeAt(i);h=Math.imul(h,16777619);}
+  h=h>>>0; const L='ABCDEFGHJKLMNPQRSTUVWXYZ';
+  return L[h%24]+(Math.floor(h/24)%10)+'-'+String(Math.floor(h/240)%100).padStart(2,'0');
+}
+const KIND={avant:'Avant',pendant:'Pendant',apres:'Après'};
+function phCard(ph,p){
+  return `<div class="photo"><img loading="lazy" decoding="async" src="${esc(ph.data)}" alt="Photo ${esc(KIND[ph.kind]||'')} du chantier, ${esc(p.steps[ph.step]?p.steps[ph.step].name:'')}"><span><b style="font-weight:600">${esc(KIND[ph.kind]||'Photo')}</b> · ${esc(p.steps[ph.step]?p.steps[ph.step].name:'')}<br>${ftime(ph.at)} · ${esc(ph.who)}${ph.code?`<br>Code attendu : <b style="font-weight:600">${esc(ph.code)}</b>`:''}</span></div>`;
+}
 function tPhotos(p,r){
+  const code=dayCode(p.id);
+  const kind=S.p.phKind||'pendant';
+  const pairs=p.steps.map((st,i)=>{
+    const list=S.photos.filter(x=>x.step===i).sort((a,b)=>a.at-b.at);
+    const av=list.find(x=>x.kind==='avant'), ap=list.slice().reverse().find(x=>x.kind==='apres');
+    if(!av&&!ap) return '';
+    const cell=(x,l)=>x?`<div class="photo"><img loading="lazy" src="${esc(x.data)}" alt="${l}, ${esc(st.name)}"><span><b style="font-weight:600">${l}</b> · ${fdate(x.at)}</span></div>`:`<div class="photo"><div style="aspect-ratio:1;background:var(--tile);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted);text-align:center;padding:8px">${l} : pas encore de photo</div></div>`;
+    return `<div class="stack-s"><span class="label">${esc(st.name)} · avant / après</span><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">${cell(av,'Avant')}${cell(ap,'Après')}</div></div>`;
+  }).join('');
   return `<div class="stack">
-    <label class="btn ghost" style="display:flex;align-items:center;justify-content:center" for="ph-file">Ajouter une photo du chantier</label>
+    <div style="border:1px solid var(--fg);padding:14px;display:flex;justify-content:space-between;align-items:center;gap:12px">
+      <div style="min-width:0"><span class="label">Code du jour</span><div class="small muted" style="margin-top:4px">${r==='client'?'Sur les photos d\'aujourd\'hui, ce code doit être écrit sur une feuille visible.':'Écris ce code sur une feuille et montre-la dans chaque photo d\'aujourd\'hui.'}</div></div>
+      <span style="font-family:var(--display);font-size:30px;letter-spacing:.04em;white-space:nowrap">${code}</span>
+    </div>
+    <div class="stack-s"><span class="label">Type de photo</span><div class="chips">${Object.keys(KIND).map(k=>`<button aria-pressed="${k===kind}" data-a="phkind" data-v="${k}">${KIND[k]}</button>`).join('')}</div></div>
+    <div class="field"><label class="label" for="ph-step">Étape concernée</label><select id="ph-step">${p.steps.map((st,i)=>`<option value="${i}">${esc(st.name)}</option>`).join('')}</select></div>
+    <label class="btn" style="display:flex;align-items:center;justify-content:center" for="ph-file">Prendre une photo « ${KIND[kind]} »</label>
     <input id="ph-file" type="file" accept="image/*" capture="environment" hidden>
-    <div class="field"><label class="label" for="ph-step">Étape concernée</label><select id="ph-step">${p.steps.map((s,i)=>`<option value="${i}">${esc(s.name)}</option>`).join('')}</select></div>
-    ${S.busy?'<p class="small muted">Envoi de la photo…</p>':''}${S.err?`<p class="err">${esc(S.err)}</p>`:''}
-    <p class="small muted">Les photos sont compressées avant l'envoi (environ 60 Ko) et ne se chargent que dans cet onglet, pour économiser la connexion. Chaque photo est enregistrée avec sa date et l'auteur. Dans la vraie app, la position GPS est ajoutée et les photos se prennent seulement depuis l'appareil photo.</p>
-    ${!S.photosLoaded?'<p class="small muted">Chargement des photos…</p>':''}
-    ${S.photos.length?`<div class="grid3">${S.photos.map(ph=>`<div class="photo"><img loading="lazy" decoding="async" src="${esc(ph.data)}" alt="Photo du chantier, ${esc(p.steps[ph.step]?p.steps[ph.step].name:'')}"><span>${esc(p.steps[ph.step]?p.steps[ph.step].name:'')} · ${ftime(ph.at)}<br>${esc(ph.who)}</span></div>`).join('')}</div>`
-    :S.photosLoaded?`<div class="empty">Aucune photo pour l'instant.</div>`:''}
+    ${S.busy?'<p class="small muted" style="margin:0">Envoi de la photo…</p>':''}${S.err?`<p class="err" style="margin:0">${esc(S.err)}</p>`:''}
+    ${!S.photosLoaded?'<p class="small muted" style="margin:0">Chargement des photos…</p>':''}
+    ${pairs}
+    ${S.photos.length?`<span class="label">Toutes les photos</span><div class="grid3">${S.photos.map(ph=>phCard(ph,p)).join('')}</div>`
+    :S.photosLoaded?`<div class="empty">Aucune photo pour l'instant. Commence par une photo « Avant » de chaque étape.</div>`:''}
+    <p class="small muted" style="margin:0">Photos compressées (environ 60 Ko) pour économiser la connexion. Dans la vraie app, la position GPS sera ajoutée.</p>
   </div>`;
 }
-
 function tMsgs(p,r){
   return `<div class="stack">
     <p class="small muted">Les messages sont gardés comme preuve et ne peuvent pas être effacés.</p>
@@ -557,6 +581,7 @@ function tMsgs(p,r){
         const body=m.photoId?(ph?`<img src="${esc(ph.data)}" alt="Photo envoyée" loading="lazy" style="display:block;width:220px;max-width:100%;aspect-ratio:4/3;object-fit:cover;background:var(--tile)">`:'<div class="bubble">Photo…</div>'):`<div class="bubble${m.uid===S.uid?' me':''}">${esc(m.text)}</div>`;
         return `<div class="stack-s" style="gap:2px;${m.uid===S.uid?'align-items:flex-end':''}">${body}<span class="meta">${esc(m.who)} · ${ftime(m.at)}</span></div>`;}).join(''):'<div class="empty">Aucun message. Écris au '+(r==='client'?'pro':'client')+'.</div>'}
     </div>
+    <p class="small muted" style="margin:0">Code du jour à montrer sur les photos : <b style="font-weight:600;color:var(--fg)">${dayCode(p.id)}</b></p>
     ${S.busy?'<p class="small muted" style="margin:0">Envoi de la photo…</p>':''}${S.err?`<p class="err" style="margin:0">${esc(S.err)}</p>`:''}
     <form class="row" data-f="msg">
       <label for="msg-photo" aria-label="Envoyer une photo" style="width:44px;height:44px;border:1px solid var(--fg);display:flex;align-items:center;justify-content:center;align-self:flex-end;flex-shrink:0;cursor:pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true">${IC.photo}</svg></label>
@@ -833,7 +858,7 @@ const INTRO={
  'pro':['card','<b>La fiche du pro.</b> Regarde ses avis avant de le choisir. Seuls les clients qui l\'ont payé via l\'app peuvent le noter.'],
  'newp':['steps','<b>Nouveau projet.</b> Donne-lui un nom et découpe-le en étapes. Les montants et le pro peuvent être ajoutés plus tard.'],
  'project-steps':['lock','<b>Comment ça marche :</b> 1. tu bloques l\'argent de l\'étape, 2. le pro travaille et envoie des photos, 3. tu valides et il est payé.'],
- 'project-photos':['photo','<b>Les photos du chantier.</b> Chaque photo garde sa date et son auteur. Ce sont tes preuves.'],
+ 'project-photos':['photo','<b>Les photos du chantier.</b> Prends une photo « Avant » et une « Après » de chaque étape. Le code du jour, écrit sur une feuille dans la photo, prouve qu\'elle est récente.'],
  'project-guard':['shield','<b>Le gardien.</b> Il pointe matin et soir avec une photo. Il est payé en fin de mois, selon ses pointages.'],
  'project-msgs':['chat','<b>Les messages.</b> Écris ou envoie une photo avec l\'appareil 📷. Tout est gardé comme preuve et ne peut pas être effacé.'],
  'project-pay':['coin','<b>Ton argent.</b> Ce qui est payé, ce qui est bloqué et ce qui reste à bloquer.'],
@@ -984,6 +1009,7 @@ document.addEventListener('click',async e=>{
     if(a==='home') return go('home');
     if(a==='go') return go(v);
     if(a==='role'){S.p.role=v;return render();}
+    if(a==='phkind'){S.p.phKind=v;return render();}
     if(a==='hideintro'){const h=hiddenIntros();h[v]=1;try{localStorage.setItem('mm-intro',JSON.stringify(h));}catch(x){}return render();}
     if(a==='showintros'){try{localStorage.removeItem('mm-intro');}catch(x){}return render();}
     if(a==='choose'){if(v==='admin'&&!S.admin)return;S.chosen=true;try{sessionStorage.setItem('mm-chosen-'+S.uid,'1');localStorage.setItem('mm-mode-'+S.uid,v);}catch(e){}S.mode=v;if(v==='pro'&&!S.me.proId)return go('myfiche');return go('home');}
@@ -1063,7 +1089,7 @@ document.addEventListener('change',async e=>{
     S.busy=true;S.err='';render();
     try{
       const data=await shrink(e.target.files[0]);
-      const ref=await S.db.collection('photos').add({projectId:p.id,step:Math.max(0,p.steps.findIndex(x=>x.status!=='paye'&&x.status!=='rembourse')),uid:S.uid,who:myName(p),data,at:Date.now(),fromChat:true});
+      const ref=await S.db.collection('photos').add({projectId:p.id,step:Math.max(0,p.steps.findIndex(x=>x.status!=='paye'&&x.status!=='rembourse')),uid:S.uid,who:myName(p),data,at:Date.now(),fromChat:true,kind:'pendant',code:dayCode(p.id)});
       const mref=S.db.doc('messages/'+p.id); const ms=await mref.get();
       const items=(ms.exists?(ms.data().items||[]):[]).slice(-300);
       items.push({uid:S.uid,who:myName(p),photoId:ref.id,text:'',at:Date.now()});
@@ -1076,7 +1102,7 @@ document.addEventListener('change',async e=>{
     S.busy=true;S.err='';render();
     try{
       const data=await shrink(e.target.files[0]);
-      await S.db.collection('photos').add({projectId:p.id,step:+val('ph-step')||0,uid:S.uid,who:myName(p),data,at:Date.now()});
+      await S.db.collection('photos').add({projectId:p.id,step:+val('ph-step')||0,kind:S.p.phKind||'pendant',code:dayCode(p.id),uid:S.uid,who:myName(p),data,at:Date.now()});
     }catch(err){S.err='La photo n\'a pas pu être envoyée. Essaie une autre image.';}
     S.busy=false;render();
   }
