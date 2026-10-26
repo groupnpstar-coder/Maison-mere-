@@ -121,15 +121,11 @@ footer{font-size:11px;color:var(--muted);text-align:center;padding-top:20px;bord
 <body>
 <div id="app">
   <div class="top">
-    <button class="brand" data-a="home">Maison Mère</button>
+    <div class="row" style="gap:10px;min-width:0"><button class="brand" data-a="home">Maison Mère</button><span id="modeTag" class="label"></span></div>
     <div class="row" style="gap:8px">
     <label for="langSel" class="label" style="position:absolute;left:-9999px">Langue</label>
     <select id="langSel" class="lang"><option value="fr">FR</option><option value="en">EN</option><option value="pt">PT</option><option value="ln">LN</option></select>
-    <div class="seg" id="modeSeg" hidden>
-      <button data-a="mode" data-v="client" aria-pressed="true">Client</button>
-      <button data-a="mode" data-v="pro" aria-pressed="false">Pro</button>
-      <button data-a="mode" data-v="admin" aria-pressed="false" id="adminBtn" hidden>Admin</button>
-    </div>
+    <button id="acctBtn" data-a="go" data-v="account" aria-label="Mon compte" hidden style="width:44px;height:44px;border:1px solid var(--line);background:var(--bg);display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"></path></svg></button>
     </div>
   </div>
   <p class="test" id="testBanner">Version de test : l'argent est fictif, rien n'est réellement payé.</p>
@@ -222,7 +218,9 @@ function start(u){
   S.admin=(window.ADMIN_EMAILS||[]).map(x=>String(x).toLowerCase()).includes(S.email);
   db.doc('profiles/'+S.uid).onSnapshot(s=>{
     const before=S.me&&S.me.proId;
+    const first=S.me===undefined;
     S.me=s.exists?Object.assign({id:s.id},s.data()):null;
+    if(first&&S.me){let m=null;try{m=localStorage.getItem('mm-mode-'+S.uid);}catch(e){}S.mode=m&&(m!=='admin'||S.admin)?m:(S.me.role==='pro'?'pro':'client');}
     if(S.me&&S.me.proId!==before) watchProProjects();
     render();
   },()=>{});
@@ -303,13 +301,11 @@ function render(){
   const keep={};
   $main.querySelectorAll('input[id],textarea[id],select[id]').forEach(el=>{if(el.type!=='file') keep[el.id]=el.value;});
   const ae=document.activeElement&&document.activeElement.id;
-  const seg=document.getElementById('modeSeg');
-  seg.hidden=!S.me;
-  document.getElementById('adminBtn').hidden=!S.admin;
+  document.getElementById('acctBtn').hidden=!S.me;
+  document.getElementById('modeTag').textContent=S.me&&S.mode!=='client'?(S.mode==='pro'?'Pro':'Admin'):'';
   document.getElementById('langSel').value=LANG;
   document.getElementById('testBanner').textContent=t('Version de test : l\'argent est fictif, rien n\'est réellement payé.');
   document.getElementById('footRule').textContent=t('Chacun peut noter l\'autre et arrêter le contrat si l\'accord n\'est pas respecté.');
-  seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===S.mode)));
   let html;
   if(!S.uid) html=vAuth();
   else if(!S.me) html=vSignup();
@@ -331,6 +327,10 @@ function vSignup(){
     <div class="field"><label class="label" for="su-phone">Téléphone (WhatsApp)</label><input id="su-phone" required maxlength="25" inputmode="tel" placeholder="+32 …"></div>
     <div class="field"><label class="label" for="su-pays">Pays où tu vis</label><select id="su-pays">${opts(PAYS,'Belgique')}</select></div>
     <div class="field"><label class="label" for="su-ville">Ville</label><input id="su-ville" required maxlength="40"></div>
+    <div class="stack-s"><span class="label">Tu viens pour…</span>
+      <button type="button" class="check" aria-pressed="${(S.p.role||'client')==='client'}" data-a="role" data-v="client"><span class="box" aria-hidden="true">${(S.p.role||'client')==='client'?'✓':''}</span><span><b style="font-weight:500">Faire faire des travaux</b><br><span class="small muted">Construire, acheter des matériaux, engager un gardien</span></span></button>
+      <button type="button" class="check" aria-pressed="${S.p.role==='pro'}" data-a="role" data-v="pro"><span class="box" aria-hidden="true">${S.p.role==='pro'?'✓':''}</span><span><b style="font-weight:500">Proposer mes services</b><br><span class="small muted">Maçon, électricien, vendeur, gardien, ingénieur…</span></span></button>
+    </div>
     ${S.err?`<p class="err">${esc(S.err)}</p>`:''}
     <button class="btn" type="submit">Créer mon compte</button>
   </form>`;
@@ -581,6 +581,9 @@ function vAccount(){
     <div class="field"><label class="label" for="ac-ville">Ville</label><input id="ac-ville" required maxlength="40" value="${esc(S.me.ville)}"></div>
     <button class="btn" type="submit">Enregistrer</button>
     <p class="small muted" style="margin:0">Connecté avec ${esc(S.email||'')}</p>
+    <div class="stack-s"><span class="label">Changer d'espace</span><div class="list">
+      ${[['client','Espace client','Faire faire des travaux',true],['pro',S.me.proId?'Espace pro':'Proposer aussi mes services','Ma fiche, mes chantiers, mes produits',true],['admin','Espace admin','Visible seulement par toi',S.admin]].filter(x=>x[3]).map(x=>`<button type="button" class="item" data-a="mode" data-v="${x[0]}"><div><div class="t">${x[1]}</div><div class="small muted">${x[2]}</div></div>${S.mode===x[0]?'<span class="pill s-paye">Actuel</span>':'<span aria-hidden="true">›</span>'}</button>`).join('')}
+    </div></div>
     <button class="btn ghost" type="button" data-a="logout">Se déconnecter</button>
     <div class="stack-s"><span class="label">Avis des pros sur toi${r.length?' · '+avg(r).toFixed(1).replace('.',',')+'/5':''}</span>
     ${reviewsList(S.me.reviews)}</div>
@@ -896,7 +899,8 @@ document.addEventListener('click',async e=>{
     if(a==='auth-reset'){S.err='';S.info='';try{await S.auth.sendPasswordResetEmail(val('au-email'));S.info='Email envoyé : suis le lien pour choisir un nouveau mot de passe.';}catch(er){S.err=AUTH_ERR[er.code]||'Entre ton email d\'abord.';}render();return;}
     if(a==='home') return go('home');
     if(a==='go') return go(v);
-    if(a==='mode'){S.mode=v;return go('home');}
+    if(a==='role'){S.p.role=v;return render();}
+    if(a==='mode'){if(v==='admin'&&!S.admin)return;S.mode=v;try{localStorage.setItem('mm-mode-'+S.uid,v);}catch(e){}if(v==='pro'&&!S.me.proId)return go('myfiche');return go('home');}
     if(a==='open') return go('project',{id:v,tab:b.dataset.t||'steps'});
     if(a==='pro') return go('pro',{id:v});
     if(a==='newwith'){S.mode='client';return go('newp',{proId:v});}
@@ -1000,7 +1004,10 @@ document.addEventListener('submit',async e=>{
   try{
     if(f==='signup'){
       if(!val('su-name')||!val('su-phone')||!val('su-ville')){S.err='Remplis tous les champs.';return render();}
-      await S.db.doc('profiles/'+S.uid).set({name:val('su-name'),phone:val('su-phone'),pays:val('su-pays'),ville:val('su-ville'),createdAt:Date.now(),proId:null,reviews:[]});
+      const role=S.p.role==='pro'?'pro':'client';
+      await S.db.doc('profiles/'+S.uid).set({name:val('su-name'),phone:val('su-phone'),pays:val('su-pays'),ville:val('su-ville'),role,createdAt:Date.now(),proId:null,reviews:[]});
+      S.mode=role;try{localStorage.setItem('mm-mode-'+S.uid,role);}catch(e){}
+      if(role==='pro') return go('myfiche');
     }
     if(f==='account'){await S.db.doc('profiles/'+S.uid).update({name:val('ac-name'),phone:val('ac-phone'),ville:val('ac-ville')});go('home');}
     if(f==='newp'){
