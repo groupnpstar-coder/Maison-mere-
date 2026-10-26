@@ -472,7 +472,7 @@ function vNewProject(){
   </form>`;
 }
 
-function role(p){return p.clientUid===S.uid?'client':(S.me.proId&&p.proId===S.me.proId?'pro':(S.me.proId&&p.guardProId===S.me.proId?'guard':'none'));}
+function role(p){if(S.mode==='pro'&&S.me.proId){if(p.proId===S.me.proId)return 'pro';if(p.guardProId===S.me.proId)return 'guard';}return p.clientUid===S.uid?'client':(S.me.proId&&p.proId===S.me.proId?'pro':(S.me.proId&&p.guardProId===S.me.proId?'guard':'none'));}
 
 function vProject(){
   const p=prjById(S.p.id); if(!p) return `<div class="stack"><button class="link" data-a="home">Retour</button><p class="muted">Chargement du projet…</p></div>`;
@@ -505,6 +505,24 @@ function waCall(p,r){
   return `<a class="btn ghost" href="https://wa.me/${n}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener" data-a="wacall" style="display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none">${ico}Appel vidéo WhatsApp</a>
     <p class="small muted" style="margin:-8px 0 0">Avec ${esc(who)}. WhatsApp s'ouvre avec un message prêt, puis appuie sur la caméra. Numéro : <span style="user-select:all">+${n}</span></p>`;
 }
+function pricesOk(p){return !p.pricesStatus||p.pricesStatus==='ok';}
+function priceBox(p,r){
+  const st=p.pricesStatus; if(!st||st==='ok') return '';
+  const open=p.steps.map((x,i)=>[x,i]).filter(([x])=>x.status==='attente');
+  const list=open.map(([x])=>`<div class="between small"><span>${esc(x.name)}</span><span class="money">${x.amount?eur(x.amount):'à définir'}</span></div>`).join('');
+  const total=open.reduce((a,[x])=>a+(+x.amount||0),0);
+  const myTurn=(st==='attente_pro'&&r==='pro')||(st==='attente_client'&&r==='client');
+  const other=st==='attente_pro'?p.proName:p.clientName;
+  if(!myTurn) return `<div class="step" style="border-color:var(--warn)"><span class="label" style="color:var(--warn)">Prix en attente d'accord</span>
+    <p class="small" style="margin:0">${esc(other)} doit accepter ces prix avant que l'argent puisse être bloqué.</p>${list}<div class="between"><span class="t" style="font-weight:500">Total</span><span class="money">${eur(total)}</span></div></div>`;
+  if(S.p.counter) return `<form class="step" data-f="counter" style="border-color:var(--fg)"><span class="label">Propose tes prix</span>
+    ${open.map(([x,i])=>`<div class="row"><span class="small" style="flex:2;min-width:0">${esc(x.name)}</span><div class="field" style="flex:1;min-width:0"><label class="label" for="ct-${i}">€</label><input id="ct-${i}" inputmode="numeric" maxlength="7" value="${x.amount||''}"></div></div>`).join('')}
+    <div class="row"><button class="btn sm" type="submit">Envoyer mes prix</button><button class="btn ghost sm" type="button" data-a="nocounter">Annuler</button></div></form>`;
+  return `<div class="step" style="border-color:var(--fg)"><span class="label">${st==='attente_pro'?'Le client propose ces prix':'Le pro propose d\'autres prix'}</span>
+    ${list}<div class="between"><span class="t" style="font-weight:500">Total</span><span class="money">${eur(total)}</span></div>
+    <div class="row"><button class="btn sm" data-a="priceok">J'accepte ces prix</button><button class="btn ghost sm" data-a="counter">Proposer d'autres prix</button></div>
+    <p class="small muted" style="margin:0">L'argent ne peut être bloqué que quand vous êtes d'accord tous les deux.</p></div>`;
+}
 function canBlock(p,i){return !p.stopped&&p.steps.slice(0,i).every(s=>s.status==='paye'||s.status==='rembourse');}
 
 function choosePro(p){
@@ -519,10 +537,12 @@ function choosePro(p){
 function tSteps(p,r){
   if(!p.proId) return r==='client'?`<div class="stack">${choosePro(p)}${p.steps.map((st,i)=>`<div class="step"><div class="between"><span class="t" style="font-weight:500">${i+1}. ${esc(st.name)}</span><span class="money small">${st.amount?eur(st.amount):'Montant à définir'}</span></div></div>`).join('')}</div>`:'<div class="empty">Pas encore de professionnel sur ce projet.</div>';
   const curIdx=p.steps.findIndex(s=>s.status!=='paye'&&s.status!=='rembourse');
-  const steps=p.steps.map((st,i)=>{
+  const pbox=priceBox(p,r);
+  const steps=pbox+p.steps.map((st,i)=>{
     let actions='', info='';
     if(st.status==='attente'){
-      if(r==='client'&&canBlock(p,i)) actions=st.amount?`<button class="btn" data-a="block" data-v="${i}">Bloquer ${eur(st.amount)}</button><button class="link" data-a="editamt" data-v="${i}">Changer le montant</button>`:amtForm(i);
+      if(r==='client'&&canBlock(p,i)&&!pricesOk(p)) actions=st.amount?'<p class="small muted" style="margin:0">Le blocage sera possible quand vous serez d\'accord sur les prix (voir en haut).</p>':amtForm(i);
+      else if(r==='client'&&canBlock(p,i)) actions=st.amount?`<button class="btn" data-a="block" data-v="${i}">Bloquer ${eur(st.amount)}</button><button class="link" data-a="editamt" data-v="${i}">Changer le montant</button>`:amtForm(i);
       if(r==='client'&&S.p.editAmt===i&&st.amount) actions=amtForm(i,st.amount);
       info=r==='pro'?'Le client n\'a pas encore bloqué l\'argent. Ne commence pas avant.':(canBlock(p,i)?'Bloque l\'argent pour que le travail commence.':'Disponible quand l\'étape précédente est payée.');
     }
@@ -1139,6 +1159,9 @@ document.addEventListener('click',async e=>{
     if(a==='home') return go('home');
     if(a==='go') return go(v);
     if(a==='role'){S.p.role=v;return render();}
+    if(a==='counter'){S.p.counter=true;return render();}
+    if(a==='nocounter'){S.p.counter=false;return render();}
+    if(a==='priceok'){const pp=prjById(S.p.id);if(!pp)return;if(pp.steps.some(x=>x.status==='attente'&&!x.amount)){S.err='Il manque un montant : propose d\'abord un prix pour chaque étape.';return render();}await S.db.doc('projects/'+pp.id).update({pricesStatus:'ok'});await sysMsg(pp.id,`${role(pp)==='pro'?pp.proName:S.me.name} accepte les prix. L'argent peut maintenant être bloqué.`);return;}
     if(a==='openreq'){S.back={view:S.view,p:S.p};return go('req',{id:v});}
     if(a==='back2'){return go(S.back&&S.back.view!=='req'?S.back.view:'home');}
     if(a==='talk'){S.p.openOffer=S.p.openOffer===v?null:v;if(!S.p.openOffer){S.p.chatId=null;}return render();}
@@ -1188,7 +1211,7 @@ document.addEventListener('click',async e=>{
     if(a==='stopno'){S.p.confirmStop=false;return render();}
     if(!p&&['block','done','pay','expert','stopyes'].includes(a)) return;
     if(a==='editamt'){S.p.editAmt=+v;return render();}
-    if(a==='block'){if(!p.steps[+v].amount)return;await setSteps(p,+v,{status:'bloque',blockedAt:Date.now()});await sysMsg(p.id,`${p.steps[+v].name} : ${eur(p.steps[+v].amount)} bloqués par le client.`);}
+    if(a==='block'){if(!p.steps[+v].amount||!pricesOk(p))return;await setSteps(p,+v,{status:'bloque',blockedAt:Date.now()});await sysMsg(p.id,`${p.steps[+v].name} : ${eur(p.steps[+v].amount)} bloqués par le client.`);}
     if(a==='done'){await setSteps(p,+v,{status:'fait',doneAt:Date.now()});await sysMsg(p.id,`${p.steps[+v].name} : le pro indique que l'étape est terminée.`);}
     if(a==='pay'){await setSteps(p,+v,{status:'paye',paidAt:Date.now()});await sysMsg(p.id,`${p.steps[+v].name} : validé par le client, ${eur(p.steps[+v].amount)} versés au pro.`);await bumpPro(p.proId,'paid');}
     if(a==='expert'){
@@ -1298,7 +1321,7 @@ document.addEventListener('submit',async e=>{
       if(!val('np-title')||!val('np-ville')){S.err='Donne un nom et une ville au projet.';return render();}
       if(proId&&!OK(pro)){S.err='Ce professionnel n\'est pas vérifié.';return render();}
       if(!steps.length){S.err='Ajoute au moins une étape, par exemple « Fondations ».';return render();}
-      const ref=await S.db.collection('projects').add({title:val('np-title'),pays:val('np-pays'),ville:val('np-ville'),clientUid:S.uid,clientName:S.me.name,proId:proId||null,proName:pro?pro.name:'',createdAt:Date.now(),steps,reviewed:false,proReviewed:false,stopped:null});
+      const ref=await S.db.collection('projects').add({title:val('np-title'),pays:val('np-pays'),ville:val('np-ville'),clientUid:S.uid,clientName:S.me.name,proId:proId||null,proName:pro?pro.name:'',createdAt:Date.now(),steps,pricesStatus:proId?'attente_pro':'ok',reviewed:false,proReviewed:false,stopped:null});
       go('project',{id:ref.id,tab:'steps'});
     }
     if(f==='fiche'){
@@ -1361,11 +1384,21 @@ document.addEventListener('submit',async e=>{
     if(f==='amt'&&p){
       const i=+e.target.dataset.v, n=parseInt(val('amt-'+i).replace(/\D/g,''),10)||0;
       if(!n){S.err='Indique un montant.';return render();}
-      await setSteps(p,i,{amount:n});S.p.editAmt=null;render();
+      const steps=p.steps.map((x,k)=>k===i?Object.assign({},x,{amount:n}):x);
+      await S.db.doc('projects/'+p.id).update({steps,pricesStatus:p.proId?'attente_pro':'ok'});
+      if(p.proId) await sysMsg(p.id,`${S.me.name} propose ${eur(n)} pour l'étape « ${p.steps[i].name} ». En attente de l'accord du pro.`);
+      S.p.editAmt=null;render();
+    }
+    if(f==='counter'&&p){
+      const r0=role(p);
+      const steps=p.steps.map((x,i)=>{if(x.status!=='attente')return x;const el=document.getElementById('ct-'+i);const n=el?parseInt(el.value.replace(/\D/g,''),10)||0:x.amount;return Object.assign({},x,{amount:n});});
+      await S.db.doc('projects/'+p.id).update({steps,pricesStatus:r0==='pro'?'attente_client':'attente_pro'});
+      await sysMsg(p.id,`${r0==='pro'?p.proName:S.me.name} propose d'autres prix : ${steps.filter(x=>x.status==='attente').map(x=>x.name+' '+eur(x.amount)).join(', ')}.`);
+      S.p.counter=false;render();
     }
     if(f==='setpro'&&p){
       const pr=proById(val('sp-pro')); if(!OK(pr)){S.err='Choisis un pro dans la liste.';return render();}
-      await S.db.doc('projects/'+p.id).update({proId:pr.id,proName:pr.name});
+      await S.db.doc('projects/'+p.id).update({proId:pr.id,proName:pr.name,pricesStatus:'attente_pro'});
       await sysMsg(p.id,`${pr.name} est choisi comme professionnel du projet.`);
     }
     if(f==='reqnew'){
