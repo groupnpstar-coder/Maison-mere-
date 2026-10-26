@@ -249,16 +249,25 @@ function fail(msg){
   $main.innerHTML=`<div class="stack"><h2>L'application ne peut pas s'ouvrir</h2><p class="muted">${esc(msg||'')} Vérifie ta connexion et réessaie.</p></div>`;
 }
 const AUTH_ERR={'auth/invalid-email':'Adresse email invalide.','auth/missing-password':'Entre un mot de passe.','auth/weak-password':'Mot de passe trop court : 6 caractères minimum.','auth/email-already-in-use':'Un compte existe déjà avec cet email. Connecte-toi.','auth/invalid-credential':'Email ou mot de passe incorrect.','auth/wrong-password':'Email ou mot de passe incorrect.','auth/user-not-found':'Aucun compte avec cet email.','auth/too-many-requests':'Trop d\'essais. Attends quelques minutes.','auth/network-request-failed':'Pas de connexion internet.','auth/operation-not-allowed':'La connexion par email n\'est pas activée dans Firebase (Authentication › Adresse e-mail/Mot de passe).'};
+function authCreds(){
+  const em=(document.getElementById('au-email')||{}).value||'', pw=(document.getElementById('au-pass')||{}).value||'';
+  const email=em.replace(/\s+/g,'').toLowerCase(); S.authEmail=email; S.err=''; S.info='';
+  if(!email){S.err='Tape ton adresse email dans la case « Email ».';render();return null;}
+  if(!/^[^@]+@[^@]+\.[a-z]{2,}$/.test(email)){S.err='Cette adresse email ne semble pas correcte : vérifie qu\'il y a bien un @ et un point, par exemple prenom@gmail.com.';render();return null;}
+  if(pw.length<6){S.err='Le mot de passe doit faire au moins 6 caractères.';render();return null;}
+  return {email,pass:pw};
+}
 function vAuth(){
   return `<form class="stack" data-f="login">
     <h1>Ton argent ne bouge pas sans ton accord.</h1>
     <p class="muted">Connecte-toi ou crée ton compte. Un seul compte par personne.</p>
-    <div class="field"><label class="label" for="au-email">Email</label><input id="au-email" type="email" autocomplete="email" required maxlength="80"></div>
-    <div class="field"><label class="label" for="au-pass">Mot de passe (6 caractères minimum)</label><input id="au-pass" type="password" autocomplete="current-password" required maxlength="60"></div>
+    <div class="field"><label class="label" for="au-email">Email</label><input id="au-email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="80" value="${esc(S.authEmail||'')}" placeholder="exemple@gmail.com"></div>
+    <div class="field"><label class="label" for="au-pass">Mot de passe (6 caractères minimum)</label><input id="au-pass" type="password" autocomplete="current-password" maxlength="60"></div>
     ${S.err?`<p class="err">${esc(S.err)}</p>`:''}${S.info?`<p class="small verified">${esc(S.info)}</p>`:''}
     <button class="btn" type="submit"${S.busyAuth?' disabled':''}>Se connecter</button>
     <button class="btn ghost" type="button" data-a="auth-signup"${S.busyAuth?' disabled':''}>Créer un compte</button>
     <button class="link" type="button" data-a="auth-reset">Mot de passe oublié</button>
+    <p class="small muted" style="margin:0">Si tu as ouvert ce lien depuis Snapchat, Instagram ou Facebook et que ça bloque, ouvre-le plutôt dans Safari ou Chrome (menu ⋯ › Ouvrir dans le navigateur).</p>
   </form>`;
 }
 function watchProProjects(){
@@ -1125,7 +1134,7 @@ document.addEventListener('click',async e=>{
   const p=S.view==='project'?prjById(S.p.id):null;
   try{
     if(a==='logout'){await S.auth.signOut();location.reload();return;}
-    if(a==='auth-signup'){if(S.busyAuth)return;S.err='';S.info='Création du compte en cours…';S.busyAuth=true;render();try{await S.auth.createUserWithEmailAndPassword(val('au-email'),document.getElementById('au-pass').value);}catch(er){S.info='';S.err=(AUTH_ERR[er.code]||'Création du compte impossible.')+' ['+(er.code||'erreur')+' · '+new Date().toLocaleTimeString('fr-FR')+']';}S.busyAuth=false;render();return;}
+    if(a==='auth-signup'){if(S.busyAuth)return;const cr=authCreds();if(!cr)return;S.info='Création du compte en cours…';S.busyAuth=true;render();try{await S.auth.createUserWithEmailAndPassword(cr.email,cr.pass);}catch(er){S.info='';S.err=(AUTH_ERR[er.code]||'Création du compte impossible.')+' ['+(er.code||'erreur')+' · '+new Date().toLocaleTimeString('fr-FR')+']';}S.busyAuth=false;render();return;}
     if(a==='auth-reset'){S.err='';S.info='';try{await S.auth.sendPasswordResetEmail(val('au-email'));S.info='Email envoyé : suis le lien pour choisir un nouveau mot de passe.';}catch(er){S.err=AUTH_ERR[er.code]||'Entre ton email d\'abord.';}render();return;}
     if(a==='home') return go('home');
     if(a==='go') return go(v);
@@ -1263,7 +1272,7 @@ function shrink(file,m0,target,stamp){
 document.addEventListener('submit',async e=>{
   e.preventDefault();
   const f=e.target.dataset.f; S.err='';
-  if(f==='login'){if(S.busyAuth)return;S.info='Connexion en cours…';S.busyAuth=true;render();try{await S.auth.signInWithEmailAndPassword(val('au-email'),document.getElementById('au-pass').value);}catch(er){S.info='';S.err=(AUTH_ERR[er.code]||'Connexion impossible.')+' ['+(er.code||'erreur')+' · '+new Date().toLocaleTimeString('fr-FR')+']';}S.busyAuth=false;render();return;}
+  if(f==='login'){if(S.busyAuth)return;const cr=authCreds();if(!cr)return;S.info='Connexion en cours…';S.busyAuth=true;render();try{await S.auth.signInWithEmailAndPassword(cr.email,cr.pass);}catch(er){S.info='';S.err=(AUTH_ERR[er.code]||'Connexion impossible.')+' ['+(er.code||'erreur')+' · '+new Date().toLocaleTimeString('fr-FR')+']';}S.busyAuth=false;render();return;}
   const p=S.view==='project'?prjById(S.p.id):null;
   try{
     if(f==='signup'){
