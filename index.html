@@ -336,7 +336,7 @@ function render(){
   const mt=document.getElementById('modeTag'), sm=document.getElementById('spaceMenu');
   mt.hidden=!(S.me&&S.chosen); mt.textContent=({client:'Client',pro:'Pro',admin:'Admin'}[S.mode]||'Client');
   mt.setAttribute('aria-expanded',String(!!S.menuOpen)); sm.hidden=!(S.menuOpen&&S.me&&S.chosen);
-  if(!sm.hidden) sm.innerHTML=[['client','Espace client','Faire faire des travaux',true],['pro','Espace pro','Mes chantiers, mes devis, mes produits',true],['admin','Espace admin','Gérer l\'app',S.admin]].filter(x=>x[3]).map(x=>`<button role="menuitem" data-a="mode" data-v="${x[0]}"><span><b style="font-weight:500;display:block">${x[1]}</b><span class="small muted">${x[2]}</span></span>${S.mode===x[0]?'<span class="on">ICI</span>':''}</button>`).join('');
+  if(!sm.hidden) sm.innerHTML=[['client','Client','Je fais construire ou réparer',true],['pro','Professionnel','Je propose mon travail',true],['admin','Administration','Je gère l\'application',S.admin]].filter(x=>x[3]).map(x=>`<button role="menuitem" data-a="mode" data-v="${x[0]}"><span><b style="font-weight:500;display:block">${x[1]}</b><span class="small muted">${x[2]}</span></span>${S.mode===x[0]?'<span class="on">ICI</span>':''}</button>`).join('');
   document.getElementById('langSel').value=LANG;
   document.getElementById('testBanner').textContent=t('Version de test : l\'argent est fictif, rien n\'est réellement payé.');
   document.getElementById('footRule').textContent=t('Chacun peut noter l\'autre et arrêter le contrat si l\'accord n\'est pas respecté.');
@@ -358,15 +358,15 @@ function render(){
 
 function vChoose(){
   const first=(S.me.name||'').split(' ')[0];
-  const card=(v,title,sub,icon)=>`<button class="item" data-a="choose" data-v="${v}" style="border:1px solid var(--fg);padding:20px;align-items:center">
-    <span style="display:flex;gap:16px;align-items:center;min-width:0"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0">${icon}</svg>
-    <span style="display:flex;flex-direction:column;gap:4px;min-width:0"><span style="font-family:var(--display);font-size:22px">${title}</span><span class="small muted">${sub}</span></span></span><span aria-hidden="true" style="font-size:22px">›</span></button>`;
+  const card=(v,title,sub,icon)=>`<button class="item" data-a="choose" data-v="${v}" style="border:1px solid var(--line);padding:18px 16px;align-items:center">
+    <span style="display:flex;gap:16px;align-items:center;min-width:0"><span style="width:52px;height:52px;background:var(--tile);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icon}</svg></span>
+    <span style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-size:18px;font-weight:600">${title}</span><span class="small muted">${sub}</span></span></span><span aria-hidden="true" style="font-size:22px">›</span></button>`;
   return `<div class="stack">
-    <div class="stack-s"><span class="label">Bonjour ${esc(first)}</span><h1>Où veux-tu aller ?</h1></div>
-    ${card('client','Espace client','Faire faire des travaux, suivre mes chantiers','<path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path><path d="M10 20v-6h4v6"></path>')}
-    ${card('pro',S.me.proId?'Espace pro':'Espace pro','Proposer mes services, mes chantiers, mes produits','<path d="M14 7l3-3 3 3-3 3"></path><path d="M17 4L8 13"></path><path d="M4 20l5-5 3 3-5 5H4z"></path>')}
-    ${S.admin?card('admin','Espace admin','Gérer l\'app : pros, litiges, comptes, bugs','<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path><path d="M9 12l2 2 4-4"></path>'):''}
-    <p class="small muted" style="margin:0">Tu pourras changer d'espace à tout moment avec l'icône en haut à droite.</p>
+    <div class="stack-s"><span class="label">Bonjour ${esc(first)}</span><h1>Choisis ton espace</h1></div>
+    ${card('client','Je suis client','Je fais construire ou réparer','<path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path><path d="M10 20v-6h4v6"></path>')}
+    ${card('pro','Je suis professionnel','Je propose mon travail','<rect x="3" y="7" width="18" height="13" rx="1"></rect><path d="M9 7V4h6v3"></path><path d="M3 13h18"></path>')}
+    ${S.admin?card('admin','Administration','Je gère l\'application','<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path><path d="M9 12l2 2 4-4"></path>'):''}
+    <p class="small muted" style="margin:0">Tu peux changer à tout moment avec l'étiquette jaune en haut.</p>
   </div>`;
 }
 function vSignup(){
@@ -377,9 +377,9 @@ function vSignup(){
     <div class="field"><label class="label" for="su-phone">Téléphone WhatsApp, avec l'indicatif (+32, +243…)</label><input id="su-phone" required maxlength="25" inputmode="tel" placeholder="+32 …"></div>
     <div class="field"><label class="label" for="su-pays">Pays où tu vis</label><select id="su-pays">${opts(PAYS,'Belgique')}</select></div>
     <div class="field"><label class="label" for="su-ville">Ville</label><input id="su-ville" required maxlength="40"></div>
-    <div class="stack-s"><span class="label">Tu viens pour…</span>
-      <button type="button" class="check" aria-pressed="${(S.p.role||'client')==='client'}" data-a="role" data-v="client"><span class="box" aria-hidden="true">${(S.p.role||'client')==='client'?'✓':''}</span><span><b style="font-weight:500">Faire faire des travaux</b><br><span class="small muted">Construire, acheter des matériaux, engager un gardien</span></span></button>
-      <button type="button" class="check" aria-pressed="${S.p.role==='pro'}" data-a="role" data-v="pro"><span class="box" aria-hidden="true">${S.p.role==='pro'?'✓':''}</span><span><b style="font-weight:500">Proposer mes services</b><br><span class="small muted">Maçon, électricien, vendeur, gardien, ingénieur…</span></span></button>
+    <div class="stack-s"><span class="label">Tu es…</span>
+      <button type="button" class="check" aria-pressed="${(S.p.role||'client')==='client'}" data-a="role" data-v="client"><span class="box" aria-hidden="true">${(S.p.role||'client')==='client'?'✓':''}</span><span><b style="font-weight:500">Je suis client</b><br><span class="small muted">Je fais construire ou réparer</span></span></button>
+      <button type="button" class="check" aria-pressed="${S.p.role==='pro'}" data-a="role" data-v="pro"><span class="box" aria-hidden="true">${S.p.role==='pro'?'✓':''}</span><span><b style="font-weight:500">Je suis professionnel</b><br><span class="small muted">Maçon, électricien, vendeur, gardien, ingénieur…</span></span></button>
     </div>
     ${S.err?`<p class="err">${esc(S.err)}</p>`:''}
     <button class="btn" type="submit">Créer mon compte</button>
@@ -403,15 +403,17 @@ function vHome(){
       <button class="btn" data-a="go" data-v="myfiche">Créer ma fiche pro</button></div>`;
     const me=proById(S.me.proId);
     const list=S.proProjects.sort((a,b)=>b.createdAt-a.createdAt);
+    const nR=proReqs(me).length,nO=otherReqs(me).length,nC=myClients().length;
+    const box=(v,title,sub,hot)=>`<button class="item" data-a="go" data-v="${v}" style="border:1px solid var(--line);padding:16px"><div><div class="t">${title}</div><div class="small muted">${sub}</div></div><span style="display:flex;gap:10px;align-items:center">${hot?`<span style="background:#FFD400;color:#111;font-size:12px;font-weight:600;min-width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px">${hot}</span>`:''}<span aria-hidden="true">›</span></span></button>`;
     return `<div class="stack">
-      <div class="stack-s"><span class="label">${me?esc(me.metier)+' · '+esc(me.ville):''}</span><h1>${me?esc(me.name):'Ma fiche'}</h1>
-      ${me&&!me.verified?'<span class="small unverified">Non vérifié : la vérification sera demandée avant de recevoir de l\'argent.</span>':''}</div>
-      <button class="link" data-a="go" data-v="myfiche">Voir et modifier ma fiche</button>
-      ${badgesHtml(me)}
+      <div class="stack-s"><span class="label">Bonjour ${esc(S.me.name.split(' ')[0])}</span><h1>Mon espace pro</h1></div>
+      <div class="stack-s">
+      ${box('reqs','Demandes de travaux',nR||nO?`${nR} pour ton métier · ${nO} autre${nO>1?'s':''}`:'Aucune demande pour l\'instant',nR)}
+      ${box('myclients','Mes clients',nC?nC+' client'+(nC>1?'s':''):'Pas encore de client',0)}
+      ${box('myfiche','Ma fiche',me?esc(me.metier)+' · '+esc(me.ville)+(me.verified?' · Vérifié':' · Pas encore vérifié'):'À compléter',0)}
+      </div>
       ${me&&me.metier==='Fournisseur de matériaux'?sellerBlock(me):''}
       ${S.guardProjects.length?`<span class="label">${t('Gardien')}</span><div class="list">${S.guardProjects.map(p=>`<button class="item" data-a="open" data-v="${p.id}" data-t="guard"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)} · client : ${esc(p.clientName)} · ${eur(p.guard?p.guard.salary:0)} / mois</div></div><span class="pill s-bloque">${t('Gardien')}</span></button>`).join('')}</div>`:''}
-      ${(()=>{const n=proReqs(me).length,n2=otherReqs(me).length;return `<button class="item" data-a="go" data-v="reqs" style="border:1px solid var(--fg);padding:16px"><div><div class="t">Demandes de travaux</div><div class="small muted">${n||n2?(n?n+' pour ton métier':'0 pour ton métier')+' · '+n2+' autre'+(n2>1?'s':''):'Aucune demande pour l\'instant'}</div></div><span aria-hidden="true">›</span></button>`;})()}
-      ${(()=>{const n=myClients().length;return `<button class="item" data-a="go" data-v="myclients" style="border:1px solid var(--line);padding:16px"><div><div class="t">Mes clients</div><div class="small muted">${n?n+' client'+(n>1?'s':''):'Pas encore de client'}</div></div><span aria-hidden="true">›</span></button>`;})()}
       <span class="label">${t('Mes chantiers')}</span>
       ${list.length?`<div class="list">${list.map(p=>`<button class="item" data-a="open" data-v="${p.id}"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)} · client : ${esc(p.clientName)}</div></div>${stepSummary(p)}</button>`).join('')}</div>`
       :`<div class="empty">Aucun chantier pour l'instant. Quand un client te choisit, son projet apparaît ici.</div>`}
@@ -692,7 +694,8 @@ function vMyFiche(){
   const p=S.me.proId?proById(S.me.proId):null;
   return `<form class="stack" data-f="fiche">
     <button class="link" type="button" data-a="home">Retour</button>
-    <h1>${p?'Ma fiche pro':'Créer ma fiche pro'}</h1>
+    <div class="stack-s"><h1>${p?'Ma fiche':'Créer ma fiche'}</h1>
+    ${p?`<div class="small ${p.verified?'verified':'unverified'}">${p.verified?'Vérifié : tu peux recevoir de l\'argent.':'Pas encore vérifié : on te le demandera avant ton premier paiement.'}</div>${badgesHtml(p)}`:''}</div>
     <div class="field"><label class="label" for="pf-name">Nom de l'entreprise ou ton nom</label><input id="pf-name" required maxlength="60" value="${esc(p?p.name:S.me.name)}"></div>
     <div class="field"><label class="label" for="pf-metier">Métier</label><select id="pf-metier">${opts(METIERS,p&&p.metier)}</select></div>
     <div class="field"><label class="label" for="pf-pays">Pays</label><select id="pf-pays">${opts(PAYS,p?p.pays:'RD Congo')}</select></div>
@@ -703,7 +706,6 @@ function vMyFiche(){
     ${S.err?`<p class="err">${esc(S.err)}</p>`:''}
     <button class="btn" type="submit">Enregistrer</button>
     ${p&&!p.verified?`<div class="stack-s"><p class="notice">Dans la vraie app, la vérification passe par la pièce d'identité, un selfie et le numéro d'entreprise. Ici, tu peux la simuler.</p><button class="btn ghost" type="button" data-a="verify">Vérifier mon compte (test)</button></div>`:''}
-    ${p&&p.verified?'<p class="small verified">Compte vérifié : tu peux recevoir de l\'argent.</p>':''}
   </form>`;
 }
 
@@ -718,7 +720,7 @@ function vAccount(){
     <button class="btn" type="submit">Enregistrer</button>
     <p class="small muted" style="margin:0">Connecté avec ${esc(S.email||'')}</p>
     <div class="stack-s"><span class="label">Changer d'espace</span><div class="list">
-      ${[['client','Espace client','Faire faire des travaux',true],['pro',S.me.proId?'Espace pro':'Proposer aussi mes services','Ma fiche, mes chantiers, mes produits',true],['admin','Espace admin','Visible seulement par toi',S.admin]].filter(x=>x[3]).map(x=>`<button type="button" class="item" data-a="mode" data-v="${x[0]}"><div><div class="t">${x[1]}</div><div class="small muted">${x[2]}</div></div>${S.mode===x[0]?'<span class="pill s-paye">Actuel</span>':'<span aria-hidden="true">›</span>'}</button>`).join('')}
+      ${[['client','Client','Je fais construire ou réparer',true],['pro','Professionnel','Je propose mon travail',true],['admin','Administration','Visible seulement par toi',S.admin]].filter(x=>x[3]).map(x=>`<button type="button" class="item" data-a="mode" data-v="${x[0]}"><div><div class="t">${x[1]}</div><div class="small muted">${x[2]}</div></div>${S.mode===x[0]?'<span class="pill s-paye">Actuel</span>':'<span aria-hidden="true">›</span>'}</button>`).join('')}
     </div></div>
     <button type="button" class="item" data-a="go" data-v="plan"><div><div class="t">Plan de test</div><div class="small muted">${planCount()[0]} sur ${planCount()[1]} testés</div></div><span aria-hidden="true">›</span></button>
     <button class="link" type="button" data-a="showintros">Réafficher les explications</button>
