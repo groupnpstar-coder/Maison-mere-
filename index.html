@@ -495,8 +495,11 @@ function role(p){if(S.mode==='pro'&&S.me.proId){if(p.proId===S.me.proId)return '
 
 function vProject(){
   const p=prjById(S.p.id); if(!p) return `<div class="stack"><button class="link" data-a="home">Retour</button><p class="muted">Chargement du projet…</p></div>`;
-  const r=role(p), tab=S.p.tab||'steps';
-  const tabs=[['steps','Étapes'],['photos','Photos'],['guard','Gardien'],['msgs','Messages'],['pay','Paiement']];
+  const r=role(p);
+  const tabs=r==='guard'?[['guard','Gardiennage'],['photos','Photos'],['msgs','Messages']]
+    :r==='client'?[['steps','Étapes'],['photos','Photos'],['msgs','Messages'],['pay','Paiement'],['guard','Gardien']]
+    :[['steps','Étapes'],['photos','Photos'],['msgs','Messages'],['pay','Paiement']];
+  const tab=tabs.some(x=>x[0]===S.p.tab)?S.p.tab:tabs[0][0];S.p.tab=tab;
   let body={steps:tSteps,photos:tPhotos,guard:tGuard,msgs:tMsgs,pay:tPay}[tab](p,r);
   return `<div class="stack">
     <button class="link" data-a="home">Retour</button>
@@ -1053,7 +1056,9 @@ function tGuard(p,r){
     if(r!=='client') return `<div class="stack"><div class="empty">Pas de gardien en ce moment sur ce chantier.</div>${guardHist(p,r)}</div>`;
     const guards=S.pros.filter(OK).sort((a,b)=>(b.metier==='Gardiennage')-(a.metier==='Gardiennage'));
     return `<form class="stack" data-f="hire">
-      <p class="small muted" style="margin:0">Le gardien envoie une photo datée matin et soir. Son salaire est bloqué au début du mois et versé à la fin, moins les pointages manqués.</p>
+      <div class="stack-s" style="border:1px solid var(--line);padding:14px 16px"><span class="label">Service en option</span>
+      <p style="margin:0">Un gardien surveille ton terrain, même quand il n'y a pas de travaux.</p>
+      <p class="small muted" style="margin:0">1. Tu bloques son salaire du mois. 2. Il envoie une photo matin et soir. 3. À la fin du mois, il est payé pour les jours où il a pointé.</p></div>
       <div class="field"><label class="label" for="gd-pro">Gardien</label><select id="gd-pro" required><option value="">Choisir…</option>${guards.map(x=>`<option value="${x.id}">${esc(x.name)} · ${esc(x.metier)} · ${esc(x.ville)}${nv(x)}</option>`).join('')}</select>
       ${guards.length?'':'<span class="small muted">L\'annuaire est vide. Pour tester seul, crée une fiche pro (métier « Gardiennage » de préférence).</span>'}</div>
       <div class="field"><label class="label" for="gd-sal">Salaire du mois (€)</label><input id="gd-sal" inputmode="numeric" maxlength="5" required></div>
