@@ -431,7 +431,7 @@ function vHome(){
     ${(S.myReqs||[]).filter(x=>x.status==='ouverte').length?`<span class="label">Mes demandes en cours</span><div class="list">${(S.myReqs||[]).filter(x=>x.status==='ouverte').sort((a,b)=>b.at-a.at).map(x=>`<button class="item" data-a="openreq" data-v="${x.id}"><div><div class="t">${esc(x.title)}</div><div class="small muted">${esc(x.metier)} · ${esc(x.ville)}</div></div><span class="pill s-fait">${x.offerCount||0} proposition${(x.offerCount||0)>1?'s':''}</span></button>`).join('')}</div>`:''}
     ${list.length?`<div class="list">${list.map(p=>`<button class="item" data-a="open" data-v="${p.id}"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)}, ${esc(p.pays)} · ${esc(p.proName||'Pro à choisir')}</div></div>${stepSummary(p)}</button>`).join('')}</div>`
     :`<div class="empty">Pas encore de projet. Crée ton premier : choisis un pro vérifié, découpe le travail en étapes et bloque l'argent étape par étape.</div>`}
-    ${(S.watchProjects||[]).filter(p=>p.clientUid!==S.uid).length?`<span class="label">Chantiers que je surveille</span><div class="list">${S.watchProjects.filter(p=>p.clientUid!==S.uid).map(p=>`<button class="item" data-a="open" data-v="${p.id}" data-t="photos"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)} · pour ${esc(p.clientName)}</div></div><span class="pill">Proche</span></button>`).join('')}</div>`:''}
+    ${(S.watchProjects||[]).filter(p=>p.clientUid!==S.uid).length?`<span class="label">Chantiers que je surveille</span><div class="list">${S.watchProjects.filter(p=>p.clientUid!==S.uid).map(p=>`<button class="item" data-a="open" data-v="${p.id}" data-t="photos"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)} · pour ${esc(p.clientName)}</div></div><span class="pill">Envoyer des photos</span></button>`).join('')}</div>`:''}
     <div class="tiles">
       <button class="tile" data-a="go" data-v="dir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">${IC.search}</svg>Trouver un pro</button>
       <button class="tile" data-a="go" data-v="market"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC.cart}</svg>Matériaux</button>
@@ -513,7 +513,7 @@ function vProject(){
   const r=role(p);
   const tabs={client:[['steps','Étapes'],['photos','Photos'],['msgs','Messages'],['pay','Paiement'],['ctrl','Contrôle']],
     pro:[['steps','Étapes'],['photos','Photos'],['msgs','Messages'],['pay','Paiement']],
-    watcher:[['steps','Étapes'],['photos','Photos'],['msgs','Messages']],
+    watcher:[['photos','Photos']],
     inspector:[['visit','Visite'],['steps','Étapes']],
     expert:[['expert','Dossier'],['photos','Photos'],['msgs','Messages'],['steps','Étapes']]}[r]||[['steps','Étapes'],['photos','Photos'],['msgs','Messages'],['pay','Paiement'],['ctrl','Contrôle']];
   const tab=tabs.some(x=>x[0]===S.p.tab)?S.p.tab:tabs[0][0];if(S.p.tab!==tab){S.p.tab=tab;setTimeout(watchProject,0);}
@@ -527,7 +527,7 @@ function vProject(){
     <div class="stack" style="border-top:1px solid var(--line);padding-top:20px;margin-top:8px">
     ${r!=='client'?clientCard(p.clientUid,p.clientName):''}
     ${waCall(p,r)}
-    ${houseCard(p)}
+    ${r==='watcher'?'':houseCard(p)}
     ${!p.stopped&&(r==='client'||r==='pro')?(S.p.confirmStop?`<div class="stack-s" style="border:1px solid var(--warn);padding:14px 16px"><span class="small">Arrêter le contrat ? L'argent bloqué et non validé sera rendu au client.</span><div class="row"><button class="btn sm" data-a="stopyes">Oui, arrêter</button><button class="btn ghost sm" data-a="stopno">Annuler</button></div></div>`:`<button class="link" data-a="stop" style="align-self:center;color:var(--muted);font-size:12px">Arrêter le contrat</button>`):''}
     </div>
   </div>`;
@@ -665,7 +665,7 @@ function tPhotos(p,r){
   }).join('');
   return `<div class="stack">
     <div style="border:1px solid var(--fg);padding:14px;display:flex;justify-content:space-between;align-items:center;gap:12px">
-      <div style="min-width:0"><span class="label">Code du jour</span><div class="small muted" style="margin-top:4px">${r==='client'?'Toi aussi, envoie tes photos : le terrain avant les travaux, un problème, ce que tu vois sur place. Le pro les voit tout de suite.':'Écris ce code à la main sur un papier (ou un carton) et tiens-le bien visible quand tu prends la photo. Ça prouve au client que la photo est d\'aujourd\'hui.'}<br>L\'app ajoute aussi le code, la date et l\'heure en bas de chaque photo.</div></div>
+      <div style="min-width:0"><span class="label">Code du jour</span><div class="small muted" style="margin-top:4px">${r==='watcher'?'Passe sur le chantier et prends tes photos avec l\'app. Le client les voit tout de suite.':r==='client'?'Toi aussi, envoie tes photos : le terrain avant les travaux, un problème, ce que tu vois sur place. Le pro les voit tout de suite.':'Écris ce code à la main sur un papier (ou un carton) et tiens-le bien visible quand tu prends la photo. Ça prouve au client que la photo est d\'aujourd\'hui.'}<br>L\'app ajoute aussi le code, la date et l\'heure en bas de chaque photo.</div></div>
       <span style="font-family:var(--display);font-size:30px;letter-spacing:.04em;white-space:nowrap">${code}</span>
     </div>
     <div class="stack-s"><span class="label">Type de photo</span><div class="chips">${Object.keys(KIND).map(k=>`<button aria-pressed="${k===kind}" data-a="phkind" data-v="${k}">${KIND[k]}</button>`).join('')}</div></div>
@@ -1141,7 +1141,7 @@ function tCtrl(p,r){
   const busy=vs.some(x=>x.status==='assignee'||x.status==='ouverte');
   return `<div class="stack">
    <div class="stack-s"><span class="label">Proche de confiance · gratuit</span>
-    <p class="small muted" style="margin:0">Quelqu'un de ta famille ou un ami qui vit sur place. Il voit le chantier, envoie des photos et écrit dans les messages. Il ne touche jamais à l'argent.</p>
+    <p class="small muted" style="margin:0">Quelqu'un de ta famille ou un ami qui vit sur place. Il peut seulement envoyer des photos du chantier. Il ne voit ni l'argent ni les messages.</p>
     ${ws.length?`<div class="list">${ws.map((w,i)=>`<div class="item"><div class="who">${avatar('',w.name,40)}<div style="min-width:0"><div class="t">${esc(w.name)}</div><div class="small muted">${esc(w.phone)}</div></div></div><span class="row" style="gap:14px;flex-shrink:0">${waNum(w.phone)?`<a class="link" target="_blank" rel="noopener" href="https://wa.me/${waNum(w.phone)}?text=${encodeURIComponent(inviteText(p,w.name))}">Prévenir</a>`:''}<button class="link" data-a="w-del" data-v="${i}">Retirer</button></span></div>`).join('')}</div>`:''}
     ${ws.length<3?`<form class="stack-s" data-f="watcher" style="border:1px solid var(--line);padding:14px 16px">
       <div class="field"><label class="label" for="w-name">Son prénom et son nom</label><input id="w-name" required maxlength="50"></div>
@@ -1314,7 +1314,7 @@ const INTRO={
  'newp':['steps','<b>Nouveau projet.</b> Donne-lui un nom et découpe-le en étapes. Les montants et le pro peuvent être ajoutés plus tard.'],
  'project-steps':['lock','<b>Comment ça marche :</b> 1. tu bloques l\'argent de l\'étape, 2. le pro travaille et envoie des photos, 3. tu valides et il est payé.'],
  'project-photos':['photo','<b>Les photos du chantier.</b> Prends une photo « Avant » et une « Après » de chaque étape. Le pro écrit le code du jour à la main sur un papier visible dans la photo : ça prouve qu\'elle est d\'aujourd\'hui.'],
- 'project-watch':['shield','<b>Tu es proche de confiance.</b> Tu vois le chantier, tu envoies des photos avec le code du jour et tu écris au client et au pro. Tu ne touches jamais à l\'argent.'],
+ 'project-watch':['shield','<b>Tu es proche de confiance.</b> Passe sur le chantier et envoie des photos : le code du jour s\'ajoute tout seul. Le client les voit tout de suite.'],
  'project-ctrl':['shield','<b>Tes yeux sur place.</b> Ajoute un proche de confiance (gratuit) ou commande une visite surprise faite par un pro vérifié tiré au sort.'],
  'project-visit':['search','<b>Ta visite.</b> Va sur place, prends tes photos avec l\'app et réponds aux 3 questions. Tu es payé quand ton rapport est envoyé.'],
  'project-expert':['shield','<b>Le dossier.</b> Regarde les photos et les messages, va sur place, puis décide. Ta décision fait partir l\'argent.'],
@@ -1795,7 +1795,7 @@ document.addEventListener('submit',async e=>{
       if((p.watchKeys||[]).includes(k)){S.err='Ce numéro est déjà ajouté.';return render();}
       const watchers=[...(p.watchers||[]),{name,phone,key:k,at:Date.now()}];
       await S.db.doc('projects/'+p.id).update({watchers,watchKeys:watchers.map(w=>w.key)});
-      await sysMsg(p.id,`${S.me.name} a ajouté ${name} comme proche de confiance. Il peut voir le chantier et envoyer des photos.`);
+      await sysMsg(p.id,`${S.me.name} a ajouté ${name} comme proche de confiance. Il peut envoyer des photos du chantier.`);
       ['w-name','w-phone'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});render();
     }
     if(f==='visit'&&p){
