@@ -84,7 +84,7 @@ main{flex:1;padding-block:22px}
 .bar span{display:block;height:100%}
 .grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .photo{display:flex;flex-direction:column;gap:4px}
-.photo img{width:100%;aspect-ratio:1;object-fit:cover;background:var(--tile);display:block;max-width:100%}
+.photo img{width:100%;aspect-ratio:4/3;object-fit:contain;background:var(--tile);display:block;max-width:100%}
 .photo span{font-size:10px;color:var(--muted);line-height:1.3}
 .bubble{max-width:80%;padding:10px 13px;font-size:14px;background:var(--tile);overflow-wrap:anywhere}
 .bubble.me{align-self:flex-end;background:var(--ink);color:var(--on-ink)}
@@ -573,12 +573,12 @@ function tPhotos(p,r){
     const list=S.photos.filter(x=>x.step===i).sort((a,b)=>a.at-b.at);
     const av=list.find(x=>x.kind==='avant'), ap=list.slice().reverse().find(x=>x.kind==='apres');
     if(!av&&!ap) return '';
-    const cell=(x,l)=>x?`<div class="photo"><img loading="lazy" src="${esc(x.data)}" alt="${l}, ${esc(st.name)}"><span><b style="font-weight:600">${l}</b> · ${fdate(x.at)}</span></div>`:`<div class="photo"><div style="aspect-ratio:1;background:var(--tile);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted);text-align:center;padding:8px">${l} : pas encore de photo</div></div>`;
+    const cell=(x,l)=>x?`<div class="photo"><img loading="lazy" src="${esc(x.data)}" alt="${l}, ${esc(st.name)}"><span><b style="font-weight:600">${l}</b> · ${fdate(x.at)}</span></div>`:`<div class="photo"><div style="aspect-ratio:4/3;background:var(--tile);display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--muted);text-align:center;padding:8px">${l} : pas encore de photo</div></div>`;
     return `<div class="stack-s"><span class="label">${esc(st.name)} · avant / après</span><div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">${cell(av,'Avant')}${cell(ap,'Après')}</div></div>`;
   }).join('');
   return `<div class="stack">
     <div style="border:1px solid var(--fg);padding:14px;display:flex;justify-content:space-between;align-items:center;gap:12px">
-      <div style="min-width:0"><span class="label">Code du jour</span><div class="small muted" style="margin-top:4px">${r==='client'?'Sur les photos d\'aujourd\'hui, ce code doit être écrit sur une feuille visible.':'Écris ce code sur une feuille et montre-la dans chaque photo d\'aujourd\'hui.'}</div></div>
+      <div style="min-width:0"><span class="label">Code du jour</span><div class="small muted" style="margin-top:4px">${r==='client'?'Le pro écrit ce code à la main sur un papier et le tient devant l\'appareil. Si le code écrit à la main est le bon, la photo a bien été prise aujourd\'hui, sur ton chantier.':'Écris ce code à la main sur un papier (ou un carton) et tiens-le bien visible quand tu prends la photo. Ça prouve au client que la photo est d\'aujourd\'hui.'}<br>L\'app ajoute aussi le code, la date et l\'heure en bas de chaque photo.</div></div>
       <span style="font-family:var(--display);font-size:30px;letter-spacing:.04em;white-space:nowrap">${code}</span>
     </div>
     <div class="stack-s"><span class="label">Type de photo</span><div class="chips">${Object.keys(KIND).map(k=>`<button aria-pressed="${k===kind}" data-a="phkind" data-v="${k}">${KIND[k]}</button>`).join('')}</div></div>
@@ -976,7 +976,7 @@ const INTRO={
  'pro':['card','<b>La fiche du pro.</b> Regarde ses avis avant de le choisir. Seuls les clients qui l\'ont payé via l\'app peuvent le noter.'],
  'newp':['steps','<b>Nouveau projet.</b> Donne-lui un nom et découpe-le en étapes. Les montants et le pro peuvent être ajoutés plus tard.'],
  'project-steps':['lock','<b>Comment ça marche :</b> 1. tu bloques l\'argent de l\'étape, 2. le pro travaille et envoie des photos, 3. tu valides et il est payé.'],
- 'project-photos':['photo','<b>Les photos du chantier.</b> Prends une photo « Avant » et une « Après » de chaque étape. Le code du jour, écrit sur une feuille dans la photo, prouve qu\'elle est récente.'],
+ 'project-photos':['photo','<b>Les photos du chantier.</b> Prends une photo « Avant » et une « Après » de chaque étape. Le pro écrit le code du jour à la main sur un papier visible dans la photo : ça prouve qu\'elle est d\'aujourd\'hui.'],
  'project-guard':['shield','<b>Le gardien.</b> Il pointe matin et soir avec une photo. Il est payé en fin de mois, selon ses pointages.'],
  'project-msgs':['chat','<b>Les messages.</b> Écris ou envoie une photo avec l\'appareil 📷. Tout est gardé comme preuve et ne peut pas être effacé.'],
  'project-pay':['coin','<b>Ton argent.</b> Ce qui est payé, ce qui est bloqué et ce qui reste à bloquer.'],
@@ -1224,7 +1224,7 @@ document.addEventListener('change',async e=>{
     const p=prjById(S.p.id); if(!p) return;
     S.busy=true;S.err='';render();
     try{
-      const data=await shrink(e.target.files[0]);
+      const data=await shrink(e.target.files[0],720,80000,dayCode(p.id)+' · '+new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · Maison Mère');
       const ref=await S.db.collection('photos').add({projectId:p.id,step:Math.max(0,p.steps.findIndex(x=>x.status!=='paye'&&x.status!=='rembourse')),uid:S.uid,who:myName(p),data,at:Date.now(),fromChat:true,kind:'pendant',code:dayCode(p.id)});
       const mref=S.db.doc('messages/'+p.id); const ms=await mref.get();
       const items=(ms.exists?(ms.data().items||[]):[]).slice(-300);
@@ -1237,19 +1237,20 @@ document.addEventListener('change',async e=>{
     const p=prjById(S.p.id); if(!p) return;
     S.busy=true;S.err='';render();
     try{
-      const data=await shrink(e.target.files[0]);
+      const data=await shrink(e.target.files[0],720,80000,dayCode(p.id)+' · '+new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · Maison Mère');
       await S.db.collection('photos').add({projectId:p.id,step:+val('ph-step')||0,kind:S.p.phKind||'pendant',code:dayCode(p.id),uid:S.uid,who:myName(p),data,at:Date.now()});
     }catch(err){S.err='La photo n\'a pas pu être envoyée. Essaie une autre image.';}
     S.busy=false;render();
   }
 });
 
-function shrink(file,m0,target){
+function shrink(file,m0,target,stamp){
   return new Promise((res,rej)=>{
     const url=URL.createObjectURL(file), img=new Image();
     img.onload=()=>{
       let w=img.naturalWidth,h=img.naturalHeight; const m=m0||720; if(Math.max(w,h)>m){const k=m/Math.max(w,h);w=Math.round(w*k);h=Math.round(h*k);}
-      const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
+      const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');g.drawImage(img,0,0,w,h);
+      if(stamp){const fs=Math.max(14,Math.round(w/26)),bh=Math.round(fs*2.1);g.fillStyle='rgba(0,0,0,.62)';g.fillRect(0,h-bh,w,bh);g.fillStyle='#fff';g.font='600 '+fs+'px system-ui,sans-serif';g.textBaseline='middle';g.fillText(stamp,Math.round(fs*.6),h-bh/2);}
       URL.revokeObjectURL(url);
       let q=.6,d=c.toDataURL('image/jpeg',q); while(d.length>(target||80000)&&q>.25){q-=.1;d=c.toDataURL('image/jpeg',q);}
       d.length>140000?rej(new Error('big')):res(d);
