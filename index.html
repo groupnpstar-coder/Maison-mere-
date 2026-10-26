@@ -410,7 +410,7 @@ function vHome(){
       ${badgesHtml(me)}
       ${me&&me.metier==='Fournisseur de matériaux'?sellerBlock(me):''}
       ${S.guardProjects.length?`<span class="label">${t('Gardien')}</span><div class="list">${S.guardProjects.map(p=>`<button class="item" data-a="open" data-v="${p.id}" data-t="guard"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)} · ${eur(p.guard?p.guard.salary:0)} / mois</div></div><span class="pill s-bloque">${t('Gardien')}</span></button>`).join('')}</div>`:''}
-      ${(()=>{const n=proReqs(me).length;return `<button class="item" data-a="go" data-v="reqs" style="border:1px solid var(--fg);padding:16px"><div><div class="t">Demandes de travaux</div><div class="small muted">${n?n+' demande'+(n>1?'s':'')+' pour ton métier':'Aucune demande pour l\'instant'}</div></div><span aria-hidden="true">›</span></button>`;})()}
+      ${(()=>{const n=proReqs(me).length,n2=otherReqs(me).length;return `<button class="item" data-a="go" data-v="reqs" style="border:1px solid var(--fg);padding:16px"><div><div class="t">Demandes de travaux</div><div class="small muted">${n||n2?(n?n+' pour ton métier':'0 pour ton métier')+' · '+n2+' autre'+(n2>1?'s':''):'Aucune demande pour l\'instant'}</div></div><span aria-hidden="true">›</span></button>`;})()}
       <span class="label">${t('Mes chantiers')}</span>
       ${list.length?`<div class="list">${list.map(p=>`<button class="item" data-a="open" data-v="${p.id}"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)} · client : ${esc(p.clientName)}</div></div>${stepSummary(p)}</button>`).join('')}</div>`
       :`<div class="empty">Aucun chantier pour l'instant. Quand un client te choisit, son projet apparaît ici.</div>`}
@@ -759,14 +759,24 @@ function vReqNew(){
     <button class="btn" type="submit">Publier la demande</button>
   </form>`;
 }
+function otherReqs(me){
+  if(!me) return [];
+  return (S.openReqs||[]).filter(x=>(TEST||x.clientUid!==S.uid)&&x.metier!==me.metier).sort((a,b)=>(b.pays===me.pays)-(a.pays===me.pays)||b.at-a.at);
+}
+function reqRow(x,mine){
+  return `<button class="item" data-a="openreq" data-v="${x.id}"><div><div class="t">${esc(x.title)}</div><div class="small muted">${esc(x.metier)} · ${esc(x.ville)}, ${esc(x.pays)} · ${fdate(x.at)}${x.budget?' · budget ~'+eur(x.budget):''}</div><div class="meta">Par ${esc(x.clientName||'')}</div></div>${mine.has(x.id)?'<span class="pill s-paye">Proposé</span>':`<span class="pill s-attente">${x.offerCount||0} offre${(x.offerCount||0)>1?'s':''}</span>`}</button>`;
+}
 function vReqs(){
-  const me=proById(S.me.proId); const list=proReqs(me);
+  const me=proById(S.me.proId); const list=proReqs(me), others=otherReqs(me);
   const mine=new Set((S.myOffers||[]).map(o=>o.requestId));
+  if(!me) return `<div class="stack"><button class="link" data-a="home">${t('Retour')}</button><h1>Demandes de travaux</h1><div class="empty">Crée d'abord ta fiche pro pour voir les demandes et y répondre.</div></div>`;
   return `<div class="stack">
     <button class="link" data-a="home">${t('Retour')}</button>
-    <div class="stack-s"><span class="label">${me?esc(me.metier):''}</span><h1>Demandes de travaux</h1></div>
-    ${!me?'<div class="empty">Crée d\'abord ta fiche pro pour voir les demandes de ton métier.</div>':list.length?`<div class="list">${list.map(x=>`<button class="item" data-a="openreq" data-v="${x.id}"><div><div class="t">${esc(x.title)}</div><div class="small muted">${esc(x.ville)}, ${esc(x.pays)} · ${fdate(x.at)}${x.budget?' · budget ~'+eur(x.budget):''}</div></div>${mine.has(x.id)?'<span class="pill s-paye">Proposé</span>':`<span class="pill s-attente">${x.offerCount||0} offre${(x.offerCount||0)>1?'s':''}</span>`}</button>`).join('')}</div>`
-    :`<div class="empty">Aucune demande ouverte pour le métier « ${esc(me.metier)} » pour l'instant. Reviens bientôt, ou partage le lien de l'app à des clients.</div>`}
+    <h1>Demandes de travaux</h1>
+    <div class="stack-s"><span class="label">Pour ton métier · ${esc(me.metier)}</span>
+    ${list.length?`<div class="list">${list.map(x=>reqRow(x,mine)).join('')}</div>`:`<p class="small muted" style="margin:0">Aucune demande en « ${esc(me.metier)} » pour l'instant.</p>`}</div>
+    <div class="stack-s"><span class="label">Autres demandes</span>
+    ${others.length?`<p class="small muted" style="margin:0">Tu peux aussi répondre si tu sais faire ce travail.</p><div class="list">${others.map(x=>reqRow(x,mine)).join('')}</div>`:'<p class="small muted" style="margin:0">Aucune autre demande ouverte.</p>'}</div>
   </div>`;
 }
 function chatBox(o){
