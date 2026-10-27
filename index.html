@@ -443,7 +443,7 @@ function render(){
   mt.setAttribute('aria-expanded',String(!!S.menuOpen)); sm.hidden=!(S.menuOpen&&S.me&&S.chosen);
   if(!sm.hidden) sm.innerHTML=[['client','Client','Je fais construire ou réparer',true],['pro','Professionnel','Je propose mon travail',true],['expert','Expert','Je tranche les litiges',true],['admin','Administration','Je gère l\'application',S.admin]].filter(x=>x[3]).map(x=>`<button role="menuitem" data-a="mode" data-v="${x[0]}"><span><b style="font-weight:500;display:block">${x[1]}</b><span class="small muted">${x[2]}</span></span>${S.mode===x[0]?'<span class="on">ICI</span>':''}</button>`).join('');
   document.getElementById('langSel').value=LANG;
-  document.getElementById('testBanner').textContent=t('Version de test : l\'argent est fictif, rien n\'est réellement payé.');
+  document.getElementById('testBanner').textContent=t('Version de test : l\'argent est fictif, rien n\'est réellement payé.')+' · v27.10-c';
   document.getElementById('footRule').textContent=t('Chacun peut noter l\'autre et arrêter le contrat si l\'accord n\'est pas respecté.');
   let html;
   if(!S.uid) html=vAuth();
@@ -531,6 +531,7 @@ function vChoose(){
       <h2>Ta maison mérite mieux qu'une promesse.</h2>
       <div class="cta2" style="width:100%">${go('client','Commencer maintenant','gold')}</div>
       <p class="small muted" style="margin:0">Tu pourras changer d'espace à tout moment avec l'étiquette dorée en haut.</p>
+      <div class="row" style="justify-content:center;gap:18px"><button class="link" data-a="go" data-v="account">Mon compte</button><button class="link" data-a="logout">Se déconnecter</button></div>
     </section>
   </div>`;
 }
