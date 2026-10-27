@@ -449,7 +449,7 @@ function render(){
   if(!S.uid) html=vAuth();
   else if(!S.me) html=vSignup();
   else if(!S.me.photo&&!TEST) html=vPhotoGate();
-  else if(!S.chosen) html=vChoose();
+  else if(!S.chosen&&!['account','legal','feedback','plan','how'].includes(S.view)) html=vChoose();
   else {
     const v={home:vHome,dir:vDir,pro:vProFiche,newp:vNewProject,project:vProject,myfiche:vMyFiche,account:vAccount,plan:vPlan,market:vMarket,estim:vEstim,orders:vOrders,client:vClient,reqnew:vReqNew,reqs:vReqs,req:vReq,myclients:vMyClients,visits:vVisits,store:vStore,mystore:vMyStore,how:vHow,search:vSearch,feedback:vFeedback,legal:vLegal}[S.view]||vHome;
     html=v();
@@ -922,6 +922,7 @@ function vAccount(){
   return `<form class="stack" data-f="account">
     <button class="link" type="button" data-a="home">Retour</button>
     <h1>Mon compte</h1>
+    <button type="button" class="item" data-a="pickspace" style="border:1px solid var(--line);padding:14px 16px"><div><div class="small muted">Mon espace</div><div class="t">${S.chosen?({client:'Client',pro:'Professionnel',expert:'Expert',admin:'Administration'}[S.mode]||'Client'):'Pas encore choisi'}</div></div><span class="small" style="color:var(--gold)">Changer ›</span></button>
     ${!S.me.photo?'<p class="small muted" style="margin:0">Ajoute ta photo de profil. Elle sera obligatoire quand l\'app sera lancée.</p>':''}
     <div class="who">${avatar(S.me.photo,S.me.name,72)}<input type="file" id="av-file" accept="image/*" hidden><button class="btn ghost sm" type="button" data-a="avpick">${S.busy?'Envoi…':S.me.photo?'Changer ma photo':'Ajouter ma photo'}</button></div>
     <div class="field"><label class="label" for="ac-name">Nom</label><input id="ac-name" required maxlength="60" value="${esc(S.me.name)}"></div>
@@ -2034,6 +2035,7 @@ document.addEventListener('click',async e=>{
     if(a==='hideintro'){const h=hiddenIntros();h[v]=1;try{localStorage.setItem('mm-intro',JSON.stringify(h));}catch(x){}return render();}
     if(a==='showintros'){try{localStorage.removeItem('mm-intro');}catch(x){}return render();}
     if(a==='choose'){if(v==='admin'&&!S.admin)return;S.chosen=true;try{sessionStorage.setItem('mm-chosen-'+S.uid,'1');localStorage.setItem('mm-mode-'+S.uid,v);}catch(e){}S.mode=v;if(v==='pro'&&!S.me.proId)return go('myfiche');return go('home');}
+    if(a==='pickspace'){S.chosen=false;try{sessionStorage.removeItem('mm-chosen-'+S.uid);}catch(x){}return go('home');}
     if(a==='spacemenu'){S.menuOpen=!S.menuOpen;return render();}
     if(a==='mode'){S.menuOpen=false;if(v==='admin'&&!S.admin)return;S.mode=v;try{localStorage.setItem('mm-mode-'+S.uid,v);}catch(e){}if(v==='pro'&&!S.me.proId)return go('myfiche');return go('home');}
     if(a==='open'){const tt=b.dataset.t;return go('project',{id:v,tab:tt||'',as:tt==='visit'?'inspector':tt==='expert'?'expert':undefined});}
