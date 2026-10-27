@@ -214,6 +214,7 @@ footer{font-size:11px;color:var(--muted);text-align:center;padding-top:20px;bord
 .btn.gold{background:var(--gold);color:#2A0E11}
 .btn.line{background:transparent;color:#F3E6D8;border:1px solid rgba(243,230,216,.7)}
 h1,h2{font-weight:500}
+.wax{height:44px;margin:0 -16px;background:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%2260%22 viewBox=%220 0 120 60%22%3E %3Crect width=%22120%22 height=%2260%22 fill=%22%235C2A2E%22/%3E %3Crect y=%220%22 width=%22120%22 height=%226%22 fill=%22%23BF9E68%22/%3E %3Crect y=%2254%22 width=%22120%22 height=%226%22 fill=%22%23BF9E68%22/%3E %3Cg fill=%22none%22 stroke=%22%23BF9E68%22 stroke-width=%222%22%3E %3Ccircle cx=%2230%22 cy=%2230%22 r=%2214%22/%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%227%22 fill=%22%232A0F12%22/%3E %3Ccircle cx=%2290%22 cy=%2230%22 r=%2214%22/%3E%3Ccircle cx=%2290%22 cy=%2230%22 r=%227%22 fill=%22%232A0F12%22/%3E %3C/g%3E %3Cpath d=%22M50 14l10 16-10 16-10-16z M110 14l10 16-10 16-10-16z M-10 14L0 30l-10 16%22 fill=%22%23A4452A%22/%3E %3Cpath d=%22M50 22l5 8-5 8-5-8z M110 22l5 8-5 8-5-8z%22 fill=%22%23F2E4D6%22/%3E %3Cg fill=%22%23F2E4D6%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%222.5%22/%3E%3Ccircle cx=%2290%22 cy=%2230%22 r=%222.5%22/%3E%3C/g%3E %3Cg fill=%22%232A0F12%22%3E%3Crect x=%220%22 y=%229%22 width=%224%22 height=%224%22/%3E%3Crect x=%2212%22 y=%229%22 width=%224%22 height=%224%22/%3E%3Crect x=%2224%22 y=%229%22 width=%224%22 height=%224%22/%3E%3Crect x=%2236%22 y=%229%22 width=%224%22 height=%224%22/%3E%3Crect x=%2248%22 y=%229%22 width=%224%22 height=%224%22/%3E%3Crect x=%2260%22 y=%229%22 width=%224%22 height=%224%22/%3E%3Crect x=%2272%22 y=%229%22 width=%224%22 height=%224%22/%3E%3Crect x=%2284%22 y=%229%22 width=%224%22 height=%224%22/%3E%3Crect x=%2296%22 y=%229%22 width=%224%22 height=%224%22/%3E%3Crect x=%22108%22 y=%229%22 width=%224%22 height=%224%22/%3E %3Crect x=%226%22 y=%2247%22 width=%224%22 height=%224%22/%3E%3Crect x=%2218%22 y=%2247%22 width=%224%22 height=%224%22/%3E%3Crect x=%2230%22 y=%2247%22 width=%224%22 height=%224%22/%3E%3Crect x=%2242%22 y=%2247%22 width=%224%22 height=%224%22/%3E%3Crect x=%2254%22 y=%2247%22 width=%224%22 height=%224%22/%3E%3Crect x=%2266%22 y=%2247%22 width=%224%22 height=%224%22/%3E%3Crect x=%2278%22 y=%2247%22 width=%224%22 height=%224%22/%3E%3Crect x=%2290%22 y=%2247%22 width=%224%22 height=%224%22/%3E%3Crect x=%22102%22 y=%2247%22 width=%224%22 height=%224%22/%3E%3Crect x=%22114%22 y=%2247%22 width=%224%22 height=%224%22/%3E%3C/g%3E %3C/svg%3E") repeat-x;background-size:88px 44px}
 .nb{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--brand);color:#2A0E11;font-size:11px;font-weight:700;letter-spacing:0;line-height:1;vertical-align:middle;margin-left:8px;border:none}
 .av{border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--tile);display:inline-flex;align-items:center;justify-content:center;font-weight:600;color:var(--fg);overflow:hidden}
 .who{display:flex;gap:12px;align-items:center;min-width:0}
@@ -246,6 +247,7 @@ h1,h2{font-weight:500}
         <p style="font-size:17px">De Bruxelles, Paris ou Luxembourg, fais construire ou rénover à Kinshasa ou Luanda avec des professionnels vérifiés. Ton argent reste bloqué tant que tu n'as pas validé le travail.</p>
         <p id="bootMsg" class="small" style="opacity:.85">Ouverture de l'application…</p>
       </div>
+      <div class="wax" aria-hidden="true"></div>
       <section class="lsec c-slate"><span class="kicker">Notre idée</span><h2>Construire au pays ne devrait pas être un pari.</h2>
         <p style="margin:0;line-height:1.7">Envoyer de l'argent à un proche ou à un entrepreneur, puis attendre des nouvelles qui n'arrivent jamais : beaucoup de familles de la diaspora l'ont vécu. Avec Maison Mère, chaque étape a un prix accepté par les deux parties, l'argent est bloqué, le pro envoie des preuves en photos, et c'est toi qui décides quand il est payé.</p></section>
       <section class="lsec c-sand"><span class="kicker">Comment ça marche</span><h2>Quatre étapes, aucune surprise.</h2>
@@ -393,7 +395,8 @@ function vAuth(){
     <button class="btn ghost" type="button" data-a="auth-signup"${S.busyAuth?' disabled':''}>Créer un compte</button>
     <button class="link" type="button" data-a="auth-reset">Mot de passe oublié</button>
     <p class="small muted" style="margin:0">Si tu as ouvert ce lien depuis Snapchat, Instagram ou Facebook et que ça bloque, ouvre-le plutôt dans Safari ou Chrome (menu ⋯ › Ouvrir dans le navigateur).</p>
-    <section class="lsec c-slate" style="margin-top:12px"><span class="kicker">Notre idée</span><h2>Construire au pays ne devrait pas être un pari.</h2><p style="margin:0;line-height:1.7">Envoyer de l'argent à un proche ou à un entrepreneur, puis attendre des nouvelles qui n'arrivent jamais : beaucoup de familles de la diaspora l'ont vécu. Avec Maison Mère, chaque étape a un prix accepté par les deux parties, l'argent est bloqué, le pro envoie des preuves en photos, et c'est toi qui décides quand il est payé.</p></section>
+<div class="wax" aria-hidden="true"></div>
+    <section class="lsec c-slate"><span class="kicker">Notre idée</span><h2>Construire au pays ne devrait pas être un pari.</h2><p style="margin:0;line-height:1.7">Envoyer de l'argent à un proche ou à un entrepreneur, puis attendre des nouvelles qui n'arrivent jamais : beaucoup de familles de la diaspora l'ont vécu. Avec Maison Mère, chaque étape a un prix accepté par les deux parties, l'argent est bloqué, le pro envoie des preuves en photos, et c'est toi qui décides quand il est payé.</p></section>
     <section class="lsec c-sand"><span class="kicker">Comment ça marche</span><h2>Quatre étapes, aucune surprise.</h2><div class="steps4">${HOW.map((x,i)=>`<div><b>${i+1}</b><span><span style="font-weight:700;font-size:17px">${x[0]}</span><br><span class="muted" style="line-height:1.6">${x[1]}</span></span></div>`).join('')}</div></section>
     <section class="lsec c-navy"><span class="kicker">Pour qui ?</span><h2>Clients, pros, quincailleries et experts.</h2><p style="margin:0;line-height:1.7">Que tu construises depuis l'étranger, que tu sois maçon, électricien, quincaillerie ou ingénieur : crée ton compte gratuitement et choisis ton espace juste après.</p></section>
   </form>`;
@@ -456,7 +459,7 @@ function render(){
   mt.setAttribute('aria-expanded',String(!!S.menuOpen)); sm.hidden=!(S.menuOpen&&S.me&&S.chosen);
   if(!sm.hidden) sm.innerHTML=[['client','Client','Je fais construire ou réparer',true],['pro','Professionnel','Je propose mon travail',true],['expert','Expert','Je tranche les litiges',true],['admin','Administration','Je gère l\'application',S.admin]].filter(x=>x[3]).map(x=>`<button role="menuitem" data-a="mode" data-v="${x[0]}"><span><b style="font-weight:500;display:block">${x[1]}</b><span class="small muted">${x[2]}</span></span>${S.mode===x[0]?'<span class="on">ICI</span>':''}</button>`).join('');
   document.getElementById('langSel').value=LANG;
-  document.getElementById('testBanner').textContent=t('Version de test : l\'argent est fictif, rien n\'est réellement payé.')+' · v27.10-e';
+  document.getElementById('testBanner').textContent=t('Version de test : l\'argent est fictif, rien n\'est réellement payé.')+' · v27.10-f';
   document.getElementById('footRule').textContent=t('Chacun peut noter l\'autre et arrêter le contrat si l\'accord n\'est pas respecté.');
   let html;
   if(!S.uid) html=vAuth();
@@ -502,7 +505,7 @@ function vChoose(){
       <p style="font-size:17px">De Bruxelles, Paris ou Luxembourg, fais construire ou rénover à Kinshasa ou Luanda avec des professionnels vérifiés. Ton argent reste bloqué tant que tu n'as pas validé le travail.</p>
       <div class="cta2">${go('client','Je fais construire','gold')}${go('pro','Je suis professionnel','line')}</div>
     </div>
-
+    <div class="wax" aria-hidden="true"></div>
     <section class="lsec c-slate">
       <span class="kicker">Notre idée</span>
       <h2>Construire au pays ne devrait pas être un pari.</h2>
@@ -534,6 +537,7 @@ function vChoose(){
       <div class="list">${[['Argent bloqué','Rien n\'est versé sans ton accord.'],['Photos datées','Le code du jour est collé sur chaque photo.'],['Visites surprises','Un pro vérifié contrôle ton chantier sans prévenir.'],['Expert indépendant','En cas de désaccord, un ingénieur tranche.'],['Prix transparents','Les prix des quincailleries sont datés et comparés.']].map(g=>`<div class="item"><div><div class="t">${g[0]}</div><div class="small muted">${g[1]}</div></div><span style="color:var(--gold)" aria-hidden="true">✓</span></div>`).join('')}</div>
     </section>
 
+    <div class="wax" aria-hidden="true"></div>
     <section class="lsec c-wine faq">
       <span class="kicker">Questions fréquentes</span>
       <h2>Tu te poses des questions ?</h2>
