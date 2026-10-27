@@ -239,14 +239,24 @@ h1,h2{font-weight:500}
   </div>
   <p class="test" id="testBanner">Version de test : l'argent est fictif, rien n'est réellement payé.</p>
   <main id="main">
-    <div class="stack">
-      <h1>Ton argent ne bouge pas sans ton accord.</h1>
-      <p class="muted">Ouverture de l'application…</p>
+    <div class="stack" style="gap:0">
+      <div class="land" style="min-height:440px;gap:16px">
+        <span class="kicker">Maison Mère</span>
+        <h1 style="font-size:46px;line-height:1">Construis au pays,<br>sans te déplacer.</h1>
+        <p style="font-size:17px">De Bruxelles, Paris ou Luxembourg, fais construire ou rénover à Kinshasa ou Luanda avec des professionnels vérifiés. Ton argent reste bloqué tant que tu n'as pas validé le travail.</p>
+        <p id="bootMsg" class="small" style="opacity:.85">Ouverture de l'application…</p>
+      </div>
+      <section class="lsec c-slate"><span class="kicker">Notre idée</span><h2>Construire au pays ne devrait pas être un pari.</h2>
+        <p style="margin:0;line-height:1.7">Envoyer de l'argent à un proche ou à un entrepreneur, puis attendre des nouvelles qui n'arrivent jamais : beaucoup de familles de la diaspora l'ont vécu. Avec Maison Mère, chaque étape a un prix accepté par les deux parties, l'argent est bloqué, le pro envoie des preuves en photos, et c'est toi qui décides quand il est payé.</p></section>
+      <section class="lsec c-sand"><span class="kicker">Comment ça marche</span><h2>Quatre étapes, aucune surprise.</h2>
+        <div class="steps4"><div><b>1</b><span><span style="font-weight:700;font-size:17px">Trouve</span><br><span class="muted">Un pro vérifié ou une quincaillerie de ta ville.</span></span></div><div><b>2</b><span><span style="font-weight:700;font-size:17px">Bloque</span><br><span class="muted">Tu bloques l'argent étape par étape.</span></span></div><div><b>3</b><span><span style="font-weight:700;font-size:17px">Suis</span><br><span class="muted">Photos datées, messages, visites surprises.</span></span></div><div><b>4</b><span><span style="font-weight:700;font-size:17px">Valide</span><br><span class="muted">Tu valides, le pro est payé.</span></span></div></div></section>
     </div>
   </main>
   <footer id="footRule">Chacun peut noter l'autre et arrêter le contrat si l'accord n'est pas respecté.</footer>
 </div>
 
+<script>window.addEventListener('error',function(e){var m=document.getElementById('bootMsg');if(m)m.textContent='Erreur au démarrage : '+(e.message||'inconnue')+'. Recharge la page.';});
+setTimeout(function(){var m=document.getElementById('bootMsg');if(m)m.innerHTML='Le chargement prend du temps (connexion lente ?). <button onclick="location.replace(location.pathname+\'?v=\'+Date.now())" style="background:none;border:1px solid currentColor;color:inherit;padding:4px 10px;margin-left:6px">Recharger</button>';},15000);</script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -322,7 +332,7 @@ async function boot(){
   if(!window.firebase||!cfg||!cfg.apiKey||cfg.apiKey.indexOf('COLLE')===0) return fail('La configuration Firebase n\'est pas encore installée.');
   try{firebase.initializeApp(cfg);}catch(e){return fail('Configuration Firebase invalide.');}
   const db=firebase.firestore();
-  try{await db.enablePersistence({synchronizeTabs:true});}catch(e){}
+  try{await Promise.race([db.enablePersistence({synchronizeTabs:true}),new Promise(r=>setTimeout(r,3000))]);}catch(e){}
   S.db=db; S.auth=firebase.auth();
   S.auth.onAuthStateChanged(u=>{
     S.authReady=true;
@@ -383,6 +393,9 @@ function vAuth(){
     <button class="btn ghost" type="button" data-a="auth-signup"${S.busyAuth?' disabled':''}>Créer un compte</button>
     <button class="link" type="button" data-a="auth-reset">Mot de passe oublié</button>
     <p class="small muted" style="margin:0">Si tu as ouvert ce lien depuis Snapchat, Instagram ou Facebook et que ça bloque, ouvre-le plutôt dans Safari ou Chrome (menu ⋯ › Ouvrir dans le navigateur).</p>
+    <section class="lsec c-slate" style="margin-top:12px"><span class="kicker">Notre idée</span><h2>Construire au pays ne devrait pas être un pari.</h2><p style="margin:0;line-height:1.7">Envoyer de l'argent à un proche ou à un entrepreneur, puis attendre des nouvelles qui n'arrivent jamais : beaucoup de familles de la diaspora l'ont vécu. Avec Maison Mère, chaque étape a un prix accepté par les deux parties, l'argent est bloqué, le pro envoie des preuves en photos, et c'est toi qui décides quand il est payé.</p></section>
+    <section class="lsec c-sand"><span class="kicker">Comment ça marche</span><h2>Quatre étapes, aucune surprise.</h2><div class="steps4">${HOW.map((x,i)=>`<div><b>${i+1}</b><span><span style="font-weight:700;font-size:17px">${x[0]}</span><br><span class="muted" style="line-height:1.6">${x[1]}</span></span></div>`).join('')}</div></section>
+    <section class="lsec c-navy"><span class="kicker">Pour qui ?</span><h2>Clients, pros, quincailleries et experts.</h2><p style="margin:0;line-height:1.7">Que tu construises depuis l'étranger, que tu sois maçon, électricien, quincaillerie ou ingénieur : crée ton compte gratuitement et choisis ton espace juste après.</p></section>
   </form>`;
 }
 function watchProProjects(){
@@ -443,7 +456,7 @@ function render(){
   mt.setAttribute('aria-expanded',String(!!S.menuOpen)); sm.hidden=!(S.menuOpen&&S.me&&S.chosen);
   if(!sm.hidden) sm.innerHTML=[['client','Client','Je fais construire ou réparer',true],['pro','Professionnel','Je propose mon travail',true],['expert','Expert','Je tranche les litiges',true],['admin','Administration','Je gère l\'application',S.admin]].filter(x=>x[3]).map(x=>`<button role="menuitem" data-a="mode" data-v="${x[0]}"><span><b style="font-weight:500;display:block">${x[1]}</b><span class="small muted">${x[2]}</span></span>${S.mode===x[0]?'<span class="on">ICI</span>':''}</button>`).join('');
   document.getElementById('langSel').value=LANG;
-  document.getElementById('testBanner').textContent=t('Version de test : l\'argent est fictif, rien n\'est réellement payé.')+' · v27.10-c';
+  document.getElementById('testBanner').textContent=t('Version de test : l\'argent est fictif, rien n\'est réellement payé.')+' · v27.10-d';
   document.getElementById('footRule').textContent=t('Chacun peut noter l\'autre et arrêter le contrat si l\'accord n\'est pas respecté.');
   let html;
   if(!S.uid) html=vAuth();
