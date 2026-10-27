@@ -218,6 +218,12 @@ footer{font-size:11px;color:var(--muted);text-align:center;padding-top:20px;bord
 .btn.line{background:transparent;color:#F3E6D8;border:1px solid rgba(243,230,216,.7)}
 h1,h2{font-weight:500}
 .wax{height:44px;margin:0 -16px;background:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%2260%22 viewBox=%220 0 120 60%22%3E %3Crect width=%22120%22 height=%2260%22 fill=%22%235C2A2E%22/%3E %3Crect y=%220%22 width=%22120%22 height=%226%22 fill=%22%23BF9E68%22/%3E %3Crect y=%2254%22 width=%22120%22 height=%226%22 fill=%22%23BF9E68%22/%3E %3Cg fill=%22none%22 stroke=%22%23BF9E68%22 stroke-width=%222%22%3E %3Ccircle cx=%2230%22 cy=%2230%22 r=%2214%22/%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%227%22 fill=%22%232A0F12%22/%3E %3Ccircle cx=%2290%22 cy=%2230%22 r=%2214%22/%3E%3Ccircle cx=%2290%22 cy=%2230%22 r=%227%22 fill=%22%232A0F12%22/%3E %3C/g%3E %3Cpath d=%22M50 14l10 16-10 16-10-16z M110 14l10 16-10 16-10-16z M-10 14L0 30l-10 16%22 fill=%22%23A4452A%22/%3E %3Cpath d=%22M50 22l5 8-5 8-5-8z M110 22l5 8-5 8-5-8z%22 fill=%22%23F2E4D6%22/%3E %3Cg fill=%22%23F2E4D6%22%3E%3Ccircle cx=%2230%22 cy=%2230%22 r=%222.5%22/%3E%3Ccircle cx=%2290%22 cy=%2230%22 r=%222.5%22/%3E%3C/g%3E %3Cg fill=%22%232A0F12%22%3E%3Crect x=%220%22 y=%229%22 width=%224%22 height=%224%22/%3E%3Crect x=%2212%22 y=%229%22 width=%224%22 height=%224%22/%3E%3Crect x=%2224%22 y=%229%22 width=%224%22 height=%224%22/%3E%3Crect x=%2236%22 y=%229%22 width=%224%22 height=%224%22/%3E%3Crect x=%2248%22 y=%229%22 width=%224%22 height=%224%22/%3E%3Crect x=%2260%22 y=%229%22 width=%224%22 height=%224%22/%3E%3Crect x=%2272%22 y=%229%22 width=%224%22 height=%224%22/%3E%3Crect x=%2284%22 y=%229%22 width=%224%22 height=%224%22/%3E%3Crect x=%2296%22 y=%229%22 width=%224%22 height=%224%22/%3E%3Crect x=%22108%22 y=%229%22 width=%224%22 height=%224%22/%3E %3Crect x=%226%22 y=%2247%22 width=%224%22 height=%224%22/%3E%3Crect x=%2218%22 y=%2247%22 width=%224%22 height=%224%22/%3E%3Crect x=%2230%22 y=%2247%22 width=%224%22 height=%224%22/%3E%3Crect x=%2242%22 y=%2247%22 width=%224%22 height=%224%22/%3E%3Crect x=%2254%22 y=%2247%22 width=%224%22 height=%224%22/%3E%3Crect x=%2266%22 y=%2247%22 width=%224%22 height=%224%22/%3E%3Crect x=%2278%22 y=%2247%22 width=%224%22 height=%224%22/%3E%3Crect x=%2290%22 y=%2247%22 width=%224%22 height=%224%22/%3E%3Crect x=%22102%22 y=%2247%22 width=%224%22 height=%224%22/%3E%3Crect x=%22114%22 y=%2247%22 width=%224%22 height=%224%22/%3E%3C/g%3E %3C/svg%3E") repeat-x;background-size:88px 44px}
+.phsec{position:relative;overflow:hidden;isolation:isolate}
+.phsec>img.bgi{position:absolute!important;z-index:-2!important;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
+.phsec::before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(30,10,12,.62),rgba(30,10,12,.80))}
+.land.phsec::before{background:linear-gradient(180deg,rgba(30,10,12,.35),rgba(30,10,12,.85) 70%)}
+.phsec,.phsec h1,.phsec h2,.phsec p{color:#F4E7DA}
+.phsec .muted{color:#E2CCBD}
 .nb{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--brand);color:#2A0E11;font-size:11px;font-weight:700;letter-spacing:0;line-height:1;vertical-align:middle;margin-left:8px;border:none}
 .av{border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--tile);display:inline-flex;align-items:center;justify-content:center;font-weight:600;color:var(--fg);overflow:hidden}
 .who{display:flex;gap:12px;align-items:center;min-width:0}
@@ -244,7 +250,7 @@ h1,h2{font-weight:500}
   <p class="test" id="testBanner">Version de test : l'argent est fictif, rien n'est réellement payé.</p>
   <main id="main">
     <div class="stack" style="gap:0">
-      <div class="land" style="min-height:440px;gap:16px">
+      <div class="land phsec" style="min-height:440px;gap:16px"><img class="bgi" src="img/a4.jpg" alt="">
         <div class="bigmm" aria-hidden="true">MM</div>
         <span class="kicker">Maison Mère</span>
         <h1 style="font-size:46px;line-height:1">Construis au pays,<br>sans te déplacer.</h1>
@@ -252,7 +258,7 @@ h1,h2{font-weight:500}
         <p id="bootMsg" class="small" style="opacity:.85">Ouverture de l'application…</p>
       </div>
       <div class="wax" aria-hidden="true"></div>
-      <section class="lsec c-slate"><span class="kicker">Notre idée</span><h2>Construire au pays ne devrait pas être un pari.</h2>
+      <section class="lsec c-slate phsec"><img class="bgi" src="img/a2.jpg" alt="" loading="lazy"><span class="kicker">Notre idée</span><h2>Construire au pays ne devrait pas être un pari.</h2>
         <p style="margin:0;line-height:1.7">Envoyer de l'argent à un proche ou à un entrepreneur, puis attendre des nouvelles qui n'arrivent jamais : beaucoup de familles de la diaspora l'ont vécu. Avec Maison Mère, chaque étape a un prix accepté par les deux parties, l'argent est bloqué, le pro envoie des preuves en photos, et c'est toi qui décides quand il est payé.</p></section>
       <section class="lsec c-sand"><span class="kicker">Comment ça marche</span><h2>Quatre étapes, aucune surprise.</h2>
         <div class="steps4"><div><b>1</b><span><span style="font-weight:700;font-size:17px">Trouve</span><br><span class="muted">Un pro vérifié ou une quincaillerie de ta ville.</span></span></div><div><b>2</b><span><span style="font-weight:700;font-size:17px">Bloque</span><br><span class="muted">Tu bloques l'argent étape par étape.</span></span></div><div><b>3</b><span><span style="font-weight:700;font-size:17px">Observe</span><br><span class="muted">Photos datées, messages, visites surprises.</span></span></div><div><b>4</b><span><span style="font-weight:700;font-size:17px">Valide</span><br><span class="muted">Tu valides, le pro est payé.</span></span></div></div></section>
@@ -333,7 +339,7 @@ function go(view,p){viewUnsubs.forEach(u=>u());viewUnsubs=[];S.view=view;S.p=p||
 function ensureProducts(){if(S.productsOn||!S.db)return;S.productsOn=true;S.db.collection('products').onSnapshot(q=>{S.products=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});}
 
 /* ---------- boot ---------- */
-const APPV='27.10-k';
+const APPV='27.10-l';
 (function(){try{fetch('version.txt?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(v=>{v=(v||'').trim();if(v&&v!==APPV){const k='mm-upd-'+v;let n=0;try{n=+sessionStorage.getItem(k)||0;sessionStorage.setItem(k,n+1);}catch(e){}if(n<2)location.replace(location.pathname+'?v='+encodeURIComponent(v)+location.hash);}}).catch(()=>{});}catch(e){}})();
 async function boot(){
   const cfg=window.FIREBASE_CONFIG;
@@ -390,7 +396,7 @@ function authCreds(){
 }
 function vAuth(){
   return `<form class="stack" data-f="login">
-    <div class="land" style="${homePh(0)?'min-height:420px':''}">${phLayer(0)}<div class="bigmm" aria-hidden="true">MM</div><h1>Construis au pays,<br>sans te déplacer.</h1><p>Des pros vérifiés, des prix comparés et ton argent bloqué jusqu'à ce que tu valides chaque étape.</p></div>
+    <div class="land phsec" style="min-height:420px">${homePh(0)?phLayer(0):'<img class="bgi" src="img/a4.jpg" alt="" decoding="async">'}<div class="bigmm" aria-hidden="true">MM</div><h1>Construis au pays,<br>sans te déplacer.</h1><p>Des pros vérifiés, des prix comparés et ton argent bloqué jusqu'à ce que tu valides chaque étape.</p></div>
     ${TRUST}
     <h2 class="sec">Connexion</h2>
     <p class="muted" style="margin:0">Connecte-toi ou crée ton compte. Un seul compte par personne.</p>
@@ -505,7 +511,7 @@ function vChoose(){
    ['Combien ça coûte ?','L\'inscription est gratuite. Une petite commission sera prélevée sur les paiements validés au lancement officiel. Pendant la phase de test, tout est gratuit.'],
    ['Dans quels pays ?','D\'abord en RD Congo et en Angola, pour des clients qui vivent en Belgique, en France, au Luxembourg et ailleurs. D\'autres pays suivront.']];
   return `<div class="stack" style="gap:0">
-    <div class="land" style="min-height:${homePh(0)?'520':'440'}px;gap:16px">${(ensureHome(),phLayer(0))}
+    <div class="land phsec" style="min-height:520px;gap:16px">${(ensureHome(),homePh(0)?phLayer(0):'<img class="bgi" src="img/a4.jpg" alt="" decoding="async">')}
       <div class="bigmm" aria-hidden="true">MM</div>
       <span class="kicker">Bonjour ${esc(first)} · Maison Mère</span>
       <h1 style="font-size:46px;line-height:1">Construis au pays,<br>sans te déplacer.</h1>
@@ -513,19 +519,19 @@ function vChoose(){
       <div class="cta2">${go('client','Je fais construire','gold')}${go('pro','Je suis professionnel','line')}</div>
     </div>
     <div class="wax" aria-hidden="true"></div>
-    <section class="lsec c-slate">
+    <section class="lsec c-slate phsec"><img class="bgi" src="img/a2.jpg" alt="" loading="lazy" decoding="async">
       <span class="kicker">Notre idée</span>
       <h2>Construire au pays ne devrait pas être un pari.</h2>
       <p style="margin:0;line-height:1.7">Envoyer de l'argent à un proche ou à un entrepreneur, puis attendre des nouvelles qui n'arrivent jamais : beaucoup de familles de la diaspora l'ont vécu. Maison Mère change la règle. Chaque étape a un prix accepté par les deux parties, l'argent est bloqué, le pro envoie des preuves en photos, et c'est toi qui décides quand il est payé.</p>
     </section>
 
-    <section class="lsec c-sand">
+    <section class="lsec c-sand phsec"><img class="bgi" src="img/a3.jpg" alt="" loading="lazy" decoding="async">
       <span class="kicker">Comment ça marche</span>
       <h2>Quatre étapes, aucune surprise.</h2>
       <div class="steps4">${HOW.map((x,i)=>`<div><b>${i+1}</b><span><span style="font-weight:700;font-size:17px">${x[0]}</span><br><span class="muted" style="line-height:1.6">${x[1]}</span></span></div>`).join('')}</div>
     </section>
 
-    <section class="lsec c-navy">
+    <section class="lsec c-navy phsec"><img class="bgi" src="img/a1.jpg" alt="" loading="lazy" decoding="async">
       <span class="kicker">Pour qui ?</span>
       <h2>Choisis ton espace.</h2>
       <div class="who4">
@@ -537,7 +543,7 @@ function vChoose(){
       </div>
     </section>
 
-    <section class="lsec c-wood">
+    <section class="lsec c-wood phsec"><img class="bgi" src="img/a7.jpg" alt="" loading="lazy" decoding="async">
       <span class="kicker">Nos garanties</span>
       <h2>La confiance, sans la croire sur parole.</h2>
       ${TRUST}
@@ -545,13 +551,13 @@ function vChoose(){
     </section>
 
     <div class="wax" aria-hidden="true"></div>
-    <section class="lsec c-wine faq">
+    <section class="lsec c-wine faq phsec"><img class="bgi" src="img/a6.jpg" alt="" loading="lazy" decoding="async">
       <span class="kicker">Questions fréquentes</span>
       <h2>Tu te poses des questions ?</h2>
       <div>${faq.map(q=>`<details><summary>${q[0]}</summary><p>${q[1]}</p></details>`).join('')}</div>
     </section>
 
-    <section class="lsec c-slate" style="text-align:center;align-items:center">
+    <section class="lsec c-slate phsec" style="text-align:center;align-items:center"><img class="bgi" src="img/a8.jpg" alt="" loading="lazy" decoding="async">
       <h2>Ta maison mérite mieux qu'une promesse.</h2>
       <div class="cta2" style="width:100%">${go('client','Commencer maintenant','gold')}</div>
       <p class="small muted" style="margin:0">Tu pourras changer d'espace à tout moment avec l'étiquette dorée en haut.</p>
@@ -616,7 +622,7 @@ function vHome(){
   ensureStores();
   return `<div class="stack">
     ${homeTop()}
-    <div class="hero" style="background:#3A1519;${homePh(1)?'min-height:380px;justify-content:flex-end':''}">${(ensureHome(),phLayer(1))}<span class="label" style="color:inherit;opacity:.85">Bonjour ${esc(S.me.name.split(' ')[0])}</span><h2>Construis au pays,<br>sans te déplacer.</h2><p>Des pros vérifiés, des prix comparés, et ton argent bloqué jusqu'à ce que tu valides chaque étape.</p><button class="circ" data-a="go" data-v="how" aria-label="Comment ça marche">${ico(ARROW,22)}</button></div>
+    <div class="hero phsec" style="background:#3A1519;min-height:340px;justify-content:flex-end">${(ensureHome(),homePh(1)?phLayer(1):'<img class="bgi" src="img/a3.jpg" alt="" decoding="async">')}<span class="label" style="color:inherit;opacity:.85">Bonjour ${esc(S.me.name.split(' ')[0])}</span><h2>Construis au pays,<br>sans te déplacer.</h2><p>Des pros vérifiés, des prix comparés, et ton argent bloqué jusqu'à ce que tu valides chaque étape.</p><button class="circ" data-a="go" data-v="how" aria-label="Comment ça marche">${ico(ARROW,22)}</button></div>
     <div class="stack-s"><h1 style="font-size:30px">${t('Mes projets')}</h1></div>
     <div class="row"><button class="btn" data-a="go" data-v="reqnew" style="flex:1">Demander des devis</button><button class="btn ghost" data-a="go" data-v="newp" style="flex:1">${t('Nouveau projet')}</button></div>
     ${(S.myReqs||[]).filter(x=>x.status==='ouverte').length?`<span class="label">Mes demandes en cours</span><div class="list">${(S.myReqs||[]).filter(x=>x.status==='ouverte').sort((a,b)=>b.at-a.at).map(x=>`<button class="item" data-a="openreq" data-v="${x.id}"><div><div class="t">${tnb(esc(x.title),reqUnread(x.id))}</div><div class="small muted">${esc(x.metier)} · ${esc(x.ville)}</div></div><span class="pill s-fait">${x.offerCount||0} proposition${(x.offerCount||0)>1?'s':''}</span></button>`).join('')}</div>`:''}
