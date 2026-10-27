@@ -146,7 +146,7 @@ footer{font-size:11px;color:var(--muted);text-align:center;padding-top:20px;bord
 <body>
 <div id="app">
   <div class="top">
-    <div class="row" style="gap:10px;min-width:0;position:relative"><button class="brand" data-a="home">Maison Mère</button><button id="modeTag" class="label" data-a="spacemenu" aria-haspopup="true" aria-expanded="false" hidden></button><button id="msgDot" class="nb" data-a="home" hidden style="margin-left:0;height:22px;min-width:22px"></button></div>
+    <div class="row" style="gap:10px;min-width:0;position:relative"><button class="brand" data-a="reload" aria-label="Maison Mère : actualiser">Maison Mère</button><button id="modeTag" class="label" data-a="spacemenu" aria-haspopup="true" aria-expanded="false" hidden></button><button id="msgDot" class="nb" data-a="home" hidden style="margin-left:0;height:22px;min-width:22px"></button></div>
     <div id="spaceMenu" role="menu" hidden></div>
     <div class="row" style="gap:8px">
     <label for="langSel" class="label" style="position:absolute;left:-9999px">Langue</label>
@@ -1679,6 +1679,7 @@ document.addEventListener('click',async e=>{
     if(a==='auth-signup'){if(S.busyAuth)return;const cr=authCreds();if(!cr)return;S.info='Création du compte en cours…';S.busyAuth=true;render();try{await S.auth.createUserWithEmailAndPassword(cr.email,cr.pass);}catch(er){S.info='';S.err=(AUTH_ERR[er.code]||'Création du compte impossible.')+' ['+(er.code||'erreur')+' · '+new Date().toLocaleTimeString('fr-FR')+']';}S.busyAuth=false;render();return;}
     if(a==='auth-reset'){S.err='';S.info='';try{await S.auth.sendPasswordResetEmail(val('au-email'));S.info='Email envoyé : suis le lien pour choisir un nouveau mot de passe.';}catch(er){S.err=AUTH_ERR[er.code]||'Entre ton email d\'abord.';}render();return;}
     if(a==='home') return go('home');
+    if(a==='reload'){try{sessionStorage.setItem('mm-view','home');}catch(x){}location.replace(location.pathname+'?v='+Date.now());return;}
     if(a==='go') return go(v);
     if(a==='role'){S.p.role=v;return render();}
     if(a==='counter'){S.p.counter=true;return render();}
