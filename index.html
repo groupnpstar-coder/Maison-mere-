@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Maison Mère</title>
 <meta name="description" content="Ton argent ne bouge pas sans ton accord. Construis au pays en toute confiance.">
-<meta name="theme-color" content="#F3E7D6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#FBF7F2" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#1A0F0A" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -15,9 +15,9 @@
 <style>
 /* Layout: one mobile column, max 480px, black and white like a document; money states carry the only color. */
 :root{
-  --bg:#F3E7D6; --fg:#2A140C; --muted:#6E5444; --line:#DCC5A8; --tile:#EAD6BE;
-  --ink:#2A140C; --on-ink:#F8EEE0;
-  --brand:#E3A33D; --terra:#B85A35; --clay:#C9776A; --oxblood:#5B2416; --olive:#5E6B32; --gold:#C8973F;
+  --bg:#FBF7F2; --fg:#1E1410; --muted:#6B5B50; --line:#E8DED3; --tile:#F2EAE0;
+  --ink:#1E1410; --on-ink:#FBF7F2;
+  --brand:#A4452A; --terra:#B85A35; --clay:#C9776A; --oxblood:#5B2416; --olive:#5E6B32; --gold:#C8973F;
   --ok:#1D6B45; --warn:#9A5B05; --bad:#A3271C; --held:#5E6B32;
   --display:Georgia, 'Times New Roman', serif;
   --body:system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -31,14 +31,14 @@
   --ink:#F4E6D3; --on-ink:#1A0F0A;
   --ok:#5FC08E; --warn:#E3A94A; --bad:#EE7D70; --held:#B4C07A; color-scheme:dark }
 /* Une seule couleur de marque : le jaune chantier, avec le noir */
-#modeTag{background:var(--brand,#E3A33D);color:#2A140C;font-weight:600;padding:0 8px;letter-spacing:.1em;border:none;min-height:32px;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+#modeTag{background:var(--brand,#A4452A);color:#FBF7F2;font-weight:600;padding:0 8px;letter-spacing:.1em;border:none;min-height:32px;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
 #modeTag::after{content:"";width:6px;height:6px;border-right:1.5px solid #111;border-bottom:1.5px solid #111;transform:rotate(45deg) translateY(-2px)}
 .top{position:sticky}
 #spaceMenu{position:absolute;left:0;top:100%;margin-top:6px;z-index:20;background:var(--bg);border:1px solid var(--fg);min-width:240px;box-shadow:0 8px 24px rgba(0,0,0,.12)}
 #spaceMenu button{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;border:none;border-bottom:1px solid var(--line);background:var(--bg);padding:14px 16px;min-height:52px}
 #spaceMenu button:last-child{border-bottom:none}
-#spaceMenu .on{background:var(--brand,#E3A33D);color:#2A140C;font-size:10px;letter-spacing:.1em;font-weight:600;padding:3px 6px}
-.top{box-shadow:inset 0 3px 0 var(--terra,#B85A35)}
+#spaceMenu .on{background:var(--brand,#A4452A);color:#FBF7F2;font-size:10px;letter-spacing:.1em;font-weight:600;padding:3px 6px}
+.top{box-shadow:inset 0 3px 0 #A4452A}
 html,body{height:100%}
 html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0}
@@ -139,18 +139,18 @@ footer{font-size:11px;color:var(--muted);text-align:center;padding-top:20px;bord
 .pills{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}.pills::-webkit-scrollbar{display:none}
 .pill2{display:flex;align-items:center;gap:8px;border:none;background:var(--tile);border-radius:999px;padding:8px 16px 8px 8px;white-space:nowrap;font-size:14px;font-weight:600;color:var(--fg);flex-shrink:0}
 .pill2 span{width:32px;height:32px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center}
-.hero{background:linear-gradient(160deg,#B85A35,#8E3B22);color:#F8EEE0;padding:28px 24px;display:flex;flex-direction:column;gap:14px}
+.hero{background:#A4452A;color:#FBF7F2;position:relative;overflow:hidden;padding:28px 24px;display:flex;flex-direction:column;gap:14px}
 .hero h2{font-family:var(--display);font-size:32px;line-height:1.08;margin:0;font-weight:400}
 .hero p{margin:0;font-size:16px;line-height:1.5}
 .circ{width:48px;height:48px;border-radius:50%;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;background:none;color:inherit;padding:0}
 .rail{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:16px;scrollbar-width:none;margin:0 -16px;padding:0 16px}.rail::-webkit-scrollbar{display:none}
 .rail>*{scroll-snap-align:start;flex:0 0 78%;max-width:300px}
-.howcard{border-radius:120px 120px 0 0;padding:44px 20px 22px;display:flex;flex-direction:column;gap:10px;min-height:190px;border:none;text-align:left}
+.howcard{padding:22px 20px;display:flex;flex-direction:column;gap:10px;min-height:190px;border:none;text-align:left}
 .howcard b{font-family:var(--display);font-size:40px;line-height:1;font-weight:400}
 .howcard .t{font-size:18px;font-weight:600}
 .prog{height:3px;background:var(--line);position:relative}.prog i{position:absolute;left:0;top:0;bottom:0;background:var(--fg);width:25%;transition:left .2s}
 .dealcard{border:none;background:none;padding:0;text-align:left;display:flex;flex-direction:column;gap:6px;flex:0 0 44%!important;max-width:180px!important}
-.dealcard .ph{aspect-ratio:1;border-radius:999px 999px 0 0;background:var(--tile);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.dealcard .ph{aspect-ratio:1;background:var(--tile);display:flex;align-items:center;justify-content:center;overflow:hidden}
 .dealcard .ph img{width:100%;height:100%;object-fit:cover}
 .sec{font-family:var(--display);font-size:24px;margin:8px 0 0;font-weight:400}
 .btnr{border-radius:999px;padding:14px 26px;font-weight:600;font-size:14px;border:1.5px solid var(--fg);background:var(--fg);color:var(--bg);letter-spacing:0;text-transform:none;align-self:flex-start}
@@ -166,17 +166,20 @@ footer{font-size:11px;color:var(--muted);text-align:center;padding-top:20px;bord
 .foot2 details[open] summary:after{transform:rotate(-135deg);margin-top:4px}
 .foot2 details .link{display:block;text-align:left;text-transform:none;letter-spacing:0;font-size:15px;padding:8px 0;border:none;text-decoration:none}
 .legal h2{font-size:18px;margin:18px 0 6px;font-family:var(--body);font-weight:700}.legal p,.legal li{line-height:1.6}
-.land{margin:-8px -16px 0;background:linear-gradient(180deg,#E9A06B,#F3C78F 60%);color:#2A140C;padding:24px 16px 0;display:flex;flex-direction:column;gap:10px}
-.land h1{font-size:36px;line-height:1.05;margin:0;color:#2A140C}
+.land{margin:-8px -16px 0;background:#A4452A;color:#FBF7F2;padding:24px 16px 24px;position:relative;overflow:hidden;min-height:260px;justify-content:flex-end;display:flex;flex-direction:column;gap:10px}
+.land h1{font-size:36px;line-height:1.05;margin:0;color:inherit}
 .land p{margin:0;font-size:16px;line-height:1.5;max-width:30em}
 .trust{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .trust div{display:flex;flex-direction:column;gap:6px;font-size:12px;line-height:1.35;font-weight:600}
 .trust svg{width:26px;height:26px}
 .space{display:flex;align-items:center;gap:16px;padding:20px;border:none;text-align:left;width:100%;color:inherit}
-.space .ic{width:48px;height:56px;border-radius:999px 999px 6px 6px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.space .ic{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .space b{display:block;font-size:19px;font-weight:700}
 .space small{display:block;font-size:14px;opacity:.8;margin-top:2px}
-.nb{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--brand,#E3A33D);color:#2A140C;font-size:11px;font-weight:700;letter-spacing:0;line-height:1;vertical-align:middle;margin-left:8px;border:none}
+.bgph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.bgph+.shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,10,6,.05) 30%,rgba(20,10,6,.72));z-index:0}
+.land>*:not(.bgph):not(.shade),.hero>*:not(.bgph):not(.shade){position:relative;z-index:1}
+.nb{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--brand,#A4452A);color:#FBF7F2;font-size:11px;font-weight:700;letter-spacing:0;line-height:1;vertical-align:middle;margin-left:8px;border:none}
 .av{border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--tile);display:inline-flex;align-items:center;justify-content:center;font-weight:600;color:var(--fg);overflow:hidden}
 .who{display:flex;gap:12px;align-items:center;min-width:0}
 .badge{font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;padding:3px 7px;background:var(--tile);color:var(--fg)}
@@ -325,7 +328,7 @@ function authCreds(){
 }
 function vAuth(){
   return `<form class="stack" data-f="login">
-    <div class="land"><h1>Construis au pays,<br>sans te déplacer.</h1><p>Des pros vérifiés, des prix comparés et ton argent bloqué jusqu'à ce que tu valides chaque étape.</p>${ART}</div>
+    <div class="land" style="${homePh(0)?'min-height:420px':''}">${phLayer(0)}<h1>Construis au pays,<br>sans te déplacer.</h1><p>Des pros vérifiés, des prix comparés et ton argent bloqué jusqu'à ce que tu valides chaque étape.</p></div>
     ${TRUST}
     <h2 class="sec">Connexion</h2>
     <p class="muted" style="margin:0">Connecte-toi ou crée ton compte. Un seul compte par personne.</p>
@@ -429,10 +432,10 @@ function vChoose(){
   const ic=d=>`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
   const card=(v,title,sub,icon,bg,fg,icbg)=>`<button class="space" data-a="choose" data-v="${v}" style="background:${bg};color:${fg}"><span class="ic" style="background:${icbg}">${ic(icon)}</span><span style="flex:1;min-width:0"><b>${title}</b><small>${sub}</small></span>${ic('<path d="M5 12h14M13 6l6 6-6 6"></path>')}</button>`;
   return `<div class="stack">
-    <div class="land"><span class="label" style="color:inherit;opacity:.85">Bonjour ${esc(first)}</span><h1>Construis au pays,<br>sans te déplacer.</h1><p>Trouve des pros vérifiés, compare les prix des matériaux et suis ton chantier en photos, depuis l'Europe.</p>${ART}</div>
+    <div class="land" style="${homePh(0)?'min-height:420px':''}">${(ensureHome(),phLayer(0))}<span class="label" style="color:inherit;opacity:.85">Bonjour ${esc(first)}</span><h1>Construis au pays,<br>sans te déplacer.</h1><p>Trouve des pros vérifiés, compare les prix des matériaux et suis ton chantier en photos, depuis l'Europe.</p></div>
     <h2 class="sec">Choisis ton espace</h2>
     <div class="stack-s" style="gap:10px">
-    ${card('client','Je suis client','Je fais construire ou rénover','<path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path><path d="M10 20v-6h4v6"></path>','var(--fg)','var(--bg)','var(--brand);color:#2A140C')}
+    ${card('client','Je suis client','Je fais construire ou rénover','<path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path><path d="M10 20v-6h4v6"></path>','var(--fg)','var(--bg)','var(--brand);color:#FBF7F2')}
     ${card('pro','Je suis professionnel','Artisan, entreprise ou quincaillerie','<rect x="3" y="7" width="18" height="13" rx="1"></rect><path d="M9 7V4h6v3"></path><path d="M3 13h18"></path>','var(--tile)','var(--fg)','var(--bg)')}
     ${card('expert','Je suis expert','Ingénieur, je tranche les litiges','<circle cx="12" cy="12" r="9"></circle><path d="M15.5 8.5l-2 5-5 2 2-5z"></path>','var(--tile)','var(--fg)','var(--bg)')}
     ${S.admin?card('admin','Administration','Je gère l\'application','<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path><path d="M9 12l2 2 4-4"></path>','none;border:1px solid var(--line)','var(--fg)','var(--tile)'):''}
@@ -477,7 +480,7 @@ function vHome(){
     const me=proById(S.me.proId);
     const list=S.proProjects.sort((a,b)=>b.createdAt-a.createdAt);
     const nR=proReqs(me).length,nO=otherReqs(me).length,nC=myClients().length;
-    const box=(v,title,sub,hot)=>`<button class="item" data-a="go" data-v="${v}" style="border:1px solid var(--line);padding:16px"><div><div class="t">${title}</div><div class="small muted">${sub}</div></div><span style="display:flex;gap:10px;align-items:center">${hot?`<span style="background:var(--brand);color:#2A140C;font-size:12px;font-weight:600;min-width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px">${hot}</span>`:''}<span aria-hidden="true">›</span></span></button>`;
+    const box=(v,title,sub,hot)=>`<button class="item" data-a="go" data-v="${v}" style="border:1px solid var(--line);padding:16px"><div><div class="t">${title}</div><div class="small muted">${sub}</div></div><span style="display:flex;gap:10px;align-items:center">${hot?`<span style="background:var(--brand);color:#FBF7F2;font-size:12px;font-weight:600;min-width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px">${hot}</span>`:''}<span aria-hidden="true">›</span></span></button>`;
     return `<div class="stack">
       <div class="stack-s"><div class="who">${avatar(proPhoto(me)||S.me.photo,me?me.name:S.me.name,48)}<span class="label">Bonjour ${esc(S.me.name.split(' ')[0])}</span></div><h1>Mon espace pro</h1></div>
       <div class="stack-s">
@@ -498,7 +501,7 @@ function vHome(){
   ensureStores();
   return `<div class="stack">
     ${homeTop()}
-    <div class="hero"><span class="label" style="color:inherit;opacity:.85">Bonjour ${esc(S.me.name.split(' ')[0])}</span><h2>Construis au pays,<br>sans te déplacer.</h2><p>Des pros vérifiés, des prix comparés, et ton argent bloqué jusqu'à ce que tu valides chaque étape.</p><button class="circ" data-a="go" data-v="how" aria-label="Comment ça marche">${ico(ARROW,22)}</button></div>
+    <div class="hero" style="${homePh(1)?'min-height:380px;justify-content:flex-end':''}">${(ensureHome(),phLayer(1))}<span class="label" style="color:inherit;opacity:.85">Bonjour ${esc(S.me.name.split(' ')[0])}</span><h2>Construis au pays,<br>sans te déplacer.</h2><p>Des pros vérifiés, des prix comparés, et ton argent bloqué jusqu'à ce que tu valides chaque étape.</p><button class="circ" data-a="go" data-v="how" aria-label="Comment ça marche">${ico(ARROW,22)}</button></div>
     <div class="stack-s"><h1 style="font-size:30px">${t('Mes projets')}</h1></div>
     <div class="row"><button class="btn" data-a="go" data-v="reqnew" style="flex:1">Demander des devis</button><button class="btn ghost" data-a="go" data-v="newp" style="flex:1">${t('Nouveau projet')}</button></div>
     ${(S.myReqs||[]).filter(x=>x.status==='ouverte').length?`<span class="label">Mes demandes en cours</span><div class="list">${(S.myReqs||[]).filter(x=>x.status==='ouverte').sort((a,b)=>b.at-a.at).map(x=>`<button class="item" data-a="openreq" data-v="${x.id}"><div><div class="t">${tnb(esc(x.title),reqUnread(x.id))}</div><div class="small muted">${esc(x.metier)} · ${esc(x.ville)}</div></div><span class="pill s-fait">${x.offerCount||0} proposition${(x.offerCount||0)>1?'s':''}</span></button>`).join('')}</div>`:''}
@@ -1599,8 +1602,8 @@ const PILLS=[['dir','Maçonnerie','Maçon','<path d="M3 20h18"></path><path d="M
  ['dir','Ingénieur civil','Ingénieur','<path d="M4 20h16"></path><path d="M6 20V10l6-6 6 6v10"></path><path d="M10 20v-5h4v5"></path>']];
 const HOW=[['Trouve','Un pro vérifié ou une quincaillerie de ta ville. Compare les avis et les prix.','var(--tile)','var(--fg)'],
  ['Bloque','Tu bloques l\'argent étape par étape. Le pro sait qu\'il sera payé, toi tu gardes le contrôle.','#5B2416','#F4E3C4'],
- ['Suis','Photos datées avec le code du jour, messages, visites surprises : tu vois ton chantier comme si tu y étais.','#C9776A','#2A140C'],
- ['Valide','Tu valides, le pro est payé. Un problème ? Un expert indépendant tranche.','#E3A33D','#2A140C']];
+ ['Suis','Photos datées avec le code du jour, messages, visites surprises : tu vois ton chantier comme si tu y étais.','var(--tile)','var(--fg)'],
+ ['Valide','Tu valides, le pro est payé. Un problème ? Un expert indépendant tranche.','#A4452A','#FBF7F2']];
 const ico=(d,sz)=>`<svg width="${sz||18}" height="${sz||18}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const ARROW='<path d="M5 12h14M13 6l6 6-6 6"></path>';
 function homeTop(){
@@ -1649,6 +1652,9 @@ function vSearch(){
 
 /* ---------- accueil / connexion ---------- */
 const ART=`<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Une maison aux murs terracotta avec une grande arche, un escalier, une plante et le soleil" style="display:block;width:100%;height:auto" preserveAspectRatio="xMidYMax slice" viewBox="0 0 360 220"> <defs> <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E9A06B"/><stop offset="1" stop-color="#F3C78F"/></linearGradient> <linearGradient id="wall" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#B85A35"/><stop offset="1" stop-color="#8E3B22"/></linearGradient> <linearGradient id="arch" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3A160D"/><stop offset="1" stop-color="#5B2416"/></linearGradient> </defs> <rect width="360" height="220" fill="url(#sky)"/> <circle cx="268" cy="62" r="34" fill="#F6D58A"/> <circle cx="268" cy="62" r="34" fill="none" stroke="#C8973F" stroke-width="1.5" stroke-dasharray="2 5"/> <path d="M0 220V128H96V96Q96 70 122 70H150V220Z" fill="#C9776A"/> <path d="M150 220V58Q150 30 180 30H236Q262 30 262 58V220Z" fill="url(#wall)"/> <path d="M178 220V112Q178 86 206 86Q234 86 234 112V220Z" fill="url(#arch)"/> <path d="M192 220V124Q192 108 206 108Q220 108 220 124V220Z" fill="#E7B36A" opacity=".55"/> <path d="M262 220V150H284V136H306V122H328V108H360V220Z" fill="#A9472A"/> <path d="M262 150H284M284 136H306M306 122H328M328 108H360" stroke="#7A2E19" stroke-width="2"/> <g fill="#F4E3C4" opacity=".55"><circle cx="164" cy="48" r="2"/><circle cx="176" cy="48" r="2"/><circle cx="188" cy="48" r="2"/><circle cx="200" cy="48" r="2"/><circle cx="212" cy="48" r="2"/><circle cx="224" cy="48" r="2"/><circle cx="236" cy="48" r="2"/><circle cx="248" cy="48" r="2"/></g> <path d="M160 60H252" stroke="#F4E3C4" stroke-width="1.5" opacity=".5"/> <path d="M112 118Q112 106 124 106Q136 106 136 118V150H112Z" fill="#7A2E19"/> <path d="M34 220Q30 196 44 186H76Q90 196 86 220Z" fill="#A9472A"/> <path d="M40 192H80" stroke="#7A2E19" stroke-width="2"/> <path d="M60 186C58 160 62 140 70 120" stroke="#4E5A2A" stroke-width="3" fill="none" stroke-linecap="round"/> <path d="M70 120C52 108 36 112 26 124C44 126 58 124 70 120Z" fill="#5E6B32"/> <path d="M68 130C84 112 102 110 114 118C100 132 82 134 68 130Z" fill="#6E7A3A"/> <path d="M62 150C46 142 32 148 26 160C40 162 54 158 62 150Z" fill="#5E6B32"/> <path d="M70 120C66 102 70 88 82 80C86 96 80 110 70 120Z" fill="#6E7A3A"/> <rect x="0" y="212" width="360" height="8" fill="#5B2416"/> <path d="M150 212H262" stroke="#C8973F" stroke-width="2"/> </svg>`;
+function homePh(i){const it=(S.home&&S.home.items)||[];if(!it.length)return null;return it[(i||0)%it.length];}
+function phLayer(i){const x=homePh(i);return x?`<img class="bgph" src="${x.data}" alt=""><div class="shade"></div>`:'';}
+function ensureHome(){if(S.homeOn||!S.db)return;S.homeOn=true;S.db.doc('config/home').onSnapshot(d=>{S.home=d.exists?d.data():null;render();},()=>{});}
 const TRUST=`<div class="trust">
   <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="1"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>Argent bloqué jusqu'à ta validation</div>
   <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v12H4z"></path><circle cx="12" cy="13" r="4"></circle></svg>Photos datées, impossibles à truquer</div>
@@ -1811,7 +1817,7 @@ function vAdmin(){
   const lit=prj.filter(p=>(p.steps||[]).some(s=>s.status==='litige'));
   const pros=S.pros.slice().sort((a,b)=>(a.verified?1:0)-(b.verified?1:0)||(b.createdAt||0)-(a.createdAt||0));
   const tab=S.p.atab||'over';
-  const tabs=[['over','Vue'],['pros','Pros'],['stores','Magasins'],['refs','Prix'],['users','Comptes'],['bugs','Bugs'],['tr','Lingala']];
+  const tabs=[['over','Vue'],['home','Accueil'],['pros','Pros'],['stores','Magasins'],['refs','Prix'],['users','Comptes'],['bugs','Bugs'],['tr','Lingala']];
   let body='';
   if(tab==='over') body=`<div class="stats">
       <div class="stat"><span class="label">Comptes</span><b>${S.allProfiles.length}</b></div>
@@ -1854,6 +1860,9 @@ function vAdmin(){
       <button class="btn" type="submit">Enregistrer les traductions</button></form>`;}
   if(tab==='stores') body=adminStores();
   if(tab==='refs') body=adminRefs();
+  if(tab==='home'){ensureHome();const it=(S.home&&S.home.items)||[];body=`<div class="stack-s"><p class="small muted" style="margin:0">Les photos de l'écran d'entrée et de l'accueil client (jusqu'à 4). Utilise tes propres photos ou des photos libres de droits (Unsplash, Pexels). La 1re photo va sur l'écran d'entrée, la 2e sur l'accueil client.</p>
+    ${it.length?`<div class="grid3">${it.map((x,i)=>`<div class="photo"><img src="${x.data}" alt=""><span>${i+1}${i===0?' · entrée':i===1?' · accueil':''} <button class="link" data-a="home-del" data-v="${i}" style="font-size:11px">Retirer</button></span></div>`).join('')}</div>`:'<div class="empty">Pas encore de photo : les bannières restent en couleur unie.</div>'}
+    ${it.length<4?`<input type="file" id="hm-file" accept="image/*" hidden><button class="btn sm" data-a="filepick" data-v="hm-file" style="align-self:flex-start">${S.busy?'Envoi…':'Ajouter une photo'}</button>`:''}</div>`;}
   if(tab==='bugs') body=S.bugs.length?`<div class="list">${S.bugs.map(b=>`<div class="item"><div><div class="small">${esc(b.text)}</div><div class="meta">${esc(b.who)} · ${ftime(b.at)}</div></div></div>`).join('')}</div>`:'<div class="empty">Aucun bug signalé pour l\'instant.</div>';
   return `<div class="stack">
     <div class="stack-s"><span class="label">Visible seulement par toi</span><h1>Espace admin</h1></div>
@@ -1953,6 +1962,7 @@ document.addEventListener('click',async e=>{
       return go(v==='store'?'mystore':'home');}
     if(a==='pill'){return b.dataset.k==='dir'?go('dir',{q:v}):go('market',{cat:v});}
     if(a==='dealref'){return go('market',{mtab:'cmp',ref:v});}
+    if(a==='home-del'&&S.admin){const it=((S.home&&S.home.items)||[]).filter((x,k)=>k!==+v);await S.db.doc('config/home').set({items:it});return;}
     if(a==='ref-del'&&S.admin){await S.db.doc('refprices/'+v).delete();return;}
     if(a==='filepick'){const i=document.getElementById(v);if(i)i.click();return;}
     if(a==='phi'){S.p.phi=+v;return render();}
@@ -2023,6 +2033,7 @@ document.addEventListener('change',async e=>{
 });
 
 async function handleFile(el,file,camShot){
+  if(el.id==='hm-file'&&file&&S.admin){S.busy=true;render();try{const data=await shrink(file,1000,110000);const it=[...((S.home&&S.home.items)||[]),{data,at:Date.now()}].slice(0,4);await S.db.doc('config/home').set({items:it});}catch(e){S.err='La photo n\'a pas pu être envoyée.';}S.busy=false;render();return;}
   if((el.id==='st-file'||el.id==='np-file'||el.classList.contains('pp-file'))&&file){
     S.busy=true;S.err='';render();
     try{
