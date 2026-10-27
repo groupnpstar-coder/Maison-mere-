@@ -232,6 +232,16 @@ h1,h2{font-weight:500}
 .slide img:nth-child(1){animation-delay:0s}.slide img:nth-child(2){animation-delay:6s}.slide img:nth-child(3){animation-delay:12s}.slide img:nth-child(4){animation-delay:18s}
 @keyframes mmfade{0%{opacity:0;transform:scale(1.04)}5%{opacity:1}25%{opacity:1}30%{opacity:0;transform:scale(1.12)}100%{opacity:0}}
 @media (prefers-reduced-motion:reduce){.slide img{animation:none}.slide img:first-child{opacity:1}}
+.insp{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:16px;scrollbar-width:none;margin:0 -16px;padding:4px 16px 8px}.insp::-webkit-scrollbar{display:none}
+.insp figure{margin:0;flex:0 0 62%;max-width:240px;scroll-snap-align:start;display:flex;flex-direction:column;gap:10px}
+.insp .fr{aspect-ratio:3/4;border-radius:999px 999px 14px 14px;overflow:hidden;border:1.5px solid var(--gold);padding:5px;background:transparent}
+.insp .fr img{width:100%;height:100%;object-fit:cover;border-radius:999px 999px 10px 10px;display:block}
+.insp figure:nth-child(3n+2) .fr{border-radius:999px}.insp figure:nth-child(3n+2) .fr img{border-radius:999px}
+.insp figcaption{font-family:var(--display);font-style:italic;font-size:20px;line-height:1.2;color:var(--fg)}
+.insp figcaption small{display:block;font-family:var(--body);font-style:normal;font-size:12px;color:var(--muted);margin-top:4px}
+.rings{position:absolute!important;right:-70px;top:-70px;width:220px;height:220px;border-radius:50%;z-index:-1!important;opacity:.5;pointer-events:none;mix-blend-mode:screen;
+background:radial-gradient(circle,#2A0F12 0 18%,#A4452A 18% 30%,#BF9E68 30% 40%,#5C2A2E 40% 52%,#D08A3C 52% 62%,#3A1519 62% 74%,#BF9E68 74% 78%,transparent 78%)}
+.capt{font-family:var(--display);font-style:italic;font-size:15px;opacity:.9;margin:0}
 .nb{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--brand);color:#2A0E11;font-size:11px;font-weight:700;letter-spacing:0;line-height:1;vertical-align:middle;margin-left:8px;border:none}
 .av{border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--tile);display:inline-flex;align-items:center;justify-content:center;font-weight:600;color:var(--fg);overflow:hidden}
 .who{display:flex;gap:12px;align-items:center;min-width:0}
@@ -347,7 +357,7 @@ function go(view,p){viewUnsubs.forEach(u=>u());viewUnsubs=[];S.view=view;S.p=p||
 function ensureProducts(){if(S.productsOn||!S.db)return;S.productsOn=true;S.db.collection('products').onSnapshot(q=>{S.products=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});}
 
 /* ---------- boot ---------- */
-const APPV='27.10-n';
+const APPV='27.10-o';
 (function(){try{fetch('version.txt?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(v=>{v=(v||'').trim();if(v&&v!==APPV){const k='mm-upd-'+v;let n=0;try{n=+sessionStorage.getItem(k)||0;sessionStorage.setItem(k,n+1);}catch(e){}if(n<2)location.replace(location.pathname+'?v='+encodeURIComponent(v)+location.hash);}}).catch(()=>{});}catch(e){}})();
 async function boot(){
   const cfg=window.FIREBASE_CONFIG;
@@ -520,26 +530,32 @@ function vChoose(){
    ['Dans quels pays ?','D\'abord en RD Congo et en Angola, pour des clients qui vivent en Belgique, en France, au Luxembourg et ailleurs. D\'autres pays suivront.']];
   return `<div class="stack" style="gap:0">
     <div class="land phsec" style="min-height:520px;gap:16px">${(ensureHome(),homePh(0)?phLayer(0):'<div class="slide" aria-hidden="true"><img src="img/a4.jpg" alt="" decoding="async"><img src="img/a2.jpg" alt="" decoding="async"><img src="img/a8.jpg" alt="" decoding="async"><img src="img/a5.jpg" alt="" decoding="async"></div>')}
-      <div class="bigmm" aria-hidden="true">MM</div>
+      <div class="rings" aria-hidden="true"></div><div class="bigmm" aria-hidden="true">MM</div>
       <span class="kicker">Bonjour ${esc(first)} · Maison Mère</span>
       <h1 style="font-size:46px;line-height:1">Construis au pays,<br>sans te déplacer.</h1>
       <p style="font-size:17px">De Bruxelles, Paris ou Luxembourg, fais construire ou rénover à Kinshasa ou Luanda avec des professionnels vérifiés. Ton argent reste bloqué tant que tu n'as pas validé le travail.</p>
       <div class="cta2">${go('client','Je fais construire','gold')}${go('pro','Je suis professionnel','line')}</div>
     </div>
     <div class="wax" aria-hidden="true"></div>
-    <section class="lsec c-slate phsec"><img class="bgi" src="img/a2.jpg" alt="" loading="lazy" decoding="async">
+    <section class="lsec c-wine">
+      <span class="kicker">Inspire-toi</span>
+      <h2>La maison que tu imagines, au pays.</h2>
+      <p class="muted" style="margin:0">Terre, laiton, bois et lumière : des idées pour ta future maison. Nos pros peuvent les réaliser.</p>
+      <div class="insp"><figure><div class="fr"><img src="img/a2.jpg" alt="Murs en terre, lumière dorée" loading="lazy" decoding="async"></div><figcaption>Murs en terre, lumière dorée<small>Enduit terracotta et sol en carreaux</small></figcaption></figure><figure><div class="fr"><img src="img/a5.jpg" alt="Formes douces" loading="lazy" decoding="async"></div><figcaption>Formes douces<small>Murs arrondis, bois brut, laiton</small></figcaption></figure><figure><div class="fr"><img src="img/a3.jpg" alt="Arches et grandes fenêtres" loading="lazy" decoding="async"></div><figcaption>Arches et grandes fenêtres<small>Une chambre ouverte sur le jardin</small></figcaption></figure><figure><div class="fr"><img src="img/a8.jpg" alt="Intérieur / extérieur" loading="lazy" decoding="async"></div><figcaption>Intérieur / extérieur<small>Patio, bassin, plantes tropicales</small></figcaption></figure><figure><div class="fr"><img src="img/a1.jpg" alt="Laiton plutôt que doré" loading="lazy" decoding="async"></div><figcaption>Laiton plutôt que doré<small>Bois foncé, mur vert profond</small></figcaption></figure><figure><div class="fr"><img src="img/a6.jpg" alt="Bain de pierre" loading="lazy" decoding="async"></div><figcaption>Bain de pierre<small>Douche à l'italienne, niche éclairée</small></figcaption></figure><figure><div class="fr"><img src="img/a7.jpg" alt="Salle à manger" loading="lazy" decoding="async"></div><figcaption>Salle à manger<small>Table en bois massif, suspension dorée</small></figcaption></figure><figure><div class="fr"><img src="img/a4.jpg" alt="Escalier dans la cour" loading="lazy" decoding="async"></div><figcaption>Escalier dans la cour<small>Éclairage bas, dallage en losanges</small></figcaption></figure></div>
+    </section>
+    <section class="lsec c-slate phsec"><img class="bgi" src="img/a2.jpg" alt="" loading="lazy" decoding="async"><p class="capt" aria-hidden="true">— Murs en terre, lumière dorée</p>
       <span class="kicker">Notre idée</span>
       <h2>Construire au pays ne devrait pas être un pari.</h2>
       <p style="margin:0;line-height:1.7">Envoyer de l'argent à un proche ou à un entrepreneur, puis attendre des nouvelles qui n'arrivent jamais : beaucoup de familles de la diaspora l'ont vécu. Maison Mère change la règle. Chaque étape a un prix accepté par les deux parties, l'argent est bloqué, le pro envoie des preuves en photos, et c'est toi qui décides quand il est payé.</p>
     </section>
 
-    <section class="lsec c-sand phsec"><img class="bgi" src="img/a3.jpg" alt="" loading="lazy" decoding="async">
+    <section class="lsec c-sand phsec"><img class="bgi" src="img/a3.jpg" alt="" loading="lazy" decoding="async"><p class="capt" aria-hidden="true">— Arches et grandes fenêtres</p>
       <span class="kicker">Comment ça marche</span>
       <h2>Quatre étapes, aucune surprise.</h2>
       <div class="steps4">${HOW.map((x,i)=>`<div><b>${i+1}</b><span><span style="font-weight:700;font-size:17px">${x[0]}</span><br><span class="muted" style="line-height:1.6">${x[1]}</span></span></div>`).join('')}</div>
     </section>
 
-    <section class="lsec c-navy phsec"><img class="bgi" src="img/a1.jpg" alt="" loading="lazy" decoding="async">
+    <section class="lsec c-navy phsec"><img class="bgi" src="img/a1.jpg" alt="" loading="lazy" decoding="async"><p class="capt" aria-hidden="true">— Laiton plutôt que doré</p>
       <span class="kicker">Pour qui ?</span>
       <h2>Choisis ton espace.</h2>
       <div class="who4">
@@ -551,7 +567,7 @@ function vChoose(){
       </div>
     </section>
 
-    <section class="lsec c-wood phsec"><img class="bgi" src="img/a7.jpg" alt="" loading="lazy" decoding="async">
+    <section class="lsec c-wood phsec"><img class="bgi" src="img/a7.jpg" alt="" loading="lazy" decoding="async"><p class="capt" aria-hidden="true">— Bois massif et suspension dorée</p>
       <span class="kicker">Nos garanties</span>
       <h2>La confiance, sans la croire sur parole.</h2>
       ${TRUST}
@@ -559,7 +575,7 @@ function vChoose(){
     </section>
 
     <div class="wax" aria-hidden="true"></div>
-    <section class="lsec c-wine faq phsec"><img class="bgi" src="img/a6.jpg" alt="" loading="lazy" decoding="async">
+    <section class="lsec c-wine faq phsec"><img class="bgi" src="img/a6.jpg" alt="" loading="lazy" decoding="async"><p class="capt" aria-hidden="true">— Bain de pierre</p>
       <span class="kicker">Questions fréquentes</span>
       <h2>Tu te poses des questions ?</h2>
       <div>${faq.map(q=>`<details><summary>${q[0]}</summary><p>${q[1]}</p></details>`).join('')}</div>
