@@ -1047,7 +1047,7 @@ function vMarket(){
     body=`<div class="field"><label class="label" for="cmp-ref">Produit à comparer</label><select id="cmp-ref" data-a="cmpref">${opts(REFS.filter(r=>r!=='Autre'),ref)}</select></div>
     ${fresh.length>1?`<p class="small" style="margin:0">${fresh.length} magasins · du moins cher au plus cher. Écart : ${eur(Math.round((Math.max(...fresh.map(x=>toEur(x.price,x.cur)))-lo)*100)/100)} par unité.</p>`:''}
     ${list.length?`<div class="list">${list.map((x,i)=>`${i===0&&!isStale(x)&&fresh.length>1?'<span class="label" style="margin-top:8px">Le moins cher</span>':''}${prodLine(x,true)}`).join('')}</div>`:`<div class="empty">Aucun magasin n'a encore publié « ${esc(ref)} »${ville?' dans cette ville':''}.</div>`}
-    <p class="small muted" style="margin:0">Le classement se fait seulement par prix, jamais par publicité. Les prix non confirmés depuis 30 jours passent à la fin. Les conversions en euros sont indicatives.</p>`;
+    <p class="small muted" style="margin:0">Le classement des offres est effectué exclusivement selon leur prix, sans aucune influence publicitaire ou commerciale. Les prix qui n\'ont pas été confirmés depuis plus de 30 jours sont automatiquement relégués en fin de classement. Les conversions en euros sont fournies à titre indicatif et peuvent varier en fonction du taux de change applicable.</p>`;
   }
   if(tab==='stores'){
     const list=(S.stores||[]).filter(s=>s.status!=='suspendue'&&inCity(s)).sort((a,b)=>(['partenaire','verifiee','a_verifier','suggeree'].indexOf(a.status))-(['partenaire','verifiee','a_verifier','suggeree'].indexOf(b.status)));
