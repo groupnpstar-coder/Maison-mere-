@@ -221,17 +221,22 @@ h1,h2{font-weight:500}
 .phsec{position:relative;overflow:hidden;isolation:isolate}
 .phsec>img.bgi{position:absolute!important;z-index:-2!important;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
 .phsec::before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(30,10,12,.62),rgba(30,10,12,.80))}
-.land.phsec::before{background:linear-gradient(180deg,rgba(30,10,12,.35),rgba(30,10,12,.85) 70%)}
+.land.phsec::before{background:linear-gradient(180deg,rgba(30,10,12,.12) 0%,rgba(30,10,12,.35) 35%,rgba(30,10,12,.88) 78%)}
+.hero.phsec::before{background:linear-gradient(180deg,rgba(30,10,12,.15),rgba(30,10,12,.82) 75%)}
 .phsec,.phsec h1,.phsec h2,.phsec p{color:#F4E7DA}
 .phsec .muted{color:#E2CCBD}
 .sysmsg{align-self:center;max-width:92%;text-align:center;display:flex;flex-direction:column;gap:4px;padding:10px 14px;border:1px dashed var(--line);font-size:13px;color:var(--muted);margin:4px 0}
 .mmname{white-space:nowrap}
 @media (max-width:420px){.top:has(#msgDot:not([hidden])) .mmname{display:none}}
 .slide{position:absolute!important;inset:0;z-index:-2!important;overflow:hidden}
-.slide img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;animation:mmfade 24s infinite;transform:scale(1.04)}
-.slide img:nth-child(1){animation-delay:0s}.slide img:nth-child(2){animation-delay:6s}.slide img:nth-child(3){animation-delay:12s}.slide img:nth-child(4){animation-delay:18s}
-@keyframes mmfade{0%{opacity:0;transform:scale(1.04)}5%{opacity:1}25%{opacity:1}30%{opacity:0;transform:scale(1.12)}100%{opacity:0}}
-@media (prefers-reduced-motion:reduce){.slide img{animation:none}.slide img:first-child{opacity:1}}
+.slide img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 1.6s ease;will-change:transform,opacity}
+.slide img.on{opacity:1}
+.slide img.kb0{animation:kb0 7s linear forwards}.slide img.kb1{animation:kb1 7s linear forwards}.slide img.kb2{animation:kb2 7s linear forwards}.slide img.kb3{animation:kb3 7s linear forwards}
+@keyframes kb0{from{transform:scale(1.02) translate(0,0)}to{transform:scale(1.14) translate(-3%,-2%)}}
+@keyframes kb1{from{transform:scale(1.14) translate(-2%,0)}to{transform:scale(1.03) translate(2%,1%)}}
+@keyframes kb2{from{transform:scale(1.04) translate(2%,2%)}to{transform:scale(1.15) translate(0,-2%)}}
+@keyframes kb3{from{transform:scale(1.12) translate(0,-2%)}to{transform:scale(1.02) translate(-2%,2%)}}
+@media (prefers-reduced-motion:reduce){.slide img{animation:none!important;transition:none}}
 .insp{display:flex;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:16px;scrollbar-width:none;margin:0 -16px;padding:4px 16px 8px}.insp::-webkit-scrollbar{display:none}
 .insp figure{margin:0;flex:0 0 62%;max-width:240px;scroll-snap-align:start;display:flex;flex-direction:column;gap:10px}
 .insp .fr{aspect-ratio:3/4;border-radius:999px 999px 14px 14px;overflow:hidden;border:1.5px solid var(--gold);padding:5px;background:transparent}
@@ -268,7 +273,7 @@ background:radial-gradient(circle,#2A0F12 0 18%,#A4452A 18% 30%,#BF9E68 30% 40%,
   <p class="test" id="testBanner">Version de test : l'argent est fictif, rien n'est réellement payé.</p>
   <main id="main">
     <div class="stack" style="gap:0">
-      <div class="land phsec" style="min-height:440px;gap:16px"><div class="slide" aria-hidden="true"><img src="img/a4.jpg" alt="" decoding="async"><img src="img/a2.jpg" alt="" decoding="async"><img src="img/a8.jpg" alt="" decoding="async"><img src="img/a5.jpg" alt="" decoding="async"></div>
+      <div class="land phsec" style="min-height:440px;gap:16px"><div class="slide" data-set="b2,b1,b12,b5,b15,b3,b6,b14,b8,b11,b4,b13,b10,b9,b16,b7" aria-hidden="true"></div>
         <div class="bigmm" aria-hidden="true">MM</div>
         <span class="kicker">Maison Mère</span>
         <h1 style="font-size:46px;line-height:1">Construis au pays,<br>sans te déplacer.</h1>
@@ -357,8 +362,22 @@ function go(view,p){viewUnsubs.forEach(u=>u());viewUnsubs=[];S.view=view;S.p=p||
 function ensureProducts(){if(S.productsOn||!S.db)return;S.productsOn=true;S.db.collection('products').onSnapshot(q=>{S.products=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});}
 
 /* ---------- boot ---------- */
-const APPV='27.10-o';
+const APPV='27.10-p';
 (function(){try{fetch('version.txt?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(v=>{v=(v||'').trim();if(v&&v!==APPV){const k='mm-upd-'+v;let n=0;try{n=+sessionStorage.getItem(k)||0;sessionStorage.setItem(k,n+1);}catch(e){}if(n<2)location.replace(location.pathname+'?v='+encodeURIComponent(v)+location.hash);}}).catch(()=>{});}catch(e){}})();
+const SLIDE={i:0,k:0};
+function slideTick(first){
+  document.querySelectorAll('.slide[data-set]').forEach(el=>{
+    const set=el.dataset.set.split(',');if(!set.length)return;
+    if(!el._init){el._init=1;el.innerHTML='<img alt=""><img alt="">';el._cur=0;el._idx=-1;}
+    const want=SLIDE.i%set.length; if(el._idx===want&&!first)return;
+    const imgs=el.querySelectorAll('img'), nx=imgs[el._cur^1];
+    const go=()=>{imgs.forEach(x=>x.classList.remove('on'));nx.className='on kb'+(SLIDE.k%4);el._cur^=1;el._idx=want;
+      const pre=new Image();pre.src='img/'+set[(want+1)%set.length]+'.jpg';};
+    nx.onload=go; nx.src='img/'+set[want]+'.jpg'; if(nx.complete&&nx.naturalWidth)go();
+  });
+}
+setInterval(()=>{SLIDE.i++;SLIDE.k++;slideTick();},6000);
+slideTick(true);
 async function boot(){
   const cfg=window.FIREBASE_CONFIG;
   if(!window.firebase||!cfg||!cfg.apiKey||cfg.apiKey.indexOf('COLLE')===0) return fail('La configuration Firebase n\'est pas encore installée.');
@@ -414,7 +433,7 @@ function authCreds(){
 }
 function vAuth(){
   return `<form class="stack" data-f="login">
-    <div class="land phsec" style="min-height:420px">${homePh(0)?phLayer(0):'<div class="slide" aria-hidden="true"><img src="img/a4.jpg" alt="" decoding="async"><img src="img/a2.jpg" alt="" decoding="async"><img src="img/a8.jpg" alt="" decoding="async"><img src="img/a5.jpg" alt="" decoding="async"></div>'}<div class="bigmm" aria-hidden="true">MM</div><h1>Construis au pays,<br>sans te déplacer.</h1><p>Des pros vérifiés, des prix comparés et ton argent bloqué jusqu'à ce que tu valides chaque étape.</p></div>
+    <div class="land phsec" style="min-height:420px">${homePh(0)?phLayer(0):'<div class="slide" data-set="b2,b1,b12,b5,b15,b3,b6,b14,b8,b11,b4,b13,b10,b9,b16,b7" aria-hidden="true"></div>'}<div class="bigmm" aria-hidden="true">MM</div><h1>Construis au pays,<br>sans te déplacer.</h1><p>Des pros vérifiés, des prix comparés et ton argent bloqué jusqu'à ce que tu valides chaque étape.</p></div>
     ${TRUST}
     <h2 class="sec">Connexion</h2>
     <p class="muted" style="margin:0">Connecte-toi ou crée ton compte. Un seul compte par personne.</p>
@@ -503,6 +522,7 @@ function render(){
   const ih=introHtml();
   if(ih){const m=html.match(/<\/h1>(\s*<\/div>)?/);html=m?html.slice(0,m.index+m[0].length)+ih+html.slice(m.index+m[0].length):ih+html;}
   $main.innerHTML=html;
+  slideTick(true);
   txDom($main);
   const hr=document.getElementById('howrail'),hp=document.getElementById('howprog');if(hr&&hp){hr.onscroll=()=>{const m=hr.scrollWidth-hr.clientWidth;hp.style.left=(m>0?hr.scrollLeft/m*75:0)+'%';};}
   if(S.hashRoute&&S.me){const r=S.hashRoute;S.hashRoute=null;try{history.replaceState(null,'',location.pathname);}catch(e){}
@@ -529,7 +549,7 @@ function vChoose(){
    ['Combien ça coûte ?','L\'inscription est gratuite. Une petite commission sera prélevée sur les paiements validés au lancement officiel. Pendant la phase de test, tout est gratuit.'],
    ['Dans quels pays ?','D\'abord en RD Congo et en Angola, pour des clients qui vivent en Belgique, en France, au Luxembourg et ailleurs. D\'autres pays suivront.']];
   return `<div class="stack" style="gap:0">
-    <div class="land phsec" style="min-height:520px;gap:16px">${(ensureHome(),homePh(0)?phLayer(0):'<div class="slide" aria-hidden="true"><img src="img/a4.jpg" alt="" decoding="async"><img src="img/a2.jpg" alt="" decoding="async"><img src="img/a8.jpg" alt="" decoding="async"><img src="img/a5.jpg" alt="" decoding="async"></div>')}
+    <div class="land phsec" style="min-height:520px;gap:16px">${(ensureHome(),homePh(0)?phLayer(0):'<div class="slide" data-set="b2,b1,b12,b5,b15,b3,b6,b14,b8,b11,b4,b13,b10,b9,b16,b7" aria-hidden="true"></div>')}
       <div class="rings" aria-hidden="true"></div><div class="bigmm" aria-hidden="true">MM</div>
       <span class="kicker">Bonjour ${esc(first)} · Maison Mère</span>
       <h1 style="font-size:46px;line-height:1">Construis au pays,<br>sans te déplacer.</h1>
@@ -541,7 +561,7 @@ function vChoose(){
       <span class="kicker">Inspire-toi</span>
       <h2>La maison que tu imagines, au pays.</h2>
       <p class="muted" style="margin:0">Terre, laiton, bois et lumière : des idées pour ta future maison. Nos pros peuvent les réaliser.</p>
-      <div class="insp"><figure><div class="fr"><img src="img/a2.jpg" alt="Murs en terre, lumière dorée" loading="lazy" decoding="async"></div><figcaption>Murs en terre, lumière dorée<small>Enduit terracotta et sol en carreaux</small></figcaption></figure><figure><div class="fr"><img src="img/a5.jpg" alt="Formes douces" loading="lazy" decoding="async"></div><figcaption>Formes douces<small>Murs arrondis, bois brut, laiton</small></figcaption></figure><figure><div class="fr"><img src="img/a3.jpg" alt="Arches et grandes fenêtres" loading="lazy" decoding="async"></div><figcaption>Arches et grandes fenêtres<small>Une chambre ouverte sur le jardin</small></figcaption></figure><figure><div class="fr"><img src="img/a8.jpg" alt="Intérieur / extérieur" loading="lazy" decoding="async"></div><figcaption>Intérieur / extérieur<small>Patio, bassin, plantes tropicales</small></figcaption></figure><figure><div class="fr"><img src="img/a1.jpg" alt="Laiton plutôt que doré" loading="lazy" decoding="async"></div><figcaption>Laiton plutôt que doré<small>Bois foncé, mur vert profond</small></figcaption></figure><figure><div class="fr"><img src="img/a6.jpg" alt="Bain de pierre" loading="lazy" decoding="async"></div><figcaption>Bain de pierre<small>Douche à l'italienne, niche éclairée</small></figcaption></figure><figure><div class="fr"><img src="img/a7.jpg" alt="Salle à manger" loading="lazy" decoding="async"></div><figcaption>Salle à manger<small>Table en bois massif, suspension dorée</small></figcaption></figure><figure><div class="fr"><img src="img/a4.jpg" alt="Escalier dans la cour" loading="lazy" decoding="async"></div><figcaption>Escalier dans la cour<small>Éclairage bas, dallage en losanges</small></figcaption></figure></div>
+      <div class="insp"><figure><div class="fr"><img src="img/b2.jpg" alt="Patio et bassin" loading="lazy" decoding="async"></div><figcaption>Patio et bassin<small>Lumière du soir, oliviers</small></figcaption></figure><figure><div class="fr"><img src="img/b1.jpg" alt="Salon vert profond" loading="lazy" decoding="async"></div><figcaption>Salon vert profond<small>Lampe en laiton, bouclette crème</small></figcaption></figure><figure><div class="fr"><img src="img/b6.jpg" alt="Escalier sculpté" loading="lazy" decoding="async"></div><figcaption>Escalier sculpté<small>Courbes, arbre intérieur</small></figcaption></figure><figure><div class="fr"><img src="img/b12.jpg" alt="Couloir en arches" loading="lazy" decoding="async"></div><figcaption>Couloir en arches<small>Lanternes tressées, sol poli</small></figcaption></figure><figure><div class="fr"><img src="img/b5.jpg" alt="Chambre terre" loading="lazy" decoding="async"></div><figcaption>Chambre terre<small>Enduit ocre, lin et bois</small></figcaption></figure><figure><div class="fr"><img src="img/b14.jpg" alt="Terrasse au couchant" loading="lazy" decoding="async"></div><figcaption>Terrasse au couchant<small>Grandes arches ouvertes</small></figcaption></figure><figure><div class="fr"><img src="img/b9.jpg" alt="Cuisine en marbre vert" loading="lazy" decoding="async"></div><figcaption>Cuisine en marbre vert<small>Tabourets en bois massif</small></figcaption></figure><figure><div class="fr"><img src="img/b11.jpg" alt="Bain de pierre" loading="lazy" decoding="async"></div><figcaption>Bain de pierre<small>Niche éclairée, mur bleu nuit</small></figcaption></figure><figure><div class="fr"><img src="img/b8.jpg" alt="Entrée dans le jardin" loading="lazy" decoding="async"></div><figcaption>Entrée dans le jardin<small>Allée de dalles, porte en bois</small></figcaption></figure><figure><div class="fr"><img src="img/b13.jpg" alt="Coin cheminée" loading="lazy" decoding="async"></div><figcaption>Coin cheminée<small>Main dorée, textures douces</small></figcaption></figure></div>
     </section>
     <section class="lsec c-slate phsec"><img class="bgi" src="img/a2.jpg" alt="" loading="lazy" decoding="async"><p class="capt" aria-hidden="true">— Murs en terre, lumière dorée</p>
       <span class="kicker">Notre idée</span>
@@ -646,7 +666,7 @@ function vHome(){
   ensureStores();
   return `<div class="stack">
     ${homeTop()}
-    <div class="hero phsec" style="background:#3A1519;min-height:340px;justify-content:flex-end">${(ensureHome(),homePh(1)?phLayer(1):'<div class="slide" aria-hidden="true"><img src="img/a3.jpg" alt="" decoding="async"><img src="img/a1.jpg" alt="" decoding="async"><img src="img/a6.jpg" alt="" decoding="async"><img src="img/a7.jpg" alt="" decoding="async"></div>')}<span class="label" style="color:inherit;opacity:.85">Bonjour ${esc(S.me.name.split(' ')[0])}</span><h2>Construis au pays,<br>sans te déplacer.</h2><p>Des pros vérifiés, des prix comparés, et ton argent bloqué jusqu'à ce que tu valides chaque étape.</p><button class="circ" data-a="go" data-v="how" aria-label="Comment ça marche">${ico(ARROW,22)}</button></div>
+    <div class="hero phsec" style="background:#3A1519;min-height:340px;justify-content:flex-end">${(ensureHome(),homePh(1)?phLayer(1):'<div class="slide" data-set="b5,b1,b9,b11,b3,b13,b4,b7" aria-hidden="true"></div>')}<span class="label" style="color:inherit;opacity:.85">Bonjour ${esc(S.me.name.split(' ')[0])}</span><h2>Construis au pays,<br>sans te déplacer.</h2><p>Des pros vérifiés, des prix comparés, et ton argent bloqué jusqu'à ce que tu valides chaque étape.</p><button class="circ" data-a="go" data-v="how" aria-label="Comment ça marche">${ico(ARROW,22)}</button></div>
     <div class="stack-s"><h1 style="font-size:30px">${t('Mes projets')}</h1></div>
     <div class="row"><button class="btn" data-a="go" data-v="reqnew" style="flex:1">Demander des devis</button><button class="btn ghost" data-a="go" data-v="newp" style="flex:1">${t('Nouveau projet')}</button></div>
     ${(S.myReqs||[]).filter(x=>x.status==='ouverte').length?`<span class="label">Mes demandes en cours</span><div class="list">${(S.myReqs||[]).filter(x=>x.status==='ouverte').sort((a,b)=>b.at-a.at).map(x=>`<button class="item" data-a="openreq" data-v="${x.id}"><div><div class="t">${tnb(esc(x.title),reqUnread(x.id))}</div><div class="small muted">${esc(x.metier)} · ${esc(x.ville)}</div></div><span class="pill s-fait">${x.offerCount||0} proposition${(x.offerCount||0)>1?'s':''}</span></button>`).join('')}</div>`:''}
