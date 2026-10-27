@@ -126,6 +126,11 @@ footer{font-size:11px;color:var(--muted);text-align:center;padding-top:20px;bord
 .chips button{flex-shrink:0;min-height:38px;padding:0 14px;border:1px solid var(--fg);background:var(--bg);font-size:12px;letter-spacing:.06em}
 .chips button[aria-pressed="true"]{background:var(--ink);color:var(--on-ink)}
 .badges{display:flex;flex-wrap:wrap;gap:6px}
+.pimg{width:64px;height:64px;object-fit:cover;flex-shrink:0;background:var(--tile);display:block}
+.sgal{display:flex;gap:8px;overflow-x:auto}
+.sgal button{border:2px solid transparent;padding:0;background:none;flex-shrink:0}
+.sgal button[aria-pressed="true"]{border-color:#FFD400}
+.sgal img{width:72px;height:54px;object-fit:cover;display:block}
 .nb{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#FFD400;color:#111;font-size:11px;font-weight:700;letter-spacing:0;line-height:1;vertical-align:middle;margin-left:8px;border:none}
 .av{border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--tile);display:inline-flex;align-items:center;justify-content:center;font-weight:600;color:var(--fg);overflow:hidden}
 .who{display:flex;gap:12px;align-items:center;min-width:0}
@@ -989,6 +994,14 @@ const storeById=id=>(S.stores||[]).find(x=>x.id===id);
 const prodStore=x=>x.storeId?storeById(x.storeId):(S.stores||[]).find(s=>s.proId&&s.proId===x.sellerProId);
 const myStores=()=>(S.stores||[]).filter(s=>s.ownerUid===S.uid);
 function ensureStores(){if(S.storesOn||!S.db)return;S.storesOn=true;S.db.collection('stores').onSnapshot(q=>{S.stores=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});S.db.doc('config/rates').onSnapshot(d=>{S.rates=d.exists?d.data():null;render();},()=>{});}
+function storePhotos(id){if(S.p.sphId!==id){S.p.sphId=id;S.p.sph=null;const u=S.db.doc('storephotos/'+id).onSnapshot(d=>{S.p.sph=d.exists?(d.data().items||[]):[];render();},()=>{S.p.sph=[];});viewUnsubs.push(u);}return S.p.sph||[];}
+function gallery(id,editable){
+  const ph=storePhotos(id); if(!ph.length) return '';
+  const i=Math.min(S.p.phi||0,ph.length-1);
+  return `<div class="stack-s"><img src="${ph[i].data}" alt="Photo du magasin" style="width:100%;aspect-ratio:4/3;object-fit:cover;background:var(--tile);display:block">
+   ${ph.length>1||editable?`<div class="sgal">${ph.map((x,k)=>`<button type="button" aria-pressed="${k===i}" data-a="phi" data-v="${k}" aria-label="Photo ${k+1}"><img src="${x.data}" alt=""></button>`).join('')}</div>`:''}
+   ${editable?`<button class="link" type="button" data-a="sph-del" data-v="${id}" data-d="${i}" style="align-self:flex-start">Retirer cette photo</button>`:''}</div>`;
+}
 function sPill(s){const x=SSTAT[(s&&s.status)||'a_verifier']||SSTAT.a_verifier;return `<span class="pill ${x[1]}">${x[0]}</span>`;}
 function checked(s){const v=(s&&s.verified)||{};return `<div class="stack-s" style="gap:4px">
   <div class="small ${v.exists?'verified':'muted'}">${v.exists?'✓':'○'} Le magasin existe vraiment${v.exists?' (vérifié le '+fdate(v.existsAt)+')':' : pas encore vérifié'}</div>
@@ -1004,12 +1017,12 @@ function prodLine(x,withStore){
   const s=prodStore(x);
   const act=(s&&s.status==='suspendue')||x.stock==='rupture'?'':isStale(x)?'<span class="small muted">Le magasin doit confirmer ce prix avant toute commande.</span>':`<button class="btn ghost sm" data-a="buy" data-v="${x.id}">${S.p.buy===x.id?'Fermer':t('Commander')}</button>`;
   return `<div class="item" style="flex-direction:column;align-items:stretch;gap:8px">
-   <div class="between" style="align-items:flex-start"><div style="min-width:0">
+   <div class="between" style="align-items:flex-start"><div style="display:flex;gap:12px;min-width:0">${x.photo?`<img class="pimg" src="${x.photo}" alt="" loading="lazy">`:''}<div style="min-width:0">
     <div class="t">${esc(x.name)}</div>
     <div class="small muted">${[x.brand,x.ref&&x.ref!=='Autre'?x.ref:''].filter(Boolean).map(esc).join(' · ')}</div>
     ${withStore?`<button class="link" data-a="store" data-v="${s?s.id:''}" style="padding:2px 0;text-transform:none;letter-spacing:0;font-size:13px;text-align:left">${esc(s?s.name:x.sellerName)} · ${esc(x.ville||'')}${x.quartier?', '+esc(x.quartier):''}</button>`:''}
     <div class="small ${x.stock==='rupture'?'unverified':'muted'}">${STOCK[x.stock||'dispo']}${s&&s.delivery&&s.delivery.fee!==''&&s.delivery.fee!=null?' · livraison '+fmtP(s.delivery.fee,s.delivery.cur||x.cur):''}</div>
-   </div>${priceTag(x)}</div>
+   </div></div>${priceTag(x)}</div>
    ${act?`<div style="display:flex;justify-content:flex-end">${act}</div>`:''}
    ${S.p.buy===x.id?orderForm(x):''}
   </div>`;
@@ -1038,7 +1051,7 @@ function vMarket(){
   }
   if(tab==='stores'){
     const list=(S.stores||[]).filter(s=>s.status!=='suspendue'&&inCity(s)).sort((a,b)=>(['partenaire','verifiee','a_verifier','suggeree'].indexOf(a.status))-(['partenaire','verifiee','a_verifier','suggeree'].indexOf(b.status)));
-    body=`${list.length?`<div class="list">${list.map(s=>{const n=S.products.filter(x=>prodStore(x)===s).length;return `<button class="item" data-a="store" data-v="${s.id}"><div style="min-width:0"><div class="t">${esc(s.name)}</div><div class="small muted">${esc(s.ville)}${s.quartier?', '+esc(s.quartier):''} · ${esc(s.pays)} · ${n?n+' produit'+(n>1?'s':''):'pas encore de prix'}</div></div>${sPill(s)}</button>`;}).join('')}</div>`:'<div class="empty">Aucune quincaillerie ici pour l\'instant.</div>'}
+    body=`${list.length?`<div class="list">${list.map(s=>{const n=S.products.filter(x=>prodStore(x)===s).length;return `<button class="item" data-a="store" data-v="${s.id}"><div style="display:flex;gap:12px;align-items:center;min-width:0">${s.thumb?`<img class="pimg" src="${s.thumb}" alt="" loading="lazy" style="width:56px;height:56px">`:`<span class="pimg" style="width:56px;height:56px;display:flex;align-items:center;justify-content:center" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M3 10l2-6h14l2 6"></path><path d="M4 10v10h16V10"></path><path d="M9 20v-6h6v6"></path></svg></span>`}<div style="min-width:0"><div class="t">${esc(s.name)}</div><div class="small muted">${esc(s.ville)}${s.quartier?', '+esc(s.quartier):''} · ${esc(s.pays)} · ${n?n+' produit'+(n>1?'s':''):'pas encore de prix'}</div></div></div>${sPill(s)}</button>`;}).join('')}</div>`:'<div class="empty">Aucune quincaillerie ici pour l\'instant.</div>'}
     ${S.p.suggest?suggestForm():`<button class="btn ghost" data-a="sg-open">Proposer une quincaillerie</button>`}`;
   }
   return `<div class="stack">
@@ -1074,6 +1087,7 @@ function vStore(){
   return `<div class="stack">
     <button class="link" data-a="go" data-v="market">${t('Retour')}</button>
     <div class="stack-s"><span class="label">${esc(s.ville)}${s.quartier?', '+esc(s.quartier):''} · ${esc(s.pays)}</span><h1>${esc(s.name)}</h1>${sPill(s)}</div>
+    ${gallery(s.id,false)}
     ${s.status==='suspendue'?'<p class="small unverified" style="margin:0">Ce magasin est suspendu : ses prix ne sont plus affichés.</p>':''}
     ${checked(s)}
     ${s.status==='suggeree'&&s.suggestedByName?`<p class="small muted" style="margin:0">Ajouté par ${esc(s.suggestedByName)} le ${fdate(s.at)}. Ce n'est pas un partenaire officiel.</p>`:''}
@@ -1122,8 +1136,12 @@ function vMyStore(){
     ${list.length>1?`<div class="chips">${list.map(x=>`<button aria-pressed="${x.id===s.id}" data-a="sid" data-v="${x.id}">${esc(x.name)}</button>`).join('')}</div>`:''}
     <p class="small muted" style="margin:0">${s.views||0} vue${(s.views||0)>1?'s':''} de ta fiche · ${ords.length} commande${ords.length>1?'s':''} reçue${ords.length>1?'s':''}</p>
     ${stale.length?`<div class="step" style="border-color:var(--warn)"><span class="label" style="color:var(--warn)">${stale.length} prix à confirmer</span><p class="small" style="margin:0">Un prix non confirmé depuis 30 jours n'est plus commandable. Confirme-le ou change-le.</p></div>`:''}
+    <div class="stack-s"><span class="label">Photos du magasin</span>
+      ${gallery(s.id,true)||'<p class="small muted" style="margin:0">Ajoute des photos de ta façade, de ton intérieur et de ton stock : les clients font plus confiance à un magasin qu\'ils voient.</p>'}
+      ${storePhotos(s.id).length<6?`<input type="file" id="st-file" accept="image/*" hidden data-v="${s.id}"><button class="btn ghost sm" data-a="filepick" data-v="st-file" style="align-self:flex-start">${S.busy?'Envoi…':'Ajouter une photo'}</button>`:'<p class="small muted" style="margin:0">6 photos maximum.</p>'}
+    </div>
     <span class="label">Mes produits</span>
-    ${prods.length?`<div class="list">${prods.map(x=>`<div class="item" style="align-items:flex-start"><div style="min-width:0"><div class="t">${esc(x.name)}</div><div class="small muted">${[x.brand,x.ref].filter(Boolean).map(esc).join(' · ')} · ${STOCK[x.stock||'dispo']}</div></div>${priceTag(x)}</div>
+    ${prods.length?`<div class="list">${prods.map(x=>`<div class="item" style="align-items:flex-start"><div style="display:flex;gap:12px;min-width:0">${x.photo?`<img class="pimg" src="${x.photo}" alt="">`:''}<div style="min-width:0"><div class="t">${esc(x.name)}</div><div class="small muted">${[x.brand,x.ref].filter(Boolean).map(esc).join(' · ')} · ${STOCK[x.stock||'dispo']}</div><input type="file" id="pp-${x.id}" class="pp-file" accept="image/*" hidden data-v="${x.id}"><button class="link" data-a="filepick" data-v="pp-${x.id}" style="padding:4px 0;font-size:12px">${x.photo?'Changer la photo':'Ajouter une photo'}</button></div></div>${priceTag(x)}</div>
       ${S.p.editp===x.id?`<form class="row" data-f="pupd" data-v="${x.id}" style="align-items:flex-end"><div class="field" style="flex:1;min-width:0"><label class="label" for="pu-price">Nouveau prix (${x.cur||'EUR'})</label><input id="pu-price" inputmode="decimal" maxlength="10" value="${x.price}"></div><div class="field" style="flex:1;min-width:0"><label class="label" for="pu-stock">Stock</label><select id="pu-stock">${Object.keys(STOCK).map(k=>`<option value="${k}"${(x.stock||'dispo')===k?' selected':''}>${STOCK[k]}</option>`).join('')}</select></div><button class="btn sm" type="submit">OK</button></form>`
       :`<div class="row" style="justify-content:flex-end;margin-top:-6px"><button class="btn ghost sm" data-a="pconf" data-v="${x.id}">Le prix n'a pas changé</button><button class="btn ghost sm" data-a="pedit" data-v="${x.id}">Modifier</button><button class="link" data-a="del-prod" data-v="${x.id}">Retirer</button></div>`}
       ${(x.history||[]).length>1?`<div class="small muted" style="margin-top:-4px">Historique : ${(x.history||[]).slice(-4).map(h=>fmtP(h.price,h.cur)+' ('+fdate(h.at)+')').join(' → ')}</div>`:''}`).join('')}</div>`:'<p class="small muted" style="margin:0">Aucun produit publié.</p>'}
@@ -1136,6 +1154,7 @@ function vMyStore(){
       <div class="field" style="flex:1;min-width:0"><label class="label" for="pr-stock">Stock</label><select id="pr-stock">${Object.keys(STOCK).map(k=>`<option value="${k}">${STOCK[k]}</option>`).join('')}</select></div></div>
       <div class="row"><div class="field" style="flex:2;min-width:0"><label class="label" for="pr-price">Prix par unité</label><input id="pr-price" inputmode="decimal" maxlength="10" required></div>
       <div class="field" style="flex:1;min-width:0"><label class="label" for="pr-cur">Devise</label><select id="pr-cur">${opts(CURS,cur)}</select></div></div>
+      <div class="row" style="align-items:center">${S.p.newPh?`<img class="pimg" src="${S.p.newPh}" alt="Photo du produit">`:''}<input type="file" id="np-file" accept="image/*" hidden><button class="btn ghost sm" type="button" data-a="filepick" data-v="np-file">${S.p.newPh?'Changer la photo':'Photo du produit (facultatif)'}</button></div>
       ${S.err?`<p class="err" style="margin:0">${esc(S.err)}</p>`:''}
       <button class="btn sm" type="submit">Publier</button></form>
     <form class="stack-s" data-f="sinfo" data-v="${s.id}" style="border:1px solid var(--line);padding:14px"><span class="label">Infos du magasin</span>
@@ -1716,6 +1735,9 @@ document.addEventListener('click',async e=>{
     if(a==='cprof'){const d=await S.db.doc('profiles/'+v).get();const back={view:S.view,p:S.p};S.back=back;return go('client',{data:d.exists?d.data():null});}
     if(a==='back'&&S.back){const bk=S.back;S.back=null;S.view=bk.view;S.p=bk.p;watchProject();return render();}
     if(a==='cat'){S.p.cat=v;S.p.buy=null;return render();}
+    if(a==='filepick'){const i=document.getElementById(v);if(i)i.click();return;}
+    if(a==='phi'){S.p.phi=+v;return render();}
+    if(a==='sph-del'){const items=(S.p.sph||[]).filter((x,k)=>k!==+b.dataset.d);await S.db.doc('storephotos/'+v).set({items});await S.db.doc('stores/'+v).update({thumb:items[0]?items[0].thumb||'':''});S.p.phi=0;return;}
     if(a==='mtab'){S.p.mtab=v;S.p.buy=null;S.err='';S.info='';return render();}
     if(a==='store'){if(!v)return;return go('store',{id:v});}
     if(a==='sg-open'){S.p.suggest=true;return render();}
@@ -1782,6 +1804,19 @@ document.addEventListener('change',async e=>{
 });
 
 async function handleFile(el,file,camShot){
+  if((el.id==='st-file'||el.id==='np-file'||el.classList.contains('pp-file'))&&file){
+    S.busy=true;S.err='';render();
+    try{
+      if(el.id==='np-file'){S.p.newPh=await shrink(file,240,14000);}
+      else if(el.id==='st-file'){const id=el.dataset.v, data=await shrink(file,720,60000), thumb=await shrink(file,160,8000);
+        const items=[...(S.p.sphId===id&&S.p.sph?S.p.sph:[]),{data,thumb,at:Date.now()}].slice(-6);
+        await S.db.doc('storephotos/'+id).set({items});
+        const st=storeById(id); if(st&&!st.thumb) await S.db.doc('stores/'+id).update({thumb});
+        S.p.phi=items.length-1;}
+      else {await S.db.doc('products/'+el.dataset.v).update({photo:await shrink(file,240,14000)});}
+    }catch(err){S.err='La photo n\'a pas pu être envoyée. Réessaie.';}
+    S.busy=false;render();return;
+  }
   if((el.id==='vi-file'||el.classList.contains('ex-file'))&&file){
     const p=prjById(S.p.id); if(!p) return;
     S.busy=true;S.err='';render();
@@ -2039,7 +2074,7 @@ document.addEventListener('submit',async e=>{
       const st=storeById(e.target.dataset.v); const price=parseFloat(val('pr-price').replace(/\s/g,'').replace(',','.'));
       if(!st||!val('pr-name')||!(price>0)){S.err='Donne un nom et un prix.';return render();}
       const now=Date.now(), cur=val('pr-cur')||'EUR';
-      await S.db.collection('products').add({storeId:st.id,sellerProId:st.proId||null,sellerUid:st.ownerUid||S.uid,sellerName:st.name,name:val('pr-name'),ref:val('pr-ref'),brand:val('pr-brand'),cat:val('pr-cat'),unit:val('pr-unit')||'pièce',stock:val('pr-stock')||'dispo',price,cur,pays:st.pays,ville:st.ville,quartier:st.quartier||'',at:now,confirmedAt:now,history:[{price,cur,at:now}]});
+      await S.db.collection('products').add({storeId:st.id,sellerProId:st.proId||null,sellerUid:st.ownerUid||S.uid,sellerName:st.name,name:val('pr-name'),ref:val('pr-ref'),brand:val('pr-brand'),cat:val('pr-cat'),unit:val('pr-unit')||'pièce',stock:val('pr-stock')||'dispo',price,cur,photo:S.p.newPh||'',pays:st.pays,ville:st.ville,quartier:st.quartier||'',at:now,confirmedAt:now,history:[{price,cur,at:now}]});S.p.newPh=null;
       ['pr-name','pr-price','pr-brand'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});render();
     }
     if(f==='pupd'){
