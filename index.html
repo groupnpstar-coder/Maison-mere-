@@ -333,7 +333,7 @@ function go(view,p){viewUnsubs.forEach(u=>u());viewUnsubs=[];S.view=view;S.p=p||
 function ensureProducts(){if(S.productsOn||!S.db)return;S.productsOn=true;S.db.collection('products').onSnapshot(q=>{S.products=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});}
 
 /* ---------- boot ---------- */
-const APPV='27.10-j';
+const APPV='27.10-k';
 (function(){try{fetch('version.txt?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(v=>{v=(v||'').trim();if(v&&v!==APPV){const k='mm-upd-'+v;let n=0;try{n=+sessionStorage.getItem(k)||0;sessionStorage.setItem(k,n+1);}catch(e){}if(n<2)location.replace(location.pathname+'?v='+encodeURIComponent(v)+location.hash);}}).catch(()=>{});}catch(e){}})();
 async function boot(){
   const cfg=window.FIREBASE_CONFIG;
@@ -500,7 +500,7 @@ function vChoose(){
   const go=(v,l,cls)=>`<button class="btn ${cls||''}" data-a="choose" data-v="${v}">${l}</button>`;
   const faq=[['Mon argent est-il en sécurité ?','Ton argent est bloqué pour chaque étape et ne part chez le professionnel que lorsque tu valides. Sans réponse de ta part, l\'étape est payée automatiquement au bout de 7 jours, pour protéger aussi le travail du pro. Pendant la phase de test, l\'argent affiché est fictif.'],
    ['Comment savoir si les photos sont vraies ?','Les photos sont prises en direct dans l\'application, avec le code du jour, la date et l\'heure collés dessus. Tu peux aussi demander une photo précise à tout moment, ou un appel vidéo WhatsApp.'],
-   ['Et s\'il y a un problème sur le chantier ?','Tu signales le problème : l\'argent reste bloqué et un expert indépendant de la ville, tiré au sort, va vérifier sur place. Celui qui a tort paie sa visite.'],
+   ['Et s\'il y a un problème sur le chantier ?','Tu signales le problème et l\'argent reste bloqué jusqu\'à ce que la situation soit clarifiée.<br><br>Un expert indépendant, tiré au sort parmi les experts agréés de la région, se rend sur place pour constater les faits.<br><br>Le principe est simple : celui qui a tort paie les frais de l\'expertise.<br><br>Résultat : moins de conflits, plus de transparence et une meilleure protection pour le client comme pour l\'entrepreneur.'],
    ['Qui sont les professionnels ?','Des maçons, électriciens, plombiers, ingénieurs et quincailleries inscrits avec leur identité. Le badge « vérifié » indique exactement ce qui a été contrôlé, et les avis viennent de vrais chantiers.'],
    ['Combien ça coûte ?','L\'inscription est gratuite. Une petite commission sera prélevée sur les paiements validés au lancement officiel. Pendant la phase de test, tout est gratuit.'],
    ['Dans quels pays ?','D\'abord en RD Congo et en Angola, pour des clients qui vivent en Belgique, en France, au Luxembourg et ailleurs. D\'autres pays suivront.']];
