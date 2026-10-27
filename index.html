@@ -1040,6 +1040,32 @@ function badgesHtml(p,small){const b=badges(p);return b.length?`<div class="badg
 async function bumpPro(id,k){const pr=proById(id);if(!pr)return;const st=Object.assign({paid:0,lost:0},pr.stats||{});st[k]=(st[k]||0)+1;await S.db.doc('pros/'+id).update({stats:st});}
 
 /* ---------- marché des matériaux ---------- */
+
+/* ---------- catalogue de prix de référence (géré par l'équipe) ---------- */
+const refStale=x=>Date.now()-(x.at||0)>STALE;
+function refBox(ref,ville){
+  const list=(S.refs||[]).filter(x=>x.ref===ref&&(!ville||(x.ville||'').toLowerCase().includes(ville))).sort((a,b)=>toEur(a.price,a.cur)-toEur(b.price,b.cur));
+  if(!list.length) return '';
+  return `<div class="stack-s" style="background:var(--tile);padding:16px;border-radius:24px 24px 0 0">
+    <span class="label">Prix de référence · indicatif</span>
+    ${list.map(x=>`<div class="between" style="align-items:flex-start"><div style="min-width:0"><div class="t">${esc(x.ville)}, ${esc(x.pays)}</div><div class="small muted">${esc(x.source||'Relevé Maison Mère')} · ${refStale(x)?'à mettre à jour':'relevé le '+fdate(x.at)}</div></div><div style="text-align:right;flex-shrink:0"><span class="money">${fmtP(x.price,x.cur)}</span><div class="meta">/ ${esc(x.unit||'unité')}${x.cur&&x.cur!=='EUR'?' · '+approx(x.price,x.cur):''}</div></div></div>`).join('')}
+    <p class="small muted" style="margin:0">Prix relevés par l'équipe Maison Mère pour vous donner un ordre d'idée. Ils ne sont pas garantis : seuls les magasins inscrits vendent et confirment leurs prix.</p></div>`;
+}
+function adminRefs(){
+  ensureStores();
+  const list=(S.refs||[]).slice().sort((a,b)=>a.ref.localeCompare(b.ref)||a.ville.localeCompare(b.ville));
+  return `<div class="stack-s">
+  <p class="small muted" style="margin:0">Le catalogue de référence remplit l'app dès maintenant : prix moyens relevés sur place, sur les sites des magasins ou par téléphone. Indique toujours la source. Ils s'affichent comme « indicatifs », jamais comme une offre d'un magasin.</p>
+  <form class="stack-s" data-f="refadd" style="border:1px solid var(--fg);padding:14px">
+    <div class="field"><label class="label" for="rf-ref">Produit</label><select id="rf-ref">${opts(REFS.filter(r=>r!=='Autre'),'Ciment 50 kg')}</select></div>
+    <div class="row"><div class="field" style="flex:1;min-width:0"><label class="label" for="rf-pays">Pays</label><select id="rf-pays">${opts(PAYS,'RD Congo')}</select></div><div class="field" style="flex:1;min-width:0"><label class="label" for="rf-ville">Ville</label><input id="rf-ville" maxlength="40" required placeholder="Kinshasa"></div></div>
+    <div class="row"><div class="field" style="flex:2;min-width:0"><label class="label" for="rf-price">Prix</label><input id="rf-price" inputmode="decimal" maxlength="12" required></div><div class="field" style="flex:1;min-width:0"><label class="label" for="rf-cur">Devise</label><select id="rf-cur">${opts(CURS,'CDF')}</select></div><div class="field" style="flex:1;min-width:0"><label class="label" for="rf-unit">Par</label><input id="rf-unit" maxlength="12" value="sac"></div></div>
+    <div class="field"><label class="label" for="rf-src">Source</label><input id="rf-src" maxlength="60" placeholder="Site Bricomat, relevé à Gombe, appel…"></div>
+    ${S.err?`<p class="err" style="margin:0">${esc(S.err)}</p>`:''}
+    <button class="btn sm" type="submit" style="align-self:flex-start">Ajouter ou mettre à jour</button></form>
+  ${list.length?`<div class="list">${list.map(x=>`<div class="item"><div style="min-width:0"><div class="t">${esc(x.ref)} · ${esc(x.ville)}</div><div class="small muted">${fmtP(x.price,x.cur)} / ${esc(x.unit||'')} · ${esc(x.source||'')} · ${fdate(x.at)}${refStale(x)?' · à mettre à jour':''}</div></div><button class="link" data-a="ref-del" data-v="${x.id}">Retirer</button></div>`).join('')}</div>`:'<div class="empty">Aucun prix de référence.</div>'}
+  </div>`;
+}
 /* ---------- marché : quincailleries, prix datés, comparaison ---------- */
 const CURS=['EUR','USD','CDF','AOA','XAF'];
 const RATES0={EUR:1,USD:0.86,CDF:0.0003,AOA:0.00094,XAF:0.001524};
@@ -1057,7 +1083,7 @@ const SSTAT={suggeree:['Suggérée par un utilisateur','s-attente'],a_verifier:[
 const storeById=id=>(S.stores||[]).find(x=>x.id===id);
 const prodStore=x=>x.storeId?storeById(x.storeId):(S.stores||[]).find(s=>s.proId&&s.proId===x.sellerProId);
 const myStores=()=>(S.stores||[]).filter(s=>s.ownerUid===S.uid);
-function ensureStores(){if(S.storesOn||!S.db)return;S.storesOn=true;S.db.collection('stores').onSnapshot(q=>{S.stores=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});S.db.doc('config/rates').onSnapshot(d=>{S.rates=d.exists?d.data():null;render();},()=>{});}
+function ensureStores(){if(S.storesOn||!S.db)return;S.storesOn=true;S.db.collection('refprices').onSnapshot(q=>{S.refs=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});S.db.collection('stores').onSnapshot(q=>{S.stores=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});S.db.doc('config/rates').onSnapshot(d=>{S.rates=d.exists?d.data():null;render();},()=>{});}
 function storePhotos(id){if(S.p.sphId!==id){S.p.sphId=id;S.p.sph=null;const u=S.db.doc('storephotos/'+id).onSnapshot(d=>{S.p.sph=d.exists?(d.data().items||[]):[];render();},()=>{S.p.sph=[];});viewUnsubs.push(u);}return S.p.sph||[];}
 function gallery(id,editable){
   const ph=storePhotos(id); if(!ph.length) return '';
@@ -1109,8 +1135,9 @@ function vMarket(){
     const list=visibleProds().filter(x=>x.ref===ref&&inCity(x)).sort((a,b)=>isStale(a)-isStale(b)||toEur(a.price,a.cur)-toEur(b.price,b.cur));
     const fresh=list.filter(x=>!isStale(x)), lo=fresh.length?Math.min(...fresh.map(x=>toEur(x.price,x.cur))):0;
     body=`<div class="field"><label class="label" for="cmp-ref">Produit à comparer</label><select id="cmp-ref" data-a="cmpref">${opts(REFS.filter(r=>r!=='Autre'),ref)}</select></div>
+    ${refBox(ref,ville)}
     ${fresh.length>1?`<p class="small" style="margin:0">${fresh.length} magasins · du moins cher au plus cher. Écart : ${eur(Math.round((Math.max(...fresh.map(x=>toEur(x.price,x.cur)))-lo)*100)/100)} par unité.</p>`:''}
-    ${list.length?`<div class="list">${list.map((x,i)=>`${i===0&&!isStale(x)&&fresh.length>1?'<span class="label" style="margin-top:8px">Le moins cher</span>':''}${prodLine(x,true)}`).join('')}</div>`:`<div class="empty">Aucun magasin n'a encore publié « ${esc(ref)} »${ville?' dans cette ville':''}.</div>`}
+    ${list.length?`<div class="list">${list.map((x,i)=>`${i===0&&!isStale(x)&&fresh.length>1?'<span class="label" style="margin-top:8px">Le moins cher</span>':''}${prodLine(x,true)}`).join('')}</div>`:`<div class="empty">Aucun magasin inscrit n'a encore publié « ${esc(ref)} »${ville?' dans cette ville':''}.</div>`}
     <p class="small muted" style="margin:0">Le classement des offres est effectué exclusivement selon leur prix, sans aucune influence publicitaire ou commerciale. Les prix qui n\'ont pas été confirmés depuis plus de 30 jours sont automatiquement relégués en fin de classement. Les conversions en euros sont fournies à titre indicatif et peuvent varier en fonction du taux de change applicable.</p>`;
   }
   if(tab==='stores'){
@@ -1583,10 +1610,11 @@ function homeTop(){
 function deals(){
   const fresh=visibleProds().filter(x=>x.ref&&x.ref!=='Autre'&&!isStale(x)&&x.stock!=='rupture');
   const by={};fresh.forEach(x=>{const e=toEur(x.price,x.cur);if(!by[x.ref]||e<toEur(by[x.ref].price,by[x.ref].cur))by[x.ref]=x;});
+  (S.refs||[]).filter(r=>!refStale(r)).forEach(r=>{if(!by[r.ref]||(by[r.ref].isRef&&toEur(r.price,r.cur)<toEur(by[r.ref].price,by[r.ref].cur)))by[r.ref]=Object.assign({isRef:true,sellerName:r.ville},r);});
   const list=Object.values(by).slice(0,8); if(!list.length) return '';
   return `<div class="between" style="align-items:baseline"><h2 class="sec">Meilleurs prix du moment</h2><button class="link" data-a="go" data-v="market">Tout voir</button></div>
-  <div class="rail">${list.map(x=>{const st=prodStore(x);return `<button class="dealcard" data-a="dealref" data-v="${esc(x.ref)}"><div class="ph">${x.photo?`<img src="${x.photo}" alt="" loading="lazy">`:ico(IC.cart,32)}</div>
-   <span class="small muted">${esc(x.ref)}</span><span class="money" style="font-size:18px">${fmtP(x.price,x.cur)}</span><span class="small muted">${x.cur&&x.cur!=='EUR'?approx(x.price,x.cur)+' · ':''}${esc(st?st.name:x.sellerName)}</span></button>`;}).join('')}</div>`;
+  <div class="rail">${list.map(x=>{const st=prodStore(x);return `<button class="dealcard" data-a="dealref" data-v="${esc(x.ref)}"><div class="ph">${x.photo&&!x.isRef?`<img src="${x.photo}" alt="" loading="lazy">`:ico(IC.cart,32)}</div>
+   <span class="small muted">${esc(x.ref)}</span><span class="money" style="font-size:18px">${fmtP(x.price,x.cur)}</span><span class="small muted">${x.cur&&x.cur!=='EUR'?approx(x.price,x.cur)+' · ':''}${x.isRef?'Indicatif · '+esc(x.ville):esc(st?st.name:x.sellerName)}</span></button>`;}).join('')}</div>`;
 }
 function howRail(){
   return `<h2 class="sec">Comment ça marche</h2>
@@ -1783,7 +1811,7 @@ function vAdmin(){
   const lit=prj.filter(p=>(p.steps||[]).some(s=>s.status==='litige'));
   const pros=S.pros.slice().sort((a,b)=>(a.verified?1:0)-(b.verified?1:0)||(b.createdAt||0)-(a.createdAt||0));
   const tab=S.p.atab||'over';
-  const tabs=[['over','Vue'],['pros','Pros'],['stores','Magasins'],['users','Comptes'],['bugs','Bugs'],['tr','Lingala']];
+  const tabs=[['over','Vue'],['pros','Pros'],['stores','Magasins'],['refs','Prix'],['users','Comptes'],['bugs','Bugs'],['tr','Lingala']];
   let body='';
   if(tab==='over') body=`<div class="stats">
       <div class="stat"><span class="label">Comptes</span><b>${S.allProfiles.length}</b></div>
@@ -1825,6 +1853,7 @@ function vAdmin(){
       ${S.p.trSaved?'<p class="small verified" style="margin:0">Enregistré.</p>':''}
       <button class="btn" type="submit">Enregistrer les traductions</button></form>`;}
   if(tab==='stores') body=adminStores();
+  if(tab==='refs') body=adminRefs();
   if(tab==='bugs') body=S.bugs.length?`<div class="list">${S.bugs.map(b=>`<div class="item"><div><div class="small">${esc(b.text)}</div><div class="meta">${esc(b.who)} · ${ftime(b.at)}</div></div></div>`).join('')}</div>`:'<div class="empty">Aucun bug signalé pour l\'instant.</div>';
   return `<div class="stack">
     <div class="stack-s"><span class="label">Visible seulement par toi</span><h1>Espace admin</h1></div>
@@ -1924,6 +1953,7 @@ document.addEventListener('click',async e=>{
       return go(v==='store'?'mystore':'home');}
     if(a==='pill'){return b.dataset.k==='dir'?go('dir',{q:v}):go('market',{cat:v});}
     if(a==='dealref'){return go('market',{mtab:'cmp',ref:v});}
+    if(a==='ref-del'&&S.admin){await S.db.doc('refprices/'+v).delete();return;}
     if(a==='filepick'){const i=document.getElementById(v);if(i)i.click();return;}
     if(a==='phi'){S.p.phi=+v;return render();}
     if(a==='sph-del'){const items=(S.p.sph||[]).filter((x,k)=>k!==+b.dataset.d);await S.db.doc('storephotos/'+v).set({items});await S.db.doc('stores/'+v).update({thumb:items[0]?items[0].thumb||'':''});S.p.phi=0;return;}
@@ -2274,6 +2304,15 @@ document.addEventListener('submit',async e=>{
       S.p.editp=null;render();
     }
     if(f==='hsearch'){const q=val('hs-q').trim();if(!q)return;return go('search',{q});}
+    if(f==='refadd'&&S.admin){
+      const price=parseFloat(val('rf-price').replace(/\s/g,'').replace(',','.')), ref=val('rf-ref'), ville=val('rf-ville').trim();
+      if(!(price>0)||!ville){S.err='Indique la ville et le prix.';return render();}
+      const ex=(S.refs||[]).find(x=>x.ref===ref&&x.ville.toLowerCase()===ville.toLowerCase());
+      const data={ref,pays:val('rf-pays'),ville,price,cur:val('rf-cur'),unit:val('rf-unit')||'unité',source:val('rf-src'),at:Date.now()};
+      if(ex) await S.db.doc('refprices/'+ex.id).update(Object.assign(data,{history:[...(ex.history||[]),{price:ex.price,cur:ex.cur,at:ex.at}].slice(-20)}));
+      else await S.db.collection('refprices').add(data);
+      ['rf-price','rf-src'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});render();
+    }
     if(f==='bulkstores'&&S.admin){
       const rows=val('bk-list').split('\n').map(l=>l.split(/[;\t]/).map(x=>x.trim())).filter(r=>r[0]);
       let n=0,dup=0;
