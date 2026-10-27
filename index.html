@@ -61,7 +61,10 @@ h1{font-size:34px} h2{font-size:26px}
 .between{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .top{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;padding-block:14px 10px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
-.brand{font-family:var(--display);font-size:20px;background:none;border:none;padding:6px 0}
+.brand{font-family:var(--display);font-size:20px;background:none;border:none;padding:6px 0;display:flex;align-items:center;gap:10px;color:var(--fg)}
+.mm{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border:1.5px solid var(--gold);color:var(--gold);font-family:var(--display);font-weight:600;font-size:20px;letter-spacing:-1px;line-height:1}
+@media (max-width:360px){.mmname{display:none}}
+.bigmm{font-family:var(--display);font-weight:600;font-size:110px;line-height:.85;letter-spacing:-6px;color:var(--gold);margin:0}
 .seg{display:flex;border:1px solid var(--fg)}
 .seg button{border:none;background:var(--bg);padding:8px 12px;font-size:11px;letter-spacing:.1em;font-weight:500;min-height:36px}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--on-ink)}
@@ -230,7 +233,7 @@ h1,h2{font-weight:500}
 <body>
 <div id="app">
   <div class="top">
-    <div class="row" style="gap:10px;min-width:0;position:relative"><button class="brand" data-a="reload" aria-label="Maison Mère : actualiser">Maison Mère</button><button id="modeTag" class="label" data-a="spacemenu" aria-haspopup="true" aria-expanded="false" hidden></button><button id="msgDot" class="nb" data-a="home" hidden style="margin-left:0;height:22px;min-width:22px"></button></div>
+    <div class="row" style="gap:10px;min-width:0;position:relative"><button class="brand" data-a="reload" aria-label="Maison Mère : actualiser"><span class="mm">MM</span><span class="mmname">Maison Mère</span></button><button id="modeTag" class="label" data-a="spacemenu" aria-haspopup="true" aria-expanded="false" hidden></button><button id="msgDot" class="nb" data-a="home" hidden style="margin-left:0;height:22px;min-width:22px"></button></div>
     <div id="spaceMenu" role="menu" hidden></div>
     <div class="row" style="gap:8px">
     <label for="langSel" class="label" style="position:absolute;left:-9999px">Langue</label>
@@ -242,6 +245,7 @@ h1,h2{font-weight:500}
   <main id="main">
     <div class="stack" style="gap:0">
       <div class="land" style="min-height:440px;gap:16px">
+        <div class="bigmm" aria-hidden="true">MM</div>
         <span class="kicker">Maison Mère</span>
         <h1 style="font-size:46px;line-height:1">Construis au pays,<br>sans te déplacer.</h1>
         <p style="font-size:17px">De Bruxelles, Paris ou Luxembourg, fais construire ou rénover à Kinshasa ou Luanda avec des professionnels vérifiés. Ton argent reste bloqué tant que tu n'as pas validé le travail.</p>
@@ -384,7 +388,7 @@ function authCreds(){
 }
 function vAuth(){
   return `<form class="stack" data-f="login">
-    <div class="land" style="${homePh(0)?'min-height:420px':''}">${phLayer(0)}<h1>Construis au pays,<br>sans te déplacer.</h1><p>Des pros vérifiés, des prix comparés et ton argent bloqué jusqu'à ce que tu valides chaque étape.</p></div>
+    <div class="land" style="${homePh(0)?'min-height:420px':''}">${phLayer(0)}<div class="bigmm" aria-hidden="true">MM</div><h1>Construis au pays,<br>sans te déplacer.</h1><p>Des pros vérifiés, des prix comparés et ton argent bloqué jusqu'à ce que tu valides chaque étape.</p></div>
     ${TRUST}
     <h2 class="sec">Connexion</h2>
     <p class="muted" style="margin:0">Connecte-toi ou crée ton compte. Un seul compte par personne.</p>
@@ -459,7 +463,7 @@ function render(){
   mt.setAttribute('aria-expanded',String(!!S.menuOpen)); sm.hidden=!(S.menuOpen&&S.me&&S.chosen);
   if(!sm.hidden) sm.innerHTML=[['client','Client','Je fais construire ou réparer',true],['pro','Professionnel','Je propose mon travail',true],['expert','Expert','Je tranche les litiges',true],['admin','Administration','Je gère l\'application',S.admin]].filter(x=>x[3]).map(x=>`<button role="menuitem" data-a="mode" data-v="${x[0]}"><span><b style="font-weight:500;display:block">${x[1]}</b><span class="small muted">${x[2]}</span></span>${S.mode===x[0]?'<span class="on">ICI</span>':''}</button>`).join('');
   document.getElementById('langSel').value=LANG;
-  document.getElementById('testBanner').textContent=t('Version de test : l\'argent est fictif, rien n\'est réellement payé.')+' · v27.10-f';
+  document.getElementById('testBanner').textContent=t('Version de test : l\'argent est fictif, rien n\'est réellement payé.')+' · v27.10-g';
   document.getElementById('footRule').textContent=t('Chacun peut noter l\'autre et arrêter le contrat si l\'accord n\'est pas respecté.');
   let html;
   if(!S.uid) html=vAuth();
@@ -500,6 +504,7 @@ function vChoose(){
    ['Dans quels pays ?','D\'abord en RD Congo et en Angola, pour des clients qui vivent en Belgique, en France, au Luxembourg et ailleurs. D\'autres pays suivront.']];
   return `<div class="stack" style="gap:0">
     <div class="land" style="min-height:${homePh(0)?'520':'440'}px;gap:16px">${(ensureHome(),phLayer(0))}
+      <div class="bigmm" aria-hidden="true">MM</div>
       <span class="kicker">Bonjour ${esc(first)} · Maison Mère</span>
       <h1 style="font-size:46px;line-height:1">Construis au pays,<br>sans te déplacer.</h1>
       <p style="font-size:17px">De Bruxelles, Paris ou Luxembourg, fais construire ou rénover à Kinshasa ou Luanda avec des professionnels vérifiés. Ton argent reste bloqué tant que tu n'as pas validé le travail.</p>
