@@ -398,6 +398,11 @@ function render(){
   if(ih){const m=html.match(/<\/h1>(\s*<\/div>)?/);html=m?html.slice(0,m.index+m[0].length)+ih+html.slice(m.index+m[0].length):ih+html;}
   $main.innerHTML=html;
   const hr=document.getElementById('howrail'),hp=document.getElementById('howprog');if(hr&&hp){hr.onscroll=()=>{const m=hr.scrollWidth-hr.clientWidth;hp.style.left=(m>0?hr.scrollLeft/m*75:0)+'%';};}
+  if(S.hashRoute&&S.me){const r=S.hashRoute;S.hashRoute=null;try{history.replaceState(null,'',location.pathname);}catch(e){}
+    if(r==='inscrire-mon-magasin'||r==='devenir-pro'){S.chosen=true;S.mode='pro';try{sessionStorage.setItem('mm-chosen-'+S.uid,'1');localStorage.setItem('mm-mode-'+S.uid,'pro');}catch(e){}
+      setTimeout(()=>{if(!S.me.proId)go('myfiche',{metier:r==='inscrire-mon-magasin'?'Fournisseur de matériaux':''});else go(r==='inscrire-mon-magasin'?'mystore':'home');},0);}
+    else{if(!S.chosen){S.chosen=true;try{sessionStorage.setItem('mm-chosen-'+S.uid,'1');}catch(e){}}
+      setTimeout(()=>{if(r==='comment-ca-marche')go('how');else if(r==='quincailleries')go('market');else go('market',{mtab:'cmp'});},0);}}
   if(S.hashStore&&S.me&&S.chosen){const id=S.hashStore;S.hashStore=null;try{history.replaceState(null,'',location.pathname);}catch(e){}setTimeout(()=>go('store',{id}),0);}
   Object.keys(keep).forEach(id=>{const el=document.getElementById(id);if(el&&el.dataset.fresh!=='1') el.value=keep[id];});
   if(ae){const el=document.getElementById(ae);if(el){el.focus();try{const n=el.value.length;el.setSelectionRange(n,n);}catch(x){}}}
@@ -405,6 +410,7 @@ function render(){
 }
 
 S.hashStore=(location.hash.match(/magasin=([\w-]+)/)||[])[1]||null;
+S.hashRoute=(location.hash.match(/^#(comment-ca-marche|inscrire-mon-magasin|devenir-pro|quincailleries|comparer-les-prix)$/)||[])[1]||null;
 function vChoose(){
   const first=(S.me.name||'').split(' ')[0];
   const card=(v,title,sub,icon)=>`<button class="item" data-a="choose" data-v="${v}" style="border:1px solid var(--line);padding:18px 16px;align-items:center">
@@ -1132,7 +1138,7 @@ function vStore(){
     ${gallery(s.id,false)}
     ${s.status==='suspendue'?'<p class="small unverified" style="margin:0">Ce magasin est suspendu : ses prix ne sont plus affichés.</p>':''}
     ${checked(s)}
-    ${s.status==='suggeree'&&s.suggestedByName?`<p class="small muted" style="margin:0">Ajouté par ${esc(s.suggestedByName)} le ${fdate(s.at)}. Ce n'est pas un partenaire officiel.</p>`:''}
+    ${s.addedByTeam&&!s.ownerUid?`<p class="small muted" style="margin:0">Fiche créée par l'équipe Maison Mère à partir d'informations publiques. Le magasin ne l'a pas encore confirmée.</p>`:s.status==='suggeree'&&s.suggestedByName?`<p class="small muted" style="margin:0">Ajouté par ${esc(s.suggestedByName)} le ${fdate(s.at)}. Ce n'est pas un partenaire officiel.</p>`:''}
     ${s.phone?`<div class="stack-s"><span class="label">Téléphone</span><span class="money" style="user-select:all">${esc(s.phone)}</span></div>`:''}
     ${s.delivery&&(s.delivery.fee!==''||s.delivery.delay)?`<div class="stack-s"><span class="label">Livraison</span><span class="small">${s.delivery.fee!==''&&s.delivery.fee!=null?'Frais : '+fmtP(s.delivery.fee,s.delivery.cur||PAYS_CUR[s.pays]||'EUR')+' · ':''}${esc(s.delivery.delay||'')}${s.delivery.zone?' · '+esc(s.delivery.zone):''}</span></div>`:''}
     ${pr?`<button class="link" data-a="pro" data-v="${pr.id}" style="align-self:flex-start">Voir les avis du vendeur</button>`:''}
@@ -1215,6 +1221,12 @@ function adminStores(){
   const list=(S.stores||[]).slice().sort((a,b)=>(b.claim&&b.claim.status==='attente')-(a.claim&&a.claim.status==='attente')||(b.at||0)-(a.at||0));
   return `<div class="stack-s"><p class="small muted" style="margin:0">Statuts : suggérée → existence à vérifier → vérifiée → partenaire actif. « Vérifiée » ne veut pas dire « fiable » : coche seulement ce que tu as réellement contrôlé.</p>
   <div class="field"><label class="label" for="rt-cdf">Taux indicatifs : 1 € = … (CDF / AOA / USD)</label><div class="row"><input id="rt-cdf" style="flex:1;min-width:0" inputmode="decimal" value="${Math.round(1/rates().CDF)}"><input id="rt-aoa" style="flex:1;min-width:0" inputmode="decimal" value="${Math.round(1/rates().AOA)}"><input id="rt-usd" style="flex:1;min-width:0" inputmode="decimal" value="${(1/rates().USD).toFixed(2)}"><button class="btn ghost sm" data-a="adm-rates">OK</button></div></div>
+  <form class="stack-s" data-f="bulkstores" style="border:1px solid var(--fg);padding:14px">
+    <span class="label">Ajouter des magasins (un par ligne)</span>
+    <p class="small muted" style="margin:0">Format : Nom ; Pays ; Ville ; Quartier ; Téléphone. Seules les infos publiques (nom, adresse, téléphone). Les prix, seulement avec l'accord du magasin.</p>
+    <textarea id="bk-list" rows="6" placeholder="Bricomat ; Angola ; Luanda ; Talatona ; +244 928 157 000&#10;Les Bons Amis ; RD Congo ; Kinshasa ; N'sele ; +243 891 609 300"></textarea>
+    ${S.p.bkInfo?`<p class="small verified" style="margin:0">${esc(S.p.bkInfo)}</p>`:''}
+    <button class="btn sm" type="submit" style="align-self:flex-start">Ajouter</button></form>
   ${list.length?`<div class="list">${list.map(s=>{const v=s.verified||{};return `<div class="item" style="flex-direction:column;align-items:stretch;gap:8px">
     <div class="between"><div style="min-width:0"><div class="t">${esc(s.name)}</div><div class="small muted">${esc(s.ville)}, ${esc(s.pays)}${s.phone?' · '+esc(s.phone):''}${s.suggestedByName?' · proposé par '+esc(s.suggestedByName):''}</div></div>${sPill(s)}</div>
     ${s.claim&&s.claim.status==='attente'?`<div class="row" style="align-items:center"><span class="small" style="color:var(--warn)">${esc(s.claim.name)} dit que c'est son magasin (${esc(s.claim.phone||'')})</span><button class="btn sm" data-a="adm-claim" data-v="${s.id}" data-d="ok">Accepter</button><button class="link" data-a="adm-claim" data-v="${s.id}" data-d="no">Refuser</button></div>`:''}
@@ -2239,6 +2251,15 @@ document.addEventListener('submit',async e=>{
       S.p.editp=null;render();
     }
     if(f==='hsearch'){const q=val('hs-q').trim();if(!q)return;return go('search',{q});}
+    if(f==='bulkstores'&&S.admin){
+      const rows=val('bk-list').split('\n').map(l=>l.split(/[;\t]/).map(x=>x.trim())).filter(r=>r[0]);
+      let n=0,dup=0;
+      for(const r of rows){const [name,pays0,ville,quartier,phone]=r;const pays=PAYS.includes(pays0)?pays0:(pays0||'RD Congo');
+        if((S.stores||[]).some(x=>x.name.trim().toLowerCase()===name.toLowerCase()&&(x.ville||'').toLowerCase()===(ville||'').toLowerCase())){dup++;continue;}
+        await S.db.collection('stores').add({name,pays,ville:ville||'',quartier:quartier||'',phone:phone||'',status:'a_verifier',verified:{},suggestedBy:S.uid,suggestedByName:'Maison Mère',addedByTeam:true,at:Date.now(),views:0});n++;}
+      S.p.bkInfo=`${n} magasin${n>1?'s':''} ajouté${n>1?'s':''}${dup?` · ${dup} déjà présent${dup>1?'s':''}`:''}.`;
+      const el=document.getElementById('bk-list');if(el)el.value='';render();
+    }
     if(f==='suggest'){
       const name=val('sg-name'), ville=val('sg-ville');
       if(!name||!ville){S.err='Donne au moins le nom et la ville.';return render();}
