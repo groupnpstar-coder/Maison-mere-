@@ -224,6 +224,14 @@ h1,h2{font-weight:500}
 .land.phsec::before{background:linear-gradient(180deg,rgba(30,10,12,.35),rgba(30,10,12,.85) 70%)}
 .phsec,.phsec h1,.phsec h2,.phsec p{color:#F4E7DA}
 .phsec .muted{color:#E2CCBD}
+.sysmsg{align-self:center;max-width:92%;text-align:center;display:flex;flex-direction:column;gap:4px;padding:10px 14px;border:1px dashed var(--line);font-size:13px;color:var(--muted);margin:4px 0}
+.mmname{white-space:nowrap}
+@media (max-width:420px){.top:has(#msgDot:not([hidden])) .mmname{display:none}}
+.slide{position:absolute!important;inset:0;z-index:-2!important;overflow:hidden}
+.slide img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;animation:mmfade 24s infinite;transform:scale(1.04)}
+.slide img:nth-child(1){animation-delay:0s}.slide img:nth-child(2){animation-delay:6s}.slide img:nth-child(3){animation-delay:12s}.slide img:nth-child(4){animation-delay:18s}
+@keyframes mmfade{0%{opacity:0;transform:scale(1.04)}5%{opacity:1}25%{opacity:1}30%{opacity:0;transform:scale(1.12)}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.slide img{animation:none}.slide img:first-child{opacity:1}}
 .nb{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--brand);color:#2A0E11;font-size:11px;font-weight:700;letter-spacing:0;line-height:1;vertical-align:middle;margin-left:8px;border:none}
 .av{border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--tile);display:inline-flex;align-items:center;justify-content:center;font-weight:600;color:var(--fg);overflow:hidden}
 .who{display:flex;gap:12px;align-items:center;min-width:0}
@@ -250,7 +258,7 @@ h1,h2{font-weight:500}
   <p class="test" id="testBanner">Version de test : l'argent est fictif, rien n'est réellement payé.</p>
   <main id="main">
     <div class="stack" style="gap:0">
-      <div class="land phsec" style="min-height:440px;gap:16px"><img class="bgi" src="img/a4.jpg" alt="">
+      <div class="land phsec" style="min-height:440px;gap:16px"><div class="slide" aria-hidden="true"><img src="img/a4.jpg" alt="" decoding="async"><img src="img/a2.jpg" alt="" decoding="async"><img src="img/a8.jpg" alt="" decoding="async"><img src="img/a5.jpg" alt="" decoding="async"></div>
         <div class="bigmm" aria-hidden="true">MM</div>
         <span class="kicker">Maison Mère</span>
         <h1 style="font-size:46px;line-height:1">Construis au pays,<br>sans te déplacer.</h1>
@@ -339,7 +347,7 @@ function go(view,p){viewUnsubs.forEach(u=>u());viewUnsubs=[];S.view=view;S.p=p||
 function ensureProducts(){if(S.productsOn||!S.db)return;S.productsOn=true;S.db.collection('products').onSnapshot(q=>{S.products=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});}
 
 /* ---------- boot ---------- */
-const APPV='27.10-l';
+const APPV='27.10-n';
 (function(){try{fetch('version.txt?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(v=>{v=(v||'').trim();if(v&&v!==APPV){const k='mm-upd-'+v;let n=0;try{n=+sessionStorage.getItem(k)||0;sessionStorage.setItem(k,n+1);}catch(e){}if(n<2)location.replace(location.pathname+'?v='+encodeURIComponent(v)+location.hash);}}).catch(()=>{});}catch(e){}})();
 async function boot(){
   const cfg=window.FIREBASE_CONFIG;
@@ -396,7 +404,7 @@ function authCreds(){
 }
 function vAuth(){
   return `<form class="stack" data-f="login">
-    <div class="land phsec" style="min-height:420px">${homePh(0)?phLayer(0):'<img class="bgi" src="img/a4.jpg" alt="" decoding="async">'}<div class="bigmm" aria-hidden="true">MM</div><h1>Construis au pays,<br>sans te déplacer.</h1><p>Des pros vérifiés, des prix comparés et ton argent bloqué jusqu'à ce que tu valides chaque étape.</p></div>
+    <div class="land phsec" style="min-height:420px">${homePh(0)?phLayer(0):'<div class="slide" aria-hidden="true"><img src="img/a4.jpg" alt="" decoding="async"><img src="img/a2.jpg" alt="" decoding="async"><img src="img/a8.jpg" alt="" decoding="async"><img src="img/a5.jpg" alt="" decoding="async"></div>'}<div class="bigmm" aria-hidden="true">MM</div><h1>Construis au pays,<br>sans te déplacer.</h1><p>Des pros vérifiés, des prix comparés et ton argent bloqué jusqu'à ce que tu valides chaque étape.</p></div>
     ${TRUST}
     <h2 class="sec">Connexion</h2>
     <p class="muted" style="margin:0">Connecte-toi ou crée ton compte. Un seul compte par personne.</p>
@@ -511,7 +519,7 @@ function vChoose(){
    ['Combien ça coûte ?','L\'inscription est gratuite. Une petite commission sera prélevée sur les paiements validés au lancement officiel. Pendant la phase de test, tout est gratuit.'],
    ['Dans quels pays ?','D\'abord en RD Congo et en Angola, pour des clients qui vivent en Belgique, en France, au Luxembourg et ailleurs. D\'autres pays suivront.']];
   return `<div class="stack" style="gap:0">
-    <div class="land phsec" style="min-height:520px;gap:16px">${(ensureHome(),homePh(0)?phLayer(0):'<img class="bgi" src="img/a4.jpg" alt="" decoding="async">')}
+    <div class="land phsec" style="min-height:520px;gap:16px">${(ensureHome(),homePh(0)?phLayer(0):'<div class="slide" aria-hidden="true"><img src="img/a4.jpg" alt="" decoding="async"><img src="img/a2.jpg" alt="" decoding="async"><img src="img/a8.jpg" alt="" decoding="async"><img src="img/a5.jpg" alt="" decoding="async"></div>')}
       <div class="bigmm" aria-hidden="true">MM</div>
       <span class="kicker">Bonjour ${esc(first)} · Maison Mère</span>
       <h1 style="font-size:46px;line-height:1">Construis au pays,<br>sans te déplacer.</h1>
@@ -622,7 +630,7 @@ function vHome(){
   ensureStores();
   return `<div class="stack">
     ${homeTop()}
-    <div class="hero phsec" style="background:#3A1519;min-height:340px;justify-content:flex-end">${(ensureHome(),homePh(1)?phLayer(1):'<img class="bgi" src="img/a3.jpg" alt="" decoding="async">')}<span class="label" style="color:inherit;opacity:.85">Bonjour ${esc(S.me.name.split(' ')[0])}</span><h2>Construis au pays,<br>sans te déplacer.</h2><p>Des pros vérifiés, des prix comparés, et ton argent bloqué jusqu'à ce que tu valides chaque étape.</p><button class="circ" data-a="go" data-v="how" aria-label="Comment ça marche">${ico(ARROW,22)}</button></div>
+    <div class="hero phsec" style="background:#3A1519;min-height:340px;justify-content:flex-end">${(ensureHome(),homePh(1)?phLayer(1):'<div class="slide" aria-hidden="true"><img src="img/a3.jpg" alt="" decoding="async"><img src="img/a1.jpg" alt="" decoding="async"><img src="img/a6.jpg" alt="" decoding="async"><img src="img/a7.jpg" alt="" decoding="async"></div>')}<span class="label" style="color:inherit;opacity:.85">Bonjour ${esc(S.me.name.split(' ')[0])}</span><h2>Construis au pays,<br>sans te déplacer.</h2><p>Des pros vérifiés, des prix comparés, et ton argent bloqué jusqu'à ce que tu valides chaque étape.</p><button class="circ" data-a="go" data-v="how" aria-label="Comment ça marche">${ico(ARROW,22)}</button></div>
     <div class="stack-s"><h1 style="font-size:30px">${t('Mes projets')}</h1></div>
     <div class="row"><button class="btn" data-a="go" data-v="reqnew" style="flex:1">Demander des devis</button><button class="btn ghost" data-a="go" data-v="newp" style="flex:1">${t('Nouveau projet')}</button></div>
     ${(S.myReqs||[]).filter(x=>x.status==='ouverte').length?`<span class="label">Mes demandes en cours</span><div class="list">${(S.myReqs||[]).filter(x=>x.status==='ouverte').sort((a,b)=>b.at-a.at).map(x=>`<button class="item" data-a="openreq" data-v="${x.id}"><div><div class="t">${tnb(esc(x.title),reqUnread(x.id))}</div><div class="small muted">${esc(x.metier)} · ${esc(x.ville)}</div></div><span class="pill s-fait">${x.offerCount||0} proposition${(x.offerCount||0)>1?'s':''}</span></button>`).join('')}</div>`:''}
@@ -887,9 +895,9 @@ function tPhotos(p,r){
 function tMsgs(p,r){
   markRead(p.id,S.msgs.length);
   return `<div class="stack">
-    <p class="small muted">Les messages sont gardés comme preuve et ne peuvent pas être effacés.</p>
+    <p class="small muted">Les messages sont gardés comme preuve et ne peuvent pas être effacés. Les encadrés « Suivi automatique » sont écrits par l'app : chaque action importante (prix accepté, argent bloqué, étape terminée, paiement…) y est notée, pour que le client et le pro aient le même historique.</p>
     <div id="chat" class="stack-s" style="max-height:52vh;overflow-y:auto">
-      ${S.msgs.length?S.msgs.map(m=>{const ph=m.photoId?S.photos.find(x=>x.id===m.photoId):null;
+      ${S.msgs.length?S.msgs.map(m=>{if(m.uid==='system')return `<div class="sysmsg"><span class="label" style="color:var(--gold)">Suivi automatique · ${ftime(m.at)}</span><span>${esc(m.text)}</span></div>`;const ph=m.photoId?S.photos.find(x=>x.id===m.photoId):null;
         const body=m.photoId?(ph?`<img src="${esc(ph.data)}" alt="Photo envoyée" loading="lazy" style="display:block;width:220px;max-width:100%;aspect-ratio:4/3;object-fit:cover;background:var(--tile)">`:'<div class="bubble">Photo…</div>'):`<div class="bubble${m.uid===S.uid?' me':''}">${esc(m.text)}</div>`;
         return `<div class="stack-s" style="gap:2px;${m.uid===S.uid?'align-items:flex-end':''}">${body}<span class="meta">${esc(m.who)} · ${ftime(m.at)}</span></div>`;}).join(''):'<div class="empty">Aucun message. Écris au '+(r==='client'?'pro':'client')+'.</div>'}
     </div>
