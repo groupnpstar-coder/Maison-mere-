@@ -181,17 +181,17 @@ footer{font-size:11px;color:var(--muted);text-align:center;padding-top:20px;bord
 .bgph+.shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,10,6,.05) 30%,rgba(20,10,6,.72));z-index:0}
 .land>*:not(.bgph):not(.shade),.hero>*:not(.bgph):not(.shade){position:relative;z-index:1}
 .lsec{display:flex;flex-direction:column;gap:14px;padding:32px 16px;margin:0 -16px;border-top:none}
-.c-slate{background:#3F5661;--fg:#EEF0EC;--muted:#C6D0D0;--line:#566C77;--tile:#344A55;color:var(--fg)}
-.c-sand{background:#C9B79C;--fg:#2B1D14;--muted:#5A4636;--line:#B19E82;--tile:#D8C9B1;--gold:#7A4E1E;color:var(--fg)}
-.c-navy{background:#141B27;--fg:#EDE3D3;--muted:#A9A79E;--line:#273042;--tile:#1C2433;color:var(--fg)}
-.c-wood{background:#5A3622;--fg:#F3E6D4;--muted:#D6BDA4;--line:#71472F;--tile:#4B2C1B;color:var(--fg)}
+.c-slate{background:#3A1519;--fg:#F2E4D6;--muted:#CFB1A2;--line:#55262B;--tile:#2E1013;color:var(--fg)}
+.c-sand{background:#5C2A2E;--fg:#F4E7DA;--muted:#DABBAC;--line:#74393D;--tile:#4E2226;color:var(--fg)}
+.c-navy{background:#2A0F12;--fg:#F2E4D6;--muted:#C4A797;--line:#43191D;--tile:#36151A;color:var(--fg)}
+.c-wood{background:#4A2620;--fg:#F3E6D4;--muted:#D6BDA4;--line:#633730;--tile:#3D1E19;color:var(--fg)}
 .c-wine{background:#4A1D22;color:var(--fg)}
 .tiles .tile{border:none;color:#EEF0EC}
-.tiles .tile:nth-child(3n+1){background:#3F5661}
-.tiles .tile:nth-child(3n+2){background:#C9B79C;color:#2B1D14}
-.tiles .tile:nth-child(3n){background:#5A3622}
-.dealcard:nth-child(3n+1) .ph{background:#3F5661}.dealcard:nth-child(3n+2) .ph{background:#C9B79C;color:#2B1D14}.dealcard:nth-child(3n) .ph{background:#141B27}
-.c-sand .btn.gold{background:#2B1D14;color:#F3E6D4}
+.tiles .tile:nth-child(3n+1){background:#3A1519}
+.tiles .tile:nth-child(3n+2){background:#5C2A2E}
+.tiles .tile:nth-child(3n){background:#4A2620}
+.dealcard:nth-child(3n+1) .ph{background:#3A1519}.dealcard:nth-child(3n+2) .ph{background:#5C2A2E}.dealcard:nth-child(3n) .ph{background:#2A0F12}
+
 .lsec .btn.ghost{background:transparent;color:var(--fg);border-color:var(--fg)}
 .c-sand .item .t,.c-slate .item .t,.c-navy .item .t{color:var(--fg)}
 .lsec h2{font-size:32px;font-weight:500}
@@ -456,7 +456,7 @@ function render(){
   mt.setAttribute('aria-expanded',String(!!S.menuOpen)); sm.hidden=!(S.menuOpen&&S.me&&S.chosen);
   if(!sm.hidden) sm.innerHTML=[['client','Client','Je fais construire ou réparer',true],['pro','Professionnel','Je propose mon travail',true],['expert','Expert','Je tranche les litiges',true],['admin','Administration','Je gère l\'application',S.admin]].filter(x=>x[3]).map(x=>`<button role="menuitem" data-a="mode" data-v="${x[0]}"><span><b style="font-weight:500;display:block">${x[1]}</b><span class="small muted">${x[2]}</span></span>${S.mode===x[0]?'<span class="on">ICI</span>':''}</button>`).join('');
   document.getElementById('langSel').value=LANG;
-  document.getElementById('testBanner').textContent=t('Version de test : l\'argent est fictif, rien n\'est réellement payé.')+' · v27.10-d';
+  document.getElementById('testBanner').textContent=t('Version de test : l\'argent est fictif, rien n\'est réellement payé.')+' · v27.10-e';
   document.getElementById('footRule').textContent=t('Chacun peut noter l\'autre et arrêter le contrat si l\'accord n\'est pas respecté.');
   let html;
   if(!S.uid) html=vAuth();
@@ -605,7 +605,7 @@ function vHome(){
   ensureStores();
   return `<div class="stack">
     ${homeTop()}
-    <div class="hero" style="background:#3F5661;${homePh(1)?'min-height:380px;justify-content:flex-end':''}">${(ensureHome(),phLayer(1))}<span class="label" style="color:inherit;opacity:.85">Bonjour ${esc(S.me.name.split(' ')[0])}</span><h2>Construis au pays,<br>sans te déplacer.</h2><p>Des pros vérifiés, des prix comparés, et ton argent bloqué jusqu'à ce que tu valides chaque étape.</p><button class="circ" data-a="go" data-v="how" aria-label="Comment ça marche">${ico(ARROW,22)}</button></div>
+    <div class="hero" style="background:#3A1519;${homePh(1)?'min-height:380px;justify-content:flex-end':''}">${(ensureHome(),phLayer(1))}<span class="label" style="color:inherit;opacity:.85">Bonjour ${esc(S.me.name.split(' ')[0])}</span><h2>Construis au pays,<br>sans te déplacer.</h2><p>Des pros vérifiés, des prix comparés, et ton argent bloqué jusqu'à ce que tu valides chaque étape.</p><button class="circ" data-a="go" data-v="how" aria-label="Comment ça marche">${ico(ARROW,22)}</button></div>
     <div class="stack-s"><h1 style="font-size:30px">${t('Mes projets')}</h1></div>
     <div class="row"><button class="btn" data-a="go" data-v="reqnew" style="flex:1">Demander des devis</button><button class="btn ghost" data-a="go" data-v="newp" style="flex:1">${t('Nouveau projet')}</button></div>
     ${(S.myReqs||[]).filter(x=>x.status==='ouverte').length?`<span class="label">Mes demandes en cours</span><div class="list">${(S.myReqs||[]).filter(x=>x.status==='ouverte').sort((a,b)=>b.at-a.at).map(x=>`<button class="item" data-a="openreq" data-v="${x.id}"><div><div class="t">${tnb(esc(x.title),reqUnread(x.id))}</div><div class="small muted">${esc(x.metier)} · ${esc(x.ville)}</div></div><span class="pill s-fait">${x.offerCount||0} proposition${(x.offerCount||0)>1?'s':''}</span></button>`).join('')}</div>`:''}
@@ -1725,9 +1725,9 @@ const PILLS=[['dir','Maçonnerie','Maçon','<path d="M3 20h18"></path><path d="M
  ['dir','Carrelage','Carreleur','<rect x="4" y="4" width="16" height="16"></rect><path d="M12 4v16M4 12h16"></path>'],
  ['dir','Peinture','Peintre','<rect x="4" y="3" width="13" height="6"></rect><path d="M17 6h3v5h-8v3"></path><path d="M11 14h2v7h-2z"></path>'],
  ['dir','Ingénieur civil','Ingénieur','<path d="M4 20h16"></path><path d="M6 20V10l6-6 6 6v10"></path><path d="M10 20v-5h4v5"></path>']];
-const HOW=[['Trouve','Un pro vérifié ou une quincaillerie de ta ville. Compare les avis et les prix.','#3F5661','#EEF0EC'],
+const HOW=[['Trouve','Un pro vérifié ou une quincaillerie de ta ville. Compare les avis et les prix.','#3A1519','#F2E4D6'],
  ['Bloque','Tu bloques l\'argent étape par étape. Le pro sait qu\'il sera payé, toi tu gardes le contrôle.','#3A1418','#F2E4D6'],
- ['Suis','Photos datées avec le code du jour, messages, visites surprises : tu vois ton chantier comme si tu y étais.','#C9B79C','#2B1D14'],
+ ['Suis','Photos datées avec le code du jour, messages, visites surprises : tu vois ton chantier comme si tu y étais.','#5C2A2E','#F4E7DA'],
  ['Valide','Tu valides, le pro est payé. Un problème ? Un expert indépendant tranche.','#BF9E68','#2A0E11']];
 const ico=(d,sz)=>`<svg width="${sz||18}" height="${sz||18}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const ARROW='<path d="M5 12h14M13 6l6 6-6 6"></path>';
