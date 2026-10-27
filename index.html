@@ -991,7 +991,7 @@ function rvForm(kind,v,x,title,who){
     <span class="label">${t('Laisser un avis')} · ${esc(who)}</span><span class="small">${esc(title)}</span>
     <div class="stars">${[1,2,3,4,5].map(k=>`<button type="button" aria-pressed="${k===n}" aria-label="${k} sur 5" data-a="star" data-k="rv_${key}" data-v="${k}">${k}</button>`).join('')}</div>
     <div class="field"><label class="label" for="rvt-${key}">Comment ça s'est passé ?</label><textarea id="rvt-${key}" rows="2" maxlength="300"></textarea></div>
-    <p class="meta" style="margin:0">Comme sur Airbnb, ton avis reste caché jusqu'à ce que l'autre personne ait noté aussi, ou 14 jours au maximum. Ensuite il devient public et ne peut plus être modifié ni supprimé.</p>
+    <p class="meta" style="margin:0">Ton avis reste confidentiel jusqu'à ce que l'autre personne publie le sien, ou pendant 14 jours maximum. Passé ce délai, il devient automatiquement public et ne peut plus être modifié ni supprimé.</p>
     <button class="btn sm" type="submit"${n?'':' disabled'}>Publier l'avis</button></form>`;
 }
 function reviewsList(all){
