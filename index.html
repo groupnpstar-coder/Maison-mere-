@@ -132,6 +132,26 @@ footer{font-size:11px;color:var(--muted);text-align:center;padding-top:20px;bord
 .sgal button{border:2px solid transparent;padding:0;background:none;flex-shrink:0}
 .sgal button[aria-pressed="true"]{border-color:#FFD400}
 .sgal img{width:72px;height:54px;object-fit:cover;display:block}
+.search{display:flex;align-items:center;gap:10px;background:var(--tile);border-radius:999px;padding:0 18px;min-height:52px}
+.search input{border:none;background:none;flex:1;min-width:0;font-size:16px;padding:14px 0;color:var(--fg)}
+.search input:focus{outline:none}.search:focus-within{box-shadow:0 0 0 2px var(--fg)}
+.pills{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}.pills::-webkit-scrollbar{display:none}
+.pill2{display:flex;align-items:center;gap:8px;border:none;background:var(--tile);border-radius:999px;padding:8px 16px 8px 8px;white-space:nowrap;font-size:14px;font-weight:600;color:var(--fg);flex-shrink:0}
+.pill2 span{width:32px;height:32px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center}
+.hero{background:#FFD400;color:#111;padding:28px 24px;display:flex;flex-direction:column;gap:14px}
+.hero h2{font-family:var(--display);font-size:32px;line-height:1.08;margin:0;font-weight:400}
+.hero p{margin:0;font-size:16px;line-height:1.5}
+.circ{width:48px;height:48px;border-radius:50%;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;background:none;color:inherit;padding:0}
+.rail{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:16px;scrollbar-width:none;margin:0 -16px;padding:0 16px}.rail::-webkit-scrollbar{display:none}
+.rail>*{scroll-snap-align:start;flex:0 0 78%;max-width:300px}
+.howcard{padding:22px 20px;display:flex;flex-direction:column;gap:10px;min-height:190px;border:none;text-align:left}
+.howcard b{font-family:var(--display);font-size:40px;line-height:1;font-weight:400}
+.howcard .t{font-size:18px;font-weight:600}
+.prog{height:3px;background:var(--line);position:relative}.prog i{position:absolute;left:0;top:0;bottom:0;background:var(--fg);width:25%;transition:left .2s}
+.dealcard{border:none;background:none;padding:0;text-align:left;display:flex;flex-direction:column;gap:6px;flex:0 0 44%!important;max-width:180px!important}
+.dealcard .ph{aspect-ratio:1;background:var(--tile);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.dealcard .ph img{width:100%;height:100%;object-fit:cover}
+.sec{font-family:var(--display);font-size:24px;margin:8px 0 0;font-weight:400}
 .nb{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#FFD400;color:#111;font-size:11px;font-weight:700;letter-spacing:0;line-height:1;vertical-align:middle;margin-left:8px;border:none}
 .av{border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--tile);display:inline-flex;align-items:center;justify-content:center;font-weight:600;color:var(--fg);overflow:hidden}
 .who{display:flex;gap:12px;align-items:center;min-width:0}
@@ -222,7 +242,7 @@ const nv=x=>x&&!x.verified?' (non vérifié)':'';
 const avg=r0=>{const r=vr(r0);return r.length?(r.reduce((a,b)=>a+b.note,0)/r.length):0;};
 
 let viewUnsubs=[];
-function go(view,p){viewUnsubs.forEach(u=>u());viewUnsubs=[];S.view=view;S.p=p||{};S.err='';if(view==='req')watchReq();window.scrollTo(0,0);if(['market','estim','myfiche','home','store','mystore'].includes(view)&&(view!=='home'||S.mode==='pro'))ensureProducts();if(['market','store','mystore'].includes(view)||(view==='home'&&S.mode==='pro'))ensureStores();watchProject();render();}
+function go(view,p){viewUnsubs.forEach(u=>u());viewUnsubs=[];S.view=view;S.p=p||{};S.err='';if(view==='req')watchReq();window.scrollTo(0,0);if(['market','estim','myfiche','home','store','mystore','search'].includes(view))ensureProducts();if(['market','store','mystore','search','home'].includes(view))ensureStores();watchProject();render();}
 function ensureProducts(){if(S.productsOn||!S.db)return;S.productsOn=true;S.db.collection('products').onSnapshot(q=>{S.products=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});}
 
 /* ---------- boot ---------- */
@@ -358,12 +378,13 @@ function render(){
   else if(!S.me.photo&&!TEST) html=vPhotoGate();
   else if(!S.chosen) html=vChoose();
   else {
-    const v={home:vHome,dir:vDir,pro:vProFiche,newp:vNewProject,project:vProject,myfiche:vMyFiche,account:vAccount,plan:vPlan,market:vMarket,estim:vEstim,orders:vOrders,client:vClient,reqnew:vReqNew,reqs:vReqs,req:vReq,myclients:vMyClients,visits:vVisits,store:vStore,mystore:vMyStore}[S.view]||vHome;
+    const v={home:vHome,dir:vDir,pro:vProFiche,newp:vNewProject,project:vProject,myfiche:vMyFiche,account:vAccount,plan:vPlan,market:vMarket,estim:vEstim,orders:vOrders,client:vClient,reqnew:vReqNew,reqs:vReqs,req:vReq,myclients:vMyClients,visits:vVisits,store:vStore,mystore:vMyStore,how:vHow,search:vSearch}[S.view]||vHome;
     html=v();
   }
   const ih=introHtml();
   if(ih){const m=html.match(/<\/h1>(\s*<\/div>)?/);html=m?html.slice(0,m.index+m[0].length)+ih+html.slice(m.index+m[0].length):ih+html;}
   $main.innerHTML=html;
+  const hr=document.getElementById('howrail'),hp=document.getElementById('howprog');if(hr&&hp){hr.onscroll=()=>{const m=hr.scrollWidth-hr.clientWidth;hp.style.left=(m>0?hr.scrollLeft/m*75:0)+'%';};}
   if(S.hashStore&&S.me&&S.chosen){const id=S.hashStore;S.hashStore=null;try{history.replaceState(null,'',location.pathname);}catch(e){}setTimeout(()=>go('store',{id}),0);}
   Object.keys(keep).forEach(id=>{const el=document.getElementById(id);if(el&&el.dataset.fresh!=='1') el.value=keep[id];});
   if(ae){const el=document.getElementById(ae);if(el){el.focus();try{const n=el.value.length;el.setSelectionRange(n,n);}catch(x){}}}
@@ -438,13 +459,18 @@ function vHome(){
     </div>`;
   }
   const list=S.myProjects.sort((a,b)=>b.createdAt-a.createdAt);
+  ensureStores();
   return `<div class="stack">
-    <div class="stack-s"><span class="label">Bonjour ${esc(S.me.name.split(' ')[0])}</span><h1>${t('Mes projets')}</h1></div>
+    ${homeTop()}
+    <div class="hero"><span class="label" style="color:#111">Bonjour ${esc(S.me.name.split(' ')[0])}</span><h2>Construis au pays,<br>sans te déplacer.</h2><p>Des pros vérifiés, des prix comparés, et ton argent bloqué jusqu'à ce que tu valides chaque étape.</p><button class="circ" data-a="go" data-v="how" aria-label="Comment ça marche">${ico(ARROW,22)}</button></div>
+    <div class="stack-s"><h1 style="font-size:30px">${t('Mes projets')}</h1></div>
     <div class="row"><button class="btn" data-a="go" data-v="reqnew" style="flex:1">Demander des devis</button><button class="btn ghost" data-a="go" data-v="newp" style="flex:1">${t('Nouveau projet')}</button></div>
     ${(S.myReqs||[]).filter(x=>x.status==='ouverte').length?`<span class="label">Mes demandes en cours</span><div class="list">${(S.myReqs||[]).filter(x=>x.status==='ouverte').sort((a,b)=>b.at-a.at).map(x=>`<button class="item" data-a="openreq" data-v="${x.id}"><div><div class="t">${tnb(esc(x.title),reqUnread(x.id))}</div><div class="small muted">${esc(x.metier)} · ${esc(x.ville)}</div></div><span class="pill s-fait">${x.offerCount||0} proposition${(x.offerCount||0)>1?'s':''}</span></button>`).join('')}</div>`:''}
     ${list.length?`<div class="list">${list.map(p=>`<button class="item" data-a="open" data-v="${p.id}"${unreadOf(p)?' data-t="msgs"':''}><div><div class="t">${tnb(esc(p.title),unreadOf(p))}</div><div class="small muted">${esc(p.ville)}, ${esc(p.pays)} · ${esc(p.proName||'Pro à choisir')}</div></div>${stepSummary(p)}</button>`).join('')}</div>`
     :`<div class="empty">Pas encore de projet. Crée ton premier : choisis un pro vérifié, découpe le travail en étapes et bloque l'argent étape par étape.</div>`}
     ${(S.watchProjects||[]).filter(p=>p.clientUid!==S.uid).length?`<span class="label">Chantiers que je surveille</span><div class="list">${S.watchProjects.filter(p=>p.clientUid!==S.uid).map(p=>`<button class="item" data-a="open" data-v="${p.id}" data-t="photos"><div><div class="t">${esc(p.title)}</div><div class="small muted">${esc(p.ville)} · pour ${esc(p.clientName)}</div></div><span class="pill">Envoyer des photos</span></button>`).join('')}</div>`:''}
+    ${deals()}
+    ${howRail()}
     <div class="tiles">
       <button class="tile" data-a="go" data-v="dir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">${IC.search}</svg>Trouver un pro</button>
       <button class="tile" data-a="go" data-v="market"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC.cart}</svg>Quincailleries</button>
@@ -1490,6 +1516,65 @@ async function applyDecision(p,i,d,dec){
   if(d==='refund'){await sysMsg(p.id,`${st.name} : ${who} donne raison au client. ${eur(st.amount)} remboursés, le pro paie la visite.${rep}`);await bumpPro(p.proId,'lost');}
 }
 
+
+/* ---------- accueil client (inspiration catalogue) ---------- */
+const PILLS=[['dir','Maçonnerie','Maçon','<path d="M3 20h18"></path><path d="M5 20V9h14v11"></path><path d="M5 14h14M9 9v5M15 14v6"></path>'],
+ ['dir','Électricité','Électricien','<path d="M13 3L5 13h6l-1 8 8-10h-6z"></path>'],
+ ['dir','Plomberie','Plombier','<path d="M12 3c3 4 6 7 6 11a6 6 0 0 1-12 0c0-4 3-7 6-11z"></path>'],
+ ['market','Ciment','Ciment','<path d="M6 7h12l-1 13H7z"></path><path d="M8 7l1-3h6l1 3"></path>'],
+ ['market','Fer à béton','Fer à béton','<path d="M4 18L18 4M7 20L20 7M4 14L14 4"></path>'],
+ ['market','Tôles','Tôles','<path d="M3 10l3-3 3 3 3-3 3 3 3-3 3 3v8H3z"></path>'],
+ ['dir','Carrelage','Carreleur','<rect x="4" y="4" width="16" height="16"></rect><path d="M12 4v16M4 12h16"></path>'],
+ ['dir','Peinture','Peintre','<rect x="4" y="3" width="13" height="6"></rect><path d="M17 6h3v5h-8v3"></path><path d="M11 14h2v7h-2z"></path>'],
+ ['dir','Ingénieur civil','Ingénieur','<path d="M4 20h16"></path><path d="M6 20V10l6-6 6 6v10"></path><path d="M10 20v-5h4v5"></path>']];
+const HOW=[['Trouve','Un pro vérifié ou une quincaillerie de ta ville. Compare les avis et les prix.','var(--tile)','var(--fg)'],
+ ['Bloque','Tu bloques l\'argent étape par étape. Le pro sait qu\'il sera payé, toi tu gardes le contrôle.','var(--fg)','var(--bg)'],
+ ['Suis','Photos datées avec le code du jour, messages, visites surprises : tu vois ton chantier comme si tu y étais.','var(--tile)','var(--fg)'],
+ ['Valide','Tu valides, le pro est payé. Un problème ? Un expert indépendant tranche.','#FFD400','#111']];
+const ico=(d,sz)=>`<svg width="${sz||18}" height="${sz||18}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const ARROW='<path d="M5 12h14M13 6l6 6-6 6"></path>';
+function homeTop(){
+  return `<form class="search" data-f="hsearch" role="search">${ico(IC.search,20)}<input id="hs-q" type="search" placeholder="Que cherches-tu ? Maçon, ciment…" autocomplete="off" aria-label="Rechercher un pro, un produit ou un magasin"></form>
+  <div class="pills">${PILLS.map(x=>`<button class="pill2" data-a="pill" data-k="${x[0]}" data-v="${esc(x[1])}"><span>${ico(x[3])}</span>${esc(x[2])}</button>`).join('')}</div>`;
+}
+function deals(){
+  const fresh=visibleProds().filter(x=>x.ref&&x.ref!=='Autre'&&!isStale(x)&&x.stock!=='rupture');
+  const by={};fresh.forEach(x=>{const e=toEur(x.price,x.cur);if(!by[x.ref]||e<toEur(by[x.ref].price,by[x.ref].cur))by[x.ref]=x;});
+  const list=Object.values(by).slice(0,8); if(!list.length) return '';
+  return `<div class="between" style="align-items:baseline"><h2 class="sec">Meilleurs prix du moment</h2><button class="link" data-a="go" data-v="market">Tout voir</button></div>
+  <div class="rail">${list.map(x=>{const st=prodStore(x);return `<button class="dealcard" data-a="dealref" data-v="${esc(x.ref)}"><div class="ph">${x.photo?`<img src="${x.photo}" alt="" loading="lazy">`:ico(IC.cart,32)}</div>
+   <span class="small muted">${esc(x.ref)}</span><span class="money" style="font-size:18px">${fmtP(x.price,x.cur)}</span><span class="small muted">${x.cur&&x.cur!=='EUR'?approx(x.price,x.cur)+' · ':''}${esc(st?st.name:x.sellerName)}</span></button>`;}).join('')}</div>`;
+}
+function howRail(){
+  return `<h2 class="sec">Comment ça marche</h2>
+  <div class="rail" id="howrail">${HOW.map((x,i)=>`<button class="howcard" data-a="go" data-v="how" style="background:${x[2]};color:${x[3]}"><b>${i+1}</b><span class="t">${x[0]}</span><span class="small" style="opacity:.85;line-height:1.5">${x[1]}</span></button>`).join('')}</div>
+  <div class="prog" aria-hidden="true"><i id="howprog"></i></div>`;
+}
+function vHow(){
+  return `<div class="stack">
+    <button class="link" data-a="home">${t('Retour')}</button>
+    <div class="hero" style="padding:32px 24px"><span class="label" style="color:#111">Maison Mère</span><h2 style="font-size:36px">Construis au pays,<br>sans te déplacer.</h2><p>Que tu vives à Bruxelles, Paris ou Luxembourg, ton chantier à Kinshasa ou Luanda avance sous tes yeux, et ton argent ne part que quand tu es d'accord.</p></div>
+    ${HOW.map((x,i)=>`<div class="stack-s" style="border-top:1px solid var(--line);padding-top:18px"><span style="font-family:var(--display);font-size:44px;line-height:1">${i+1}</span><span class="t" style="font-size:20px;font-weight:600">${x[0]}</span><p style="margin:0">${x[1]}</p></div>`).join('')}
+    <h2 class="sec">Nos garanties</h2>
+    <div class="list">${[['Argent bloqué','Rien n\'est versé sans ton accord. Sans réponse de ta part, l\'étape est payée au bout de 7 jours.'],['Photos impossibles à truquer','Le code du jour est collé sur chaque photo, prise en direct dans l\'app.'],['Visites surprises','Un pro vérifié, tiré au sort, contrôle ton chantier sans prévenir.'],['Expert indépendant','En cas de désaccord, un ingénieur tranche. Celui qui a tort paie sa visite.'],['Prix transparents','Les prix des quincailleries sont datés et comparés, jamais classés par publicité.']].map(g=>`<div class="item" style="align-items:flex-start"><div><div class="t">${g[0]}</div><div class="small muted">${g[1]}</div></div><span class="verified" aria-hidden="true">✓</span></div>`).join('')}</div>
+    <div class="row"><button class="btn" data-a="go" data-v="reqnew" style="flex:1">Demander des devis</button><button class="btn ghost" data-a="go" data-v="dir" style="flex:1">Voir les pros</button></div>
+  </div>`;
+}
+function vSearch(){
+  const q=(S.p.q||'').trim().toLowerCase(); const has=x=>x.toLowerCase().includes(q);
+  const pros=q?S.pros.filter(p=>!p.hidden&&has(p.name+' '+p.metier+' '+p.ville)).slice(0,20):[];
+  const prods=q?visibleProds().filter(x=>has([x.name,x.brand,x.ref,x.cat].join(' '))).slice(0,20):[];
+  const stores=q?(S.stores||[]).filter(x=>x.status!=='suspendue'&&has(x.name+' '+x.ville+' '+(x.quartier||''))).slice(0,10):[];
+  return `<div class="stack">
+    <button class="link" data-a="home">${t('Retour')}</button>
+    <form class="search" data-f="hsearch" role="search">${ico(IC.search,20)}<input id="hs-q" type="search" value="${esc(S.p.q||'')}" data-fresh="1" autocomplete="off" aria-label="Rechercher"></form>
+    <h1 style="font-size:28px">Résultats pour « ${esc(S.p.q||'')} »</h1>
+    ${pros.length?`<span class="label">Professionnels</span><div class="list">${pros.map(p=>`<button class="item" data-a="pro" data-v="${p.id}"><div class="who">${avatar(proPhoto(p),p.name,40)}<div><div class="t">${esc(p.name)}</div><div class="small muted">${esc(p.metier)} · ${esc(p.ville)}</div></div></div><span aria-hidden="true">›</span></button>`).join('')}</div>`:''}
+    ${prods.length?`<span class="label">Produits</span><div class="list">${prods.map(x=>prodLine(x,true)).join('')}</div>`:''}
+    ${stores.length?`<span class="label">Quincailleries</span><div class="list">${stores.map(x=>`<button class="item" data-a="store" data-v="${x.id}"><div><div class="t">${esc(x.name)}</div><div class="small muted">${esc(x.ville)}${x.quartier?', '+esc(x.quartier):''}</div></div>${sPill(x)}</button>`).join('')}</div>`:''}
+    ${!pros.length&&!prods.length&&!stores.length?'<div class="empty">Rien trouvé. Essaie un autre mot : un métier, un matériau ou une ville.</div>':''}
+  </div>`;
+}
 /* ---------- petites explications ---------- */
 const IC={
  home:'<path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path><path d="M10 20v-6h4v6"></path>',
@@ -1509,7 +1594,6 @@ const IC={
  chart:'<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"></path>'
 };
 const INTRO={
- 'home-client':['home','<b>Tes projets.</b> Crée un projet, choisis un pro et découpe le travail en étapes. Ton argent est bloqué, et il ne part que quand tu valides.'],
  'home-pro':['tool','<b>Tes chantiers.</b> Quand un client te choisit, son projet apparaît ici. Envoie tes photos, signale la fin de l\'étape, et tu es payé dès qu\'il valide.'],
  'home-admin':['chart','<b>Ton tableau de bord.</b> Tout ce qui se passe dans l\'app : comptes, pros, argent, litiges et bugs signalés.'],
  'dir':['search','<b>L\'annuaire.</b> Cherche un professionnel par métier, ville ou pays. « Vérifié » veut dire que son identité a été contrôlée.'],
@@ -1737,6 +1821,8 @@ document.addEventListener('click',async e=>{
     if(a==='cprof'){const d=await S.db.doc('profiles/'+v).get();const back={view:S.view,p:S.p};S.back=back;return go('client',{data:d.exists?d.data():null});}
     if(a==='back'&&S.back){const bk=S.back;S.back=null;S.view=bk.view;S.p=bk.p;watchProject();return render();}
     if(a==='cat'){S.p.cat=v;S.p.buy=null;return render();}
+    if(a==='pill'){return b.dataset.k==='dir'?go('dir',{q:v}):go('market',{cat:v});}
+    if(a==='dealref'){return go('market',{mtab:'cmp',ref:v});}
     if(a==='filepick'){const i=document.getElementById(v);if(i)i.click();return;}
     if(a==='phi'){S.p.phi=+v;return render();}
     if(a==='sph-del'){const items=(S.p.sph||[]).filter((x,k)=>k!==+b.dataset.d);await S.db.doc('storephotos/'+v).set({items});await S.db.doc('stores/'+v).update({thumb:items[0]?items[0].thumb||'':''});S.p.phi=0;return;}
@@ -2086,6 +2172,7 @@ document.addEventListener('submit',async e=>{
       await S.db.doc('products/'+x.id).update({price,stock:val('pu-stock'),confirmedAt:now,history:[...(x.history||[{price:x.price,cur:x.cur||'EUR',at:x.at}]),{price,cur:x.cur||'EUR',at:now}].slice(-20)});
       S.p.editp=null;render();
     }
+    if(f==='hsearch'){const q=val('hs-q').trim();if(!q)return;return go('search',{q});}
     if(f==='suggest'){
       const name=val('sg-name'), ville=val('sg-ville');
       if(!name||!ville){S.err='Donne au moins le nom et la ville.';return render();}
