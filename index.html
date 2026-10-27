@@ -62,9 +62,9 @@ h1{font-size:34px} h2{font-size:26px}
 .top{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5;padding-block:14px 10px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
 .brand{font-family:var(--display);font-size:20px;background:none;border:none;padding:6px 0;display:flex;align-items:center;gap:10px;color:var(--fg)}
-.mm{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border:1.5px solid var(--gold);color:var(--gold);font-family:var(--display);font-weight:600;font-size:20px;letter-spacing:-1px;line-height:1}
+.mm{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;border:1.5px solid var(--gold);box-shadow:inset 0 0 0 3px var(--bg),inset 0 0 0 4px var(--gold);color:var(--gold);font-family:var(--display);font-weight:600;font-size:17px;letter-spacing:-1px;line-height:1}
 @media (max-width:360px){.mmname{display:none}}
-.bigmm{font-family:var(--display);font-weight:600;font-size:110px;line-height:.85;letter-spacing:-6px;color:var(--gold);margin:0}
+.bigmm{font-family:var(--display);font-weight:600;font-size:64px;line-height:1;letter-spacing:-4px;color:var(--gold);margin:0 0 6px;width:150px;height:150px;border-radius:50%;border:2px solid var(--gold);outline:1px solid var(--gold);outline-offset:-10px;display:flex;align-items:center;justify-content:center;padding-right:4px}
 .seg{display:flex;border:1px solid var(--fg)}
 .seg button{border:none;background:var(--bg);padding:8px 12px;font-size:11px;letter-spacing:.1em;font-weight:500;min-height:36px}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--on-ink)}
@@ -333,7 +333,7 @@ function go(view,p){viewUnsubs.forEach(u=>u());viewUnsubs=[];S.view=view;S.p=p||
 function ensureProducts(){if(S.productsOn||!S.db)return;S.productsOn=true;S.db.collection('products').onSnapshot(q=>{S.products=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});}
 
 /* ---------- boot ---------- */
-const APPV='27.10-i';
+const APPV='27.10-j';
 (function(){try{fetch('version.txt?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(v=>{v=(v||'').trim();if(v&&v!==APPV){const k='mm-upd-'+v;let n=0;try{n=+sessionStorage.getItem(k)||0;sessionStorage.setItem(k,n+1);}catch(e){}if(n<2)location.replace(location.pathname+'?v='+encodeURIComponent(v)+location.hash);}}).catch(()=>{});}catch(e){}})();
 async function boot(){
   const cfg=window.FIREBASE_CONFIG;
