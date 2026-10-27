@@ -5,40 +5,41 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Maison Mère</title>
 <meta name="description" content="Ton argent ne bouge pas sans ton accord. Construis au pays en toute confiance.">
-<meta name="theme-color" content="#FBF7F2" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#1A0F0A" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#170A0C">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Maison Mère">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&display=swap" rel="stylesheet">
 <style>
 /* Layout: one mobile column, max 480px, black and white like a document; money states carry the only color. */
 :root{
-  --bg:#FBF7F2; --fg:#1E1410; --muted:#6B5B50; --line:#E8DED3; --tile:#F2EAE0;
-  --ink:#1E1410; --on-ink:#FBF7F2;
-  --brand:#A4452A; --terra:#B85A35; --clay:#C9776A; --oxblood:#5B2416; --olive:#5E6B32; --gold:#C8973F;
-  --ok:#1D6B45; --warn:#9A5B05; --bad:#A3271C; --held:#5E6B32;
-  --display:Georgia, 'Times New Roman', serif;
+  --bg:#170A0C; --fg:#F3E6D8; --muted:#C0A595; --line:#3B1C1F; --tile:#24100F;
+  --ink:#C9A35C; --on-ink:#170A0C;
+  --ok:#7CC79A; --warn:#E6B45A; --bad:#F08A7A; --held:#C9A35C; color-scheme:dark;
+  --brand:#C9A35C; --wine:#5A1020; --wine2:#7A1A2A; --terra:#A4452A; --gold:#C9A35C;
+  --display:'Cormorant Garamond', Georgia, 'Times New Roman', serif;
   --body:system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#1A0F0A; --fg:#F4E6D3; --muted:#BC9F88; --line:#3A2418; --tile:#2A1810;
-  --ink:#F4E6D3; --on-ink:#1A0F0A;
-  --ok:#5FC08E; --warn:#E3A94A; --bad:#EE7D70; --held:#B4C07A; color-scheme:dark }}
+  --bg:#170A0C; --fg:#F3E6D8; --muted:#C0A595; --line:#3B1C1F; --tile:#24100F;
+  --ink:#C9A35C; --on-ink:#170A0C;
+  --ok:#7CC79A; --warn:#E6B45A; --bad:#F08A7A; --held:#C9A35C; color-scheme:dark }}
 :root[data-theme="dark"]{
-  --bg:#1A0F0A; --fg:#F4E6D3; --muted:#BC9F88; --line:#3A2418; --tile:#2A1810;
-  --ink:#F4E6D3; --on-ink:#1A0F0A;
-  --ok:#5FC08E; --warn:#E3A94A; --bad:#EE7D70; --held:#B4C07A; color-scheme:dark }
+  --bg:#170A0C; --fg:#F3E6D8; --muted:#C0A595; --line:#3B1C1F; --tile:#24100F;
+  --ink:#C9A35C; --on-ink:#170A0C;
+  --ok:#7CC79A; --warn:#E6B45A; --bad:#F08A7A; --held:#C9A35C; color-scheme:dark }
 /* Une seule couleur de marque : le jaune chantier, avec le noir */
-#modeTag{background:var(--brand,#A4452A);color:#FBF7F2;font-weight:600;padding:0 8px;letter-spacing:.1em;border:none;min-height:32px;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+#modeTag{background:var(--brand);color:#170A0C;font-weight:600;padding:0 8px;letter-spacing:.1em;border:none;min-height:32px;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
 #modeTag::after{content:"";width:6px;height:6px;border-right:1.5px solid #111;border-bottom:1.5px solid #111;transform:rotate(45deg) translateY(-2px)}
 .top{position:sticky}
 #spaceMenu{position:absolute;left:0;top:100%;margin-top:6px;z-index:20;background:var(--bg);border:1px solid var(--fg);min-width:240px;box-shadow:0 8px 24px rgba(0,0,0,.12)}
 #spaceMenu button{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;border:none;border-bottom:1px solid var(--line);background:var(--bg);padding:14px 16px;min-height:52px}
 #spaceMenu button:last-child{border-bottom:none}
-#spaceMenu .on{background:var(--brand,#A4452A);color:#FBF7F2;font-size:10px;letter-spacing:.1em;font-weight:600;padding:3px 6px}
-.top{box-shadow:inset 0 3px 0 #A4452A}
+#spaceMenu .on{background:var(--brand);color:#170A0C;font-size:10px;letter-spacing:.1em;font-weight:600;padding:3px 6px}
+.top{box-shadow:inset 0 3px 0 var(--gold)}
 html,body{height:100%}
 html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0}
@@ -139,7 +140,7 @@ footer{font-size:11px;color:var(--muted);text-align:center;padding-top:20px;bord
 .pills{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}.pills::-webkit-scrollbar{display:none}
 .pill2{display:flex;align-items:center;gap:8px;border:none;background:var(--tile);border-radius:999px;padding:8px 16px 8px 8px;white-space:nowrap;font-size:14px;font-weight:600;color:var(--fg);flex-shrink:0}
 .pill2 span{width:32px;height:32px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center}
-.hero{background:#A4452A;color:#FBF7F2;position:relative;overflow:hidden;padding:28px 24px;display:flex;flex-direction:column;gap:14px}
+.hero{background:var(--wine) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23C9A35C' stroke-opacity='.22' stroke-width='1.2'%3E%3Ccircle cx='28' cy='28' r='12'/%3E%3Ccircle cx='28' cy='28' r='6'/%3E%3Cpath d='M0 0l14 14M56 0L42 14M0 56l14-14M56 56L42 42'/%3E%3C/g%3E%3Cg fill='%23C9A35C' fill-opacity='.25'%3E%3Ccircle cx='28' cy='28' r='1.8'/%3E%3Ccircle cx='0' cy='28' r='1.5'/%3E%3Ccircle cx='56' cy='28' r='1.5'/%3E%3Ccircle cx='28' cy='0' r='1.5'/%3E%3Ccircle cx='28' cy='56' r='1.5'/%3E%3C/g%3E%3C/svg%3E");color:#F3E6D8;position:relative;overflow:hidden;padding:28px 24px;display:flex;flex-direction:column;gap:14px}
 .hero h2{font-family:var(--display);font-size:32px;line-height:1.08;margin:0;font-weight:400}
 .hero p{margin:0;font-size:16px;line-height:1.5}
 .circ{width:48px;height:48px;border-radius:50%;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;background:none;color:inherit;padding:0}
@@ -166,7 +167,7 @@ footer{font-size:11px;color:var(--muted);text-align:center;padding-top:20px;bord
 .foot2 details[open] summary:after{transform:rotate(-135deg);margin-top:4px}
 .foot2 details .link{display:block;text-align:left;text-transform:none;letter-spacing:0;font-size:15px;padding:8px 0;border:none;text-decoration:none}
 .legal h2{font-size:18px;margin:18px 0 6px;font-family:var(--body);font-weight:700}.legal p,.legal li{line-height:1.6}
-.land{margin:-8px -16px 0;background:#A4452A;color:#FBF7F2;padding:24px 16px 24px;position:relative;overflow:hidden;min-height:260px;justify-content:flex-end;display:flex;flex-direction:column;gap:10px}
+.land{margin:-8px -16px 0;background:var(--wine) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23C9A35C' stroke-opacity='.22' stroke-width='1.2'%3E%3Ccircle cx='28' cy='28' r='12'/%3E%3Ccircle cx='28' cy='28' r='6'/%3E%3Cpath d='M0 0l14 14M56 0L42 14M0 56l14-14M56 56L42 42'/%3E%3C/g%3E%3Cg fill='%23C9A35C' fill-opacity='.25'%3E%3Ccircle cx='28' cy='28' r='1.8'/%3E%3Ccircle cx='0' cy='28' r='1.5'/%3E%3Ccircle cx='56' cy='28' r='1.5'/%3E%3Ccircle cx='28' cy='0' r='1.5'/%3E%3Ccircle cx='28' cy='56' r='1.5'/%3E%3C/g%3E%3C/svg%3E");color:#F3E6D8;padding:24px 16px 24px;position:relative;overflow:hidden;min-height:260px;justify-content:flex-end;display:flex;flex-direction:column;gap:10px}
 .land h1{font-size:36px;line-height:1.05;margin:0;color:inherit}
 .land p{margin:0;font-size:16px;line-height:1.5;max-width:30em}
 .trust{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
@@ -179,7 +180,28 @@ footer{font-size:11px;color:var(--muted);text-align:center;padding-top:20px;bord
 .bgph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
 .bgph+.shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,10,6,.05) 30%,rgba(20,10,6,.72));z-index:0}
 .land>*:not(.bgph):not(.shade),.hero>*:not(.bgph):not(.shade){position:relative;z-index:1}
-.nb{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--brand,#A4452A);color:#FBF7F2;font-size:11px;font-weight:700;letter-spacing:0;line-height:1;vertical-align:middle;margin-left:8px;border:none}
+.lsec{display:flex;flex-direction:column;gap:14px;padding:28px 0;border-top:1px solid var(--line)}
+.lsec h2{font-size:32px;font-weight:500}
+.kicker{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:600}
+.who4{display:grid;grid-template-columns:1fr;gap:10px}
+.who4 .card{background:var(--tile);padding:20px;display:flex;flex-direction:column;gap:10px;border-left:3px solid var(--gold)}
+.who4 .card h3{margin:0;font-family:var(--display);font-size:24px;font-weight:600}
+.who4 .card p{margin:0;color:var(--muted);line-height:1.55}
+.steps4{display:flex;flex-direction:column;gap:0}
+.steps4 div{display:flex;gap:16px;padding:16px 0;border-bottom:1px solid var(--line)}
+.steps4 b{font-family:var(--display);font-size:42px;line-height:.9;color:var(--gold);font-weight:500;min-width:34px}
+.faq details{border-bottom:1px solid var(--line);padding:14px 0}
+.faq summary{list-style:none;cursor:pointer;font-weight:600;display:flex;justify-content:space-between;gap:12px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary:after{content:'+';color:var(--gold);font-size:20px;line-height:1}
+.faq details[open] summary:after{content:'–'}
+.faq p{margin:10px 0 0;color:var(--muted);line-height:1.6}
+.cta2{display:flex;gap:10px;flex-wrap:wrap}
+.cta2 .btn{width:auto;flex:1;min-width:150px}
+.btn.gold{background:var(--gold);color:#170A0C}
+.btn.line{background:transparent;color:#F3E6D8;border:1px solid rgba(243,230,216,.7)}
+h1,h2{font-weight:500}
+.nb{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--brand);color:#170A0C;font-size:11px;font-weight:700;letter-spacing:0;line-height:1;vertical-align:middle;margin-left:8px;border:none}
 .av{border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--tile);display:inline-flex;align-items:center;justify-content:center;font-weight:600;color:var(--fg);overflow:hidden}
 .who{display:flex;gap:12px;align-items:center;min-width:0}
 .badge{font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:600;padding:3px 7px;background:var(--tile);color:var(--fg)}
@@ -430,18 +452,63 @@ S.hashRoute=(location.hash.match(/^#(comment-ca-marche|inscrire-mon-magasin|deve
 function vChoose(){
   const first=(S.me.name||'').split(' ')[0];
   const ic=d=>`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
-  const card=(v,title,sub,icon,bg,fg,icbg)=>`<button class="space" data-a="choose" data-v="${v}" style="background:${bg};color:${fg}"><span class="ic" style="background:${icbg}">${ic(icon)}</span><span style="flex:1;min-width:0"><b>${title}</b><small>${sub}</small></span>${ic('<path d="M5 12h14M13 6l6 6-6 6"></path>')}</button>`;
-  return `<div class="stack">
-    <div class="land" style="${homePh(0)?'min-height:420px':''}">${(ensureHome(),phLayer(0))}<span class="label" style="color:inherit;opacity:.85">Bonjour ${esc(first)}</span><h1>Construis au pays,<br>sans te déplacer.</h1><p>Trouve des pros vérifiés, compare les prix des matériaux et suis ton chantier en photos, depuis l'Europe.</p></div>
-    <h2 class="sec">Choisis ton espace</h2>
-    <div class="stack-s" style="gap:10px">
-    ${card('client','Je suis client','Je fais construire ou rénover','<path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path><path d="M10 20v-6h4v6"></path>','var(--fg)','var(--bg)','var(--brand);color:#FBF7F2')}
-    ${card('pro','Je suis professionnel','Artisan, entreprise ou quincaillerie','<rect x="3" y="7" width="18" height="13" rx="1"></rect><path d="M9 7V4h6v3"></path><path d="M3 13h18"></path>','var(--tile)','var(--fg)','var(--bg)')}
-    ${card('expert','Je suis expert','Ingénieur, je tranche les litiges','<circle cx="12" cy="12" r="9"></circle><path d="M15.5 8.5l-2 5-5 2 2-5z"></path>','var(--tile)','var(--fg)','var(--bg)')}
-    ${S.admin?card('admin','Administration','Je gère l\'application','<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path><path d="M9 12l2 2 4-4"></path>','none;border:1px solid var(--line)','var(--fg)','var(--tile)'):''}
+  const go=(v,l,cls)=>`<button class="btn ${cls||''}" data-a="choose" data-v="${v}">${l}</button>`;
+  const faq=[['Mon argent est-il en sécurité ?','Ton argent est bloqué pour chaque étape et ne part chez le professionnel que lorsque tu valides. Sans réponse de ta part, l\'étape est payée automatiquement au bout de 7 jours, pour protéger aussi le travail du pro. Pendant la phase de test, l\'argent affiché est fictif.'],
+   ['Comment savoir si les photos sont vraies ?','Les photos sont prises en direct dans l\'application, avec le code du jour, la date et l\'heure collés dessus. Tu peux aussi demander une photo précise à tout moment, ou un appel vidéo WhatsApp.'],
+   ['Et s\'il y a un problème sur le chantier ?','Tu signales le problème : l\'argent reste bloqué et un expert indépendant de la ville, tiré au sort, va vérifier sur place. Celui qui a tort paie sa visite.'],
+   ['Qui sont les professionnels ?','Des maçons, électriciens, plombiers, ingénieurs et quincailleries inscrits avec leur identité. Le badge « vérifié » indique exactement ce qui a été contrôlé, et les avis viennent de vrais chantiers.'],
+   ['Combien ça coûte ?','L\'inscription est gratuite. Une petite commission sera prélevée sur les paiements validés au lancement officiel. Pendant la phase de test, tout est gratuit.'],
+   ['Dans quels pays ?','D\'abord en RD Congo et en Angola, pour des clients qui vivent en Belgique, en France, au Luxembourg et ailleurs. D\'autres pays suivront.']];
+  return `<div class="stack" style="gap:0">
+    <div class="land" style="min-height:${homePh(0)?'520':'440'}px;gap:16px">${(ensureHome(),phLayer(0))}
+      <span class="kicker">Bonjour ${esc(first)} · Maison Mère</span>
+      <h1 style="font-size:46px;line-height:1">Construis au pays,<br>sans te déplacer.</h1>
+      <p style="font-size:17px">De Bruxelles, Paris ou Luxembourg, fais construire ou rénover à Kinshasa ou Luanda avec des professionnels vérifiés. Ton argent reste bloqué tant que tu n'as pas validé le travail.</p>
+      <div class="cta2">${go('client','Je fais construire','gold')}${go('pro','Je suis professionnel','line')}</div>
     </div>
-    ${TRUST}
-    <p class="small muted" style="margin:0">Tu peux changer d'espace à tout moment avec l'étiquette dorée en haut.</p>
+
+    <section class="lsec" style="border-top:none">
+      <span class="kicker">Notre idée</span>
+      <h2>Construire au pays ne devrait pas être un pari.</h2>
+      <p style="margin:0;line-height:1.7">Envoyer de l'argent à un proche ou à un entrepreneur, puis attendre des nouvelles qui n'arrivent jamais : beaucoup de familles de la diaspora l'ont vécu. Maison Mère change la règle. Chaque étape a un prix accepté par les deux parties, l'argent est bloqué, le pro envoie des preuves en photos, et c'est toi qui décides quand il est payé.</p>
+    </section>
+
+    <section class="lsec">
+      <span class="kicker">Comment ça marche</span>
+      <h2>Quatre étapes, aucune surprise.</h2>
+      <div class="steps4">${HOW.map((x,i)=>`<div><b>${i+1}</b><span><span style="font-weight:700;font-size:17px">${x[0]}</span><br><span class="muted" style="line-height:1.6">${x[1]}</span></span></div>`).join('')}</div>
+    </section>
+
+    <section class="lsec">
+      <span class="kicker">Pour qui ?</span>
+      <h2>Choisis ton espace.</h2>
+      <div class="who4">
+        <div class="card"><h3>Clients</h3><p>Tu vis à l'étranger et tu construis, rénoves ou équipes une maison au pays. Demande des devis, compare les pros, bloque l'argent étape par étape et suis tout en photos.</p>${go('client','Entrer comme client','gold')}</div>
+        <div class="card"><h3>Professionnels</h3><p>Maçons, électriciens, plombiers, carreleurs, ingénieurs… Recevez des demandes de clients sérieux et soyez payé dès que l'étape est validée.</p>${go('pro','Entrer comme professionnel','ghost')}</div>
+        <div class="card"><h3>Quincailleries</h3><p>Présentez votre magasin, vos produits et vos prix aux clients qui construisent depuis l'étranger. Gratuit pendant le lancement.</p><button class="btn ghost" data-a="join" data-v="store">Inscrire mon magasin</button></div>
+        <div class="card"><h3>Experts</h3><p>Ingénieurs et techniciens du bâtiment : tranchez les litiges de votre ville, sur place, et soyez payé à chaque dossier.</p>${go('expert','Entrer comme expert','ghost')}</div>
+        ${S.admin?`<div class="card" style="border-left-color:var(--line)"><h3>Administration</h3><p>Visible seulement par toi.</p>${go('admin','Espace admin','ghost')}</div>`:''}
+      </div>
+    </section>
+
+    <section class="lsec">
+      <span class="kicker">Nos garanties</span>
+      <h2>La confiance, sans la croire sur parole.</h2>
+      ${TRUST}
+      <div class="list">${[['Argent bloqué','Rien n\'est versé sans ton accord.'],['Photos datées','Le code du jour est collé sur chaque photo.'],['Visites surprises','Un pro vérifié contrôle ton chantier sans prévenir.'],['Expert indépendant','En cas de désaccord, un ingénieur tranche.'],['Prix transparents','Les prix des quincailleries sont datés et comparés.']].map(g=>`<div class="item"><div><div class="t">${g[0]}</div><div class="small muted">${g[1]}</div></div><span style="color:var(--gold)" aria-hidden="true">✓</span></div>`).join('')}</div>
+    </section>
+
+    <section class="lsec faq">
+      <span class="kicker">Questions fréquentes</span>
+      <h2>Tu te poses des questions ?</h2>
+      <div>${faq.map(q=>`<details><summary>${q[0]}</summary><p>${q[1]}</p></details>`).join('')}</div>
+    </section>
+
+    <section class="lsec" style="text-align:center;align-items:center">
+      <h2>Ta maison mérite mieux qu'une promesse.</h2>
+      <div class="cta2" style="width:100%">${go('client','Commencer maintenant','gold')}</div>
+      <p class="small muted" style="margin:0">Tu pourras changer d'espace à tout moment avec l'étiquette dorée en haut.</p>
+    </section>
   </div>`;
 }
 function vSignup(){
@@ -480,7 +547,7 @@ function vHome(){
     const me=proById(S.me.proId);
     const list=S.proProjects.sort((a,b)=>b.createdAt-a.createdAt);
     const nR=proReqs(me).length,nO=otherReqs(me).length,nC=myClients().length;
-    const box=(v,title,sub,hot)=>`<button class="item" data-a="go" data-v="${v}" style="border:1px solid var(--line);padding:16px"><div><div class="t">${title}</div><div class="small muted">${sub}</div></div><span style="display:flex;gap:10px;align-items:center">${hot?`<span style="background:var(--brand);color:#FBF7F2;font-size:12px;font-weight:600;min-width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px">${hot}</span>`:''}<span aria-hidden="true">›</span></span></button>`;
+    const box=(v,title,sub,hot)=>`<button class="item" data-a="go" data-v="${v}" style="border:1px solid var(--line);padding:16px"><div><div class="t">${title}</div><div class="small muted">${sub}</div></div><span style="display:flex;gap:10px;align-items:center">${hot?`<span style="background:var(--brand);color:#170A0C;font-size:12px;font-weight:600;min-width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px">${hot}</span>`:''}<span aria-hidden="true">›</span></span></button>`;
     return `<div class="stack">
       <div class="stack-s"><div class="who">${avatar(proPhoto(me)||S.me.photo,me?me.name:S.me.name,48)}<span class="label">Bonjour ${esc(S.me.name.split(' ')[0])}</span></div><h1>Mon espace pro</h1></div>
       <div class="stack-s">
@@ -1601,9 +1668,9 @@ const PILLS=[['dir','Maçonnerie','Maçon','<path d="M3 20h18"></path><path d="M
  ['dir','Peinture','Peintre','<rect x="4" y="3" width="13" height="6"></rect><path d="M17 6h3v5h-8v3"></path><path d="M11 14h2v7h-2z"></path>'],
  ['dir','Ingénieur civil','Ingénieur','<path d="M4 20h16"></path><path d="M6 20V10l6-6 6 6v10"></path><path d="M10 20v-5h4v5"></path>']];
 const HOW=[['Trouve','Un pro vérifié ou une quincaillerie de ta ville. Compare les avis et les prix.','var(--tile)','var(--fg)'],
- ['Bloque','Tu bloques l\'argent étape par étape. Le pro sait qu\'il sera payé, toi tu gardes le contrôle.','#5B2416','#F4E3C4'],
+ ['Bloque','Tu bloques l\'argent étape par étape. Le pro sait qu\'il sera payé, toi tu gardes le contrôle.','#5A1020','#F3E6D8'],
  ['Suis','Photos datées avec le code du jour, messages, visites surprises : tu vois ton chantier comme si tu y étais.','var(--tile)','var(--fg)'],
- ['Valide','Tu valides, le pro est payé. Un problème ? Un expert indépendant tranche.','#A4452A','#FBF7F2']];
+ ['Valide','Tu valides, le pro est payé. Un problème ? Un expert indépendant tranche.','#C9A35C','#170A0C']];
 const ico=(d,sz)=>`<svg width="${sz||18}" height="${sz||18}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const ARROW='<path d="M5 12h14M13 6l6 6-6 6"></path>';
 function homeTop(){
