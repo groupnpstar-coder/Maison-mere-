@@ -165,6 +165,16 @@ footer{font-size:11px;color:var(--muted);text-align:center;padding-top:20px;bord
 .foot2 details[open] summary:after{transform:rotate(-135deg);margin-top:4px}
 .foot2 details .link{display:block;text-align:left;text-transform:none;letter-spacing:0;font-size:15px;padding:8px 0;border:none;text-decoration:none}
 .legal h2{font-size:18px;margin:18px 0 6px;font-family:var(--body);font-weight:700}.legal p,.legal li{line-height:1.6}
+.land{margin:-8px -16px 0;background:#FFD400;color:#111;padding:24px 16px 0;display:flex;flex-direction:column;gap:10px}
+.land h1{font-size:36px;line-height:1.05;margin:0;color:#111}
+.land p{margin:0;font-size:16px;line-height:1.5;max-width:30em}
+.trust{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.trust div{display:flex;flex-direction:column;gap:6px;font-size:12px;line-height:1.35;font-weight:600}
+.trust svg{width:26px;height:26px}
+.space{display:flex;align-items:center;gap:16px;padding:20px;border:none;text-align:left;width:100%;color:inherit}
+.space .ic{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.space b{display:block;font-size:19px;font-weight:700}
+.space small{display:block;font-size:14px;opacity:.8;margin-top:2px}
 .nb{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#FFD400;color:#111;font-size:11px;font-weight:700;letter-spacing:0;line-height:1;vertical-align:middle;margin-left:8px;border:none}
 .av{border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--tile);display:inline-flex;align-items:center;justify-content:center;font-weight:600;color:var(--fg);overflow:hidden}
 .who{display:flex;gap:12px;align-items:center;min-width:0}
@@ -314,8 +324,10 @@ function authCreds(){
 }
 function vAuth(){
   return `<form class="stack" data-f="login">
-    <h1>Ton argent ne bouge pas sans ton accord.</h1>
-    <p class="muted">Connecte-toi ou crée ton compte. Un seul compte par personne.</p>
+    <div class="land"><h1>Construis au pays,<br>sans te déplacer.</h1><p>Des pros vérifiés, des prix comparés et ton argent bloqué jusqu'à ce que tu valides chaque étape.</p>${ART}</div>
+    ${TRUST}
+    <h2 class="sec">Connexion</h2>
+    <p class="muted" style="margin:0">Connecte-toi ou crée ton compte. Un seul compte par personne.</p>
     <div class="field"><label class="label" for="au-email">Email</label><input id="au-email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="80" value="${esc(S.authEmail||'')}" placeholder="exemple@gmail.com"></div>
     <div class="field"><label class="label" for="au-pass">Mot de passe (6 caractères minimum)</label><input id="au-pass" type="password" autocomplete="current-password" maxlength="60"></div>
     ${S.err?`<p class="err">${esc(S.err)}</p>`:''}${S.info?`<p class="small verified">${esc(S.info)}</p>`:''}
@@ -413,16 +425,19 @@ S.hashStore=(location.hash.match(/magasin=([\w-]+)/)||[])[1]||null;
 S.hashRoute=(location.hash.match(/^#(comment-ca-marche|inscrire-mon-magasin|devenir-pro|quincailleries|comparer-les-prix)$/)||[])[1]||null;
 function vChoose(){
   const first=(S.me.name||'').split(' ')[0];
-  const card=(v,title,sub,icon)=>`<button class="item" data-a="choose" data-v="${v}" style="border:1px solid var(--line);padding:18px 16px;align-items:center">
-    <span style="display:flex;gap:16px;align-items:center;min-width:0"><span style="width:52px;height:52px;background:var(--tile);display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icon}</svg></span>
-    <span style="display:flex;flex-direction:column;gap:3px;min-width:0"><span style="font-size:18px;font-weight:600">${title}</span><span class="small muted">${sub}</span></span></span><span aria-hidden="true" style="font-size:22px">›</span></button>`;
+  const ic=d=>`<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  const card=(v,title,sub,icon,bg,fg,icbg)=>`<button class="space" data-a="choose" data-v="${v}" style="background:${bg};color:${fg}"><span class="ic" style="background:${icbg}">${ic(icon)}</span><span style="flex:1;min-width:0"><b>${title}</b><small>${sub}</small></span>${ic('<path d="M5 12h14M13 6l6 6-6 6"></path>')}</button>`;
   return `<div class="stack">
-    <div class="stack-s"><span class="label">Bonjour ${esc(first)}</span><h1>Choisis ton espace</h1></div>
-    ${card('client','Je suis client','Je fais construire ou réparer','<path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path><path d="M10 20v-6h4v6"></path>')}
-    ${card('pro','Je suis professionnel','Je propose mon travail','<rect x="3" y="7" width="18" height="13" rx="1"></rect><path d="M9 7V4h6v3"></path><path d="M3 13h18"></path>')}
-    ${card('expert','Je suis expert','Ingénieur, je tranche les litiges','<circle cx="12" cy="12" r="9"></circle><path d="M15.5 8.5l-2 5-5 2 2-5z"></path>')}
-    ${S.admin?card('admin','Administration','Je gère l\'application','<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path><path d="M9 12l2 2 4-4"></path>'):''}
-    <p class="small muted" style="margin:0">Tu peux changer à tout moment avec l'étiquette jaune en haut.</p>
+    <div class="land"><span class="label" style="color:#111">Bonjour ${esc(first)}</span><h1>Construis au pays,<br>sans te déplacer.</h1><p>Trouve des pros vérifiés, compare les prix des matériaux et suis ton chantier en photos, depuis l'Europe.</p>${ART}</div>
+    <h2 class="sec">Choisis ton espace</h2>
+    <div class="stack-s" style="gap:10px">
+    ${card('client','Je suis client','Je fais construire ou rénover','<path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path><path d="M10 20v-6h4v6"></path>','var(--fg)','var(--bg)','#FFD400;color:#111')}
+    ${card('pro','Je suis professionnel','Artisan, entreprise ou quincaillerie','<rect x="3" y="7" width="18" height="13" rx="1"></rect><path d="M9 7V4h6v3"></path><path d="M3 13h18"></path>','var(--tile)','var(--fg)','var(--bg)')}
+    ${card('expert','Je suis expert','Ingénieur, je tranche les litiges','<circle cx="12" cy="12" r="9"></circle><path d="M15.5 8.5l-2 5-5 2 2-5z"></path>','var(--tile)','var(--fg)','var(--bg)')}
+    ${S.admin?card('admin','Administration','Je gère l\'application','<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path><path d="M9 12l2 2 4-4"></path>','none;border:1px solid var(--line)','var(--fg)','var(--tile)'):''}
+    </div>
+    ${TRUST}
+    <p class="small muted" style="margin:0">Tu peux changer d'espace à tout moment avec l'étiquette jaune en haut.</p>
   </div>`;
 }
 function vSignup(){
@@ -1603,6 +1618,13 @@ function vSearch(){
   </div>`;
 }
 
+/* ---------- accueil / connexion ---------- */
+const ART=`<svg xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Une maison en construction au pays, une grue et un palmier" style="display:block;width:100%;height:auto" viewBox="0 0 320 170" fill="none" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"> <circle cx="276" cy="34" r="13" fill="#FFF3B0"/> <path d="M14 150H306"/> <path d="M120 150V26 M120 26H262 M104 26H120 M104 26V40H120 M120 40L136 26 M136 26V40 M152 26L136 40 M152 26V40 M168 26L152 40 M168 26V40 M184 26L168 40" stroke-width="1.8"/> <path d="M112 150V40 M128 150V40" stroke-width="1.8"/> <path d="M112 60L128 76 M128 60L112 76 M112 92L128 108 M128 92L112 108 M112 124L128 140 M128 124L112 140" stroke-width="1.4"/> <path d="M226 26V58" stroke-width="1.6"/> <path d="M210 58H242V66H210Z" fill="#111"/> <path d="M168 150V96H286V150" fill="#FFF3B0"/> <path d="M160 98L227 62L294 98" /> <path d="M168 112H286 M168 128H286 M188 96V112 M212 112V128 M236 96V112 M260 112V128 M200 128V150 M248 128V150" stroke-width="1.3"/> <rect x="216" y="128" width="20" height="22" fill="#111"/> <path d="M46 150C48 126 44 108 52 92" stroke-width="2.4"/> <path d="M52 92C40 84 28 86 20 94 M52 92C46 80 36 74 26 74 M52 92C60 80 72 78 82 82 M52 92C66 88 76 94 80 104 M52 92C54 82 52 72 46 66"/> <path d="M18 36C50 14 86 12 102 20" stroke-dasharray="2 7"/> <path d="M104 14L106 24L97 21Z" fill="#111"/> <path d="M70 150c4-6 10-6 14 0 M90 150c3-4 7-4 10 0" stroke-width="1.6"/> </svg>`;
+const TRUST=`<div class="trust">
+  <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="1"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>Argent bloqué jusqu'à ta validation</div>
+  <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v12H4z"></path><circle cx="12" cy="13" r="4"></circle></svg>Photos datées, impossibles à truquer</div>
+  <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg>Pros vérifiés et experts indépendants</div>
+</div>`;
 /* ---------- pied de page, avis, mentions ---------- */
 function siteFooter(){
   const lk=(a,v,l)=>`<button class="link" data-a="${a}" data-v="${v}">${l}</button>`;
