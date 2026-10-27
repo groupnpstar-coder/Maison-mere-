@@ -1136,6 +1136,14 @@ function adminRefs(){
   ${list.length?`<div class="list">${list.map(x=>`<div class="item"><div style="min-width:0"><div class="t">${esc(x.ref)} · ${esc(x.ville)}</div><div class="small muted">${fmtP(x.price,x.cur)} / ${esc(x.unit||'')} · ${esc(x.source||'')} · ${fdate(x.at)}${refStale(x)?' · à mettre à jour':''}</div></div><button class="link" data-a="ref-del" data-v="${x.id}">Retirer</button></div>`).join('')}</div>`:'<div class="empty">Aucun prix de référence.</div>'}
   </div>`;
 }
+const BRICOMAT={store:{name:'Bricomat',pays:'Angola',ville:'Luanda',quartier:'Mutamba, Rua Comandante Veneno 10 · aussi Ingombota, Gamek et Estalagem',phone:'+244 928 189 065',web:'https://www.bricomat.online',email:'geral@bricomat.com'},src:'bricomat.online',items:[["Ciment Portland gris II 42,5 Yetu", "Yetu", 9500, "sac", "Ciment", "Ciment 50 kg"], ["Ciment colle gris Mopic 20 kg", "Mopic", 4554.3, "sac", "Ciment", "Autre"], ["Ciment colle blanc Weber Col Classic 20 kg", "Weber", 11272.32, "sac", "Ciment", "Autre"], ["Ciment réfractaire 20 kg", "", 37226.32, "sac", "Ciment", "Autre"], ["Brique rouge 30×20×15", "", 874.24, "pièce", "Blocs et briques", "Autre"], ["Brique de verre dépolie", "", 2548.58, "pièce", "Blocs et briques", "Autre"], ["Grille de ventilation en béton", "", 1900.97, "pièce", "Blocs et briques", "Autre"], ["Tôle profilée rouge 3000×900×0,32 mm", "", 20150, "pièce", "Tôles", "Tôle ondulée"], ["Tôle profilée laquée 27 mm, 1×6 m", "", 44640, "pièce", "Tôles", "Tôle ondulée"], ["Tuile Umbelino Monteiro", "Umbelino Monteiro", 3750, "pièce", "Tôles", "Autre"], ["Plaque polycarbonate alvéolaire 10 mm (12,6 m²)", "", 378000, "plaque", "Tôles", "Autre"], ["Argile expansée Leca 25 kg", "Leca", 16250, "sac", "Sable et gravier", "Autre"], ["Fil laminé, bobine 15 m", "", 18505.8, "bobine", "Fer à béton", "Autre"], ["Plaque de plâtre BA13 2000×1200", "", 12312, "plaque", "Autre", "Autre"], ["Plaque de plâtre hydrofuge BA13", "", 34460, "plaque", "Autre", "Autre"], ["Imperméabilisant liquide Fischer 4 kg", "Fischer", 42368.25, "pot", "Autre", "Autre"], ["Caoutchouc liquide terrasses blanc 5 kg", "", 75050, "pot", "Autre", "Autre"], ["Membrane asphaltique Esterdan 40 (rouleau 10 m)", "Esterdan", 129000, "rouleau", "Autre", "Autre"], ["Silicone Penosil universel blanc 280 ml", "Penosil", 7505, "cartouche", "Autre", "Autre"], ["Parquet flottant chêne (boîte 2,44 m²)", "", 39000, "boîte", "Bois", "Autre"], ["Panneau grillage galvanisé vert 1,8×2,5 m", "", 111250, "panneau", "Fer à béton", "Autre"], ["Échafaudage complet avec planche", "", 170500, "pièce", "Autre", "Autre"], ["Chauffe-eau réversible 100 L HTW", "HTW", 618750, "pièce", "Plomberie", "Autre"], ["Receveur de douche carré 80×80 cm", "", 205188.6, "pièce", "Plomberie", "Autre"], ["Électrode basique 7018 2,5×350 mm", "", 270, "pièce", "Autre", "Autre"]]};
+async function importSite(st,items,src){
+  const now=Date.now();let n=0;
+  for(const [name,brand,price,unit,cat,ref] of items){
+    if(S.products.some(x=>prodStore(x)===st&&x.name===name))continue;
+    await S.db.collection('products').add({storeId:st.id,sellerProId:st.proId||null,sellerUid:st.ownerUid||null,sellerName:st.name,name,brand,ref,cat,unit,stock:'dispo',price,cur:PAYS_CUR[st.pays]||'EUR',pays:st.pays,ville:st.ville,quartier:'',at:now,confirmedAt:null,fromSite:true,source:src,history:[{price,cur:PAYS_CUR[st.pays]||'EUR',at:now}]});n++;}
+  return n;
+}
 /* ---------- marché : quincailleries, prix datés, comparaison ---------- */
 const CURS=['EUR','USD','CDF','AOA','XAF'];
 const RATES0={EUR:1,USD:0.86,CDF:0.0003,AOA:0.00094,XAF:0.001524};
@@ -1146,7 +1154,7 @@ const fmtP=(n,c)=>{c=c||'EUR';const v=Number(n)||0;return c==='EUR'?eur(v):v.toL
 const approx=(n,c)=>!c||c==='EUR'?'':`≈ ${eur(Math.round(toEur(n,c)*100)/100)}`;
 const STALE=30*DAY;
 const pDate=x=>x.confirmedAt||x.at||0;
-const isStale=x=>Date.now()-pDate(x)>STALE;
+const isStale=x=>(x.fromSite&&!x.confirmedAt)||Date.now()-pDate(x)>STALE;
 const REFS=['Ciment 50 kg','Fer à béton 8 mm (barre)','Fer à béton 10 mm (barre)','Fer à béton 12 mm (barre)','Tôle ondulée','Bloc ciment 15 cm','Bloc ciment 20 cm','Sable (m³)','Gravier (m³)','Carreau de sol (m²)','Peinture 20 L','Tuyau PVC 100 mm','Câble électrique 2,5 mm² (100 m)','Planche / chevron','Autre'];
 const STOCK={dispo:'Disponible',limite:'Stock limité',rupture:'Rupture'};
 const SSTAT={suggeree:['Suggérée par un utilisateur','s-attente'],a_verifier:['Existence à vérifier','s-attente'],verifiee:['Vérifiée','s-paye'],partenaire:['Partenaire actif','s-paye'],suspendue:['Suspendue','s-litige']};
@@ -1171,17 +1179,17 @@ function priceTag(x){
   const st=isStale(x);
   return `<div class="stack-s" style="align-items:flex-end;gap:2px;flex-shrink:0;text-align:right">
     <span class="money">${fmtP(x.price,x.cur)}</span><span class="meta">/ ${esc(x.unit)}${x.cur&&x.cur!=='EUR'?' · '+approx(x.price,x.cur):''}</span>
-    <span class="small ${st?'unverified':'muted'}" style="font-size:11px">${st?'Prix à confirmer':'Prix confirmé le '+fdate(pDate(x))}</span></div>`;
+    <span class="small ${st?'unverified':'muted'}" style="font-size:11px">${x.fromSite&&!x.confirmedAt?'Prix du site · à confirmer':st?'Prix à confirmer':'Prix confirmé le '+fdate(pDate(x))}</span></div>`;
 }
 function prodLine(x,withStore){
   const s=prodStore(x);
-  const act=(s&&s.status==='suspendue')||x.stock==='rupture'?'':isStale(x)?'<span class="small muted">Le magasin doit confirmer ce prix avant toute commande.</span>':`<button class="btn ghost sm" data-a="buy" data-v="${x.id}">${S.p.buy===x.id?'Fermer':t('Commander')}</button>`;
+  const act=(s&&s.status==='suspendue')||x.stock==='rupture'?'':isStale(x)?(x.fromSite&&!x.confirmedAt?'':'<span class="small muted">Le magasin doit confirmer ce prix avant toute commande.</span>'):`<button class="btn ghost sm" data-a="buy" data-v="${x.id}">${S.p.buy===x.id?'Fermer':t('Commander')}</button>`;
   return `<div class="item" style="flex-direction:column;align-items:stretch;gap:8px">
    <div class="between" style="align-items:flex-start"><div style="display:flex;gap:12px;min-width:0">${x.photo?`<img class="pimg" src="${x.photo}" alt="" loading="lazy">`:''}<div style="min-width:0">
     <div class="t">${esc(x.name)}</div>
     <div class="small muted">${[x.brand,x.ref&&x.ref!=='Autre'?x.ref:''].filter(Boolean).map(esc).join(' · ')}</div>
     ${withStore?`<button class="link" data-a="store" data-v="${s?s.id:''}" style="padding:2px 0;text-transform:none;letter-spacing:0;font-size:13px;text-align:left">${esc(s?s.name:x.sellerName)} · ${esc(x.ville||'')}${x.quartier?', '+esc(x.quartier):''}</button>`:''}
-    <div class="small ${x.stock==='rupture'?'unverified':'muted'}">${STOCK[x.stock||'dispo']}${s&&s.delivery&&s.delivery.fee!==''&&s.delivery.fee!=null?' · livraison '+fmtP(s.delivery.fee,s.delivery.cur||x.cur):''}</div>
+    <div class="small ${x.stock==='rupture'?'unverified':'muted'}">${x.fromSite&&!x.confirmedAt?'Relevé le '+fdate(x.at):STOCK[x.stock||'dispo']}${s&&s.delivery&&s.delivery.fee!==''&&s.delivery.fee!=null?' · livraison '+fmtP(s.delivery.fee,s.delivery.cur||x.cur):''}</div>
    </div></div>${priceTag(x)}</div>
    ${act?`<div style="display:flex;justify-content:flex-end">${act}</div>`:''}
    ${S.p.buy===x.id?orderForm(x):''}
@@ -1253,6 +1261,8 @@ function vStore(){
     ${checked(s)}
     ${s.addedByTeam&&!s.ownerUid?`<p class="small muted" style="margin:0">Fiche créée par l'équipe Maison Mère à partir d'informations publiques. Le magasin ne l'a pas encore confirmée.</p>`:s.status==='suggeree'&&s.suggestedByName?`<p class="small muted" style="margin:0">Ajouté par ${esc(s.suggestedByName)} le ${fdate(s.at)}. Ce n'est pas un partenaire officiel.</p>`:''}
     ${s.phone?`<div class="stack-s"><span class="label">Téléphone</span><span class="money" style="user-select:all">${esc(s.phone)}</span></div>`:''}
+    ${s.web?`<a class="link" href="${esc(s.web)}" target="_blank" rel="noopener" style="align-self:flex-start;color:var(--gold)">Site du magasin</a>`:''}
+    ${S.products.some(x=>prodStore(x)===s&&x.fromSite&&!x.confirmedAt)?'<p class="small muted" style="margin:0">Ces prix ont été relevés par Maison Mère sur le site public du magasin. Ils sont donnés à titre indicatif et ne pourront être commandés qu\'une fois confirmés par le magasin.</p>':''}
     ${s.delivery&&(s.delivery.fee!==''||s.delivery.delay)?`<div class="stack-s"><span class="label">Livraison</span><span class="small">${s.delivery.fee!==''&&s.delivery.fee!=null?'Frais : '+fmtP(s.delivery.fee,s.delivery.cur||PAYS_CUR[s.pays]||'EUR')+' · ':''}${esc(s.delivery.delay||'')}${s.delivery.zone?' · '+esc(s.delivery.zone):''}</span></div>`:''}
     ${pr?`<button class="link" data-a="pro" data-v="${pr.id}" style="align-self:flex-start">Voir les avis du vendeur</button>`:''}
     <span class="label">Produits et prix</span>
@@ -1334,6 +1344,8 @@ function adminStores(){
   const list=(S.stores||[]).slice().sort((a,b)=>(b.claim&&b.claim.status==='attente')-(a.claim&&a.claim.status==='attente')||(b.at||0)-(a.at||0));
   return `<div class="stack-s"><p class="small muted" style="margin:0">Statuts : suggérée → existence à vérifier → vérifiée → partenaire actif. « Vérifiée » ne veut pas dire « fiable » : coche seulement ce que tu as réellement contrôlé.</p>
   <div class="field"><label class="label" for="rt-cdf">Taux indicatifs : 1 € = … (CDF / AOA / USD)</label><div class="row"><input id="rt-cdf" style="flex:1;min-width:0" inputmode="decimal" value="${Math.round(1/rates().CDF)}"><input id="rt-aoa" style="flex:1;min-width:0" inputmode="decimal" value="${Math.round(1/rates().AOA)}"><input id="rt-usd" style="flex:1;min-width:0" inputmode="decimal" value="${(1/rates().USD).toFixed(2)}"><button class="btn ghost sm" data-a="adm-rates">OK</button></div></div>
+  ${(S.stores||[]).some(x=>x.name==='Bricomat'&&x.ville==='Luanda')?'':`<button class="btn sm" data-a="add-bricomat" style="align-self:flex-start">Ajouter Bricomat (Luanda) avec ses prix publics</button>`}
+  ${S.p.bkInfo2?`<p class="small verified" style="margin:0">${esc(S.p.bkInfo2)}</p>`:''}
   <form class="stack-s" data-f="bulkstores" style="border:1px solid var(--fg);padding:14px">
     <span class="label">Ajouter des magasins (un par ligne)</span>
     <p class="small muted" style="margin:0">Format : Nom ; Pays ; Ville ; Quartier ; Téléphone. Seules les infos publiques (nom, adresse, téléphone). Les prix, seulement avec l'accord du magasin.</p>
@@ -2030,6 +2042,10 @@ document.addEventListener('click',async e=>{
     if(a==='pill'){return b.dataset.k==='dir'?go('dir',{q:v}):go('market',{cat:v});}
     if(a==='dealref'){return go('market',{mtab:'cmp',ref:v});}
     if(a==='home-del'&&S.admin){const it=((S.home&&S.home.items)||[]).filter((x,k)=>k!==+v);await S.db.doc('config/home').set({items:it});return;}
+    if(a==='add-bricomat'&&S.admin){ensureProducts();const B=BRICOMAT.store;
+      const ref=await S.db.collection('stores').add({name:B.name,pays:B.pays,ville:B.ville,quartier:B.quartier,phone:B.phone,web:B.web,email:B.email,status:'a_verifier',verified:{},suggestedBy:S.uid,suggestedByName:'Maison Mère',addedByTeam:true,at:Date.now(),views:0});
+      const st=Object.assign({id:ref.id},B);const n=await importSite(st,BRICOMAT.items,'Site '+BRICOMAT.src);
+      S.p.bkInfo2=`Bricomat ajouté avec ${n} produits relevés sur son site. Les prix restent « à confirmer » tant que le magasin ne les a pas validés.`;render();return;}
     if(a==='ref-del'&&S.admin){await S.db.doc('refprices/'+v).delete();return;}
     if(a==='filepick'){const i=document.getElementById(v);if(i)i.click();return;}
     if(a==='phi'){S.p.phi=+v;return render();}
