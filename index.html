@@ -748,8 +748,8 @@ function vMyFiche(){
       ${p.idRequest?'<span class="small" style="color:var(--warn)">Demande de changement envoyée. L\'administration va te répondre.</span>':'<button class="link" type="button" data-a="idreq" style="align-self:flex-start">Demander un changement</button>'}
     </div>`:`<div class="field"><label class="label" for="pf-name">Nom de l'entreprise ou ton nom</label><input id="pf-name" required maxlength="60" value="${esc(p?p.name:S.me.name)}"></div>`}
     <div class="field"><label class="label" for="pf-metier">Métier</label><select id="pf-metier">${opts(METIERS,p&&p.metier)}</select></div>
-    ${lk?'':`<div class="field"><label class="label" for="pf-pays">Pays</label><select id="pf-pays">${opts(PAYS,p?p.pays:'RD Congo')}</select></div>`}
-    <div class="field"><label class="label" for="pf-ville">Ville</label><input id="pf-ville" required maxlength="40" value="${esc(p?p.ville:'')}"></div>
+    ${lk?'':`<div class="field"><label class="label" for="pf-pays">Pays</label><select id="pf-pays">${opts(PAYS,p?p.pays:(PAYS.includes(S.me.pays)?S.me.pays:'RD Congo'))}</select></div>`}
+    <div class="field"><label class="label" for="pf-ville">Ville</label><input id="pf-ville" required maxlength="40" value="${esc(p?p.ville:(S.me.ville||''))}"></div>
     <div class="field"><label class="label" for="pf-phone">Téléphone WhatsApp, avec l'indicatif (+243…)</label><input id="pf-phone" required maxlength="25" value="${esc(p?p.phone:S.me.phone)}"></div>
     ${lk&&p.rccm?'':`<div class="field"><label class="label" for="pf-rccm">Numéro d'entreprise (RCCM ou autre)</label><input id="pf-rccm" maxlength="40" value="${esc(p?p.rccm:'')}"></div>${!p?'<p class="small muted" style="margin:-8px 0 0">Attention : ton nom, ton pays et ton numéro d\'entreprise seront verrouillés après l\'enregistrement.</p>':''}`}
     <div class="field"><label class="label" for="pf-about">Présentation</label><textarea id="pf-about" rows="3" maxlength="300">${esc(p?p.about:'')}</textarea></div>
