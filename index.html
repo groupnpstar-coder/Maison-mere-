@@ -363,7 +363,7 @@ function go(view,p){viewUnsubs.forEach(u=>u());viewUnsubs=[];S.view=view;S.p=p||
 function ensureProducts(){if(S.productsOn||!S.db)return;S.productsOn=true;S.db.collection('products').onSnapshot(q=>{S.products=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});}
 
 /* ---------- boot ---------- */
-const APPV='28.10-c';
+const APPV='28.10-d';
 (function(){try{fetch('version.txt?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(v=>{v=(v||'').trim();if(v&&v!==APPV){const k='mm-upd-'+v;let n=0;try{n=+sessionStorage.getItem(k)||0;sessionStorage.setItem(k,n+1);}catch(e){}if(n<2)location.replace(location.pathname+'?v='+encodeURIComponent(v)+location.hash);}}).catch(()=>{});}catch(e){}})();
 const SLIDE={i:0,k:0};
 function slideTick(first){
@@ -711,6 +711,9 @@ function vProFiche(){
     ${badgesHtml(p)}
     ${p.about?`<p>${esc(p.about)}</p>`:''}
     <div class="stack-s"><span class="label">Contact</span><span class="money" style="user-select:all">${esc(p.phone||'—')}</span></div>
+    ${(()=>{const n=waNum(p.phone);if(!n)return '';const msg=`Bonjour ${p.name}, je vous ai trouvé sur Maison Mère. Pouvons-nous faire un appel vidéo pour parler de mon projet et voir vos chantiers ?`;
+      return `<a class="btn ghost" href="https://wa.me/${n}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="12" height="10"></rect><path d="M15 11l6-3v8l-6-3"></path></svg>Appel vidéo WhatsApp</a>
+      <p class="small muted" style="margin:-8px 0 0">Vois le pro et ses chantiers en vidéo avant de le choisir. WhatsApp s'ouvre avec un message prêt, puis appuie sur la caméra.</p>`;})()}
     <div class="stack-s"><span class="label">Avis de clients ayant payé via l'app${r.length?' · '+avg(r).toFixed(1).replace('.',',')+'/5':''}</span>
     ${reviewsList(p.reviews)}</div>
     ${OK(p)?`<button class="btn" data-a="newwith" data-v="${p.id}">Choisir pour un projet</button>`:`<p class="notice">Seuls les professionnels vérifiés peuvent recevoir de l'argent dans l'app.</p>`}
