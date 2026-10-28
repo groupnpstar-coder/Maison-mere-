@@ -363,7 +363,7 @@ function go(view,p){viewUnsubs.forEach(u=>u());viewUnsubs=[];S.view=view;S.p=p||
 function ensureProducts(){if(S.productsOn||!S.db)return;S.productsOn=true;S.db.collection('products').onSnapshot(q=>{S.products=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});}
 
 /* ---------- boot ---------- */
-const APPV='28.10-b';
+const APPV='28.10-c';
 (function(){try{fetch('version.txt?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(v=>{v=(v||'').trim();if(v&&v!==APPV){const k='mm-upd-'+v;let n=0;try{n=+sessionStorage.getItem(k)||0;sessionStorage.setItem(k,n+1);}catch(e){}if(n<2)location.replace(location.pathname+'?v='+encodeURIComponent(v)+location.hash);}}).catch(()=>{});}catch(e){}})();
 const SLIDE={i:0,k:0};
 function slideTick(first){
@@ -778,7 +778,37 @@ function vProject(){
   </div>`;
 }
 
-function amtForm(i,cur){return `<form class="row" data-f="amt" data-v="${i}"><div class="field" style="flex:1;min-width:0"><label class="label" for="amt-${i}">Montant de l'étape (€)</label><input id="amt-${i}" inputmode="numeric" maxlength="7" value="${cur||''}" placeholder="Ex. 1000"></div><button class="btn sm" type="submit" style="align-self:flex-end">OK</button></form>`;}
+function amtForm(i,cur,st){st=st||{};return `<form class="stack-s" data-f="amt" data-v="${i}"><div class="field"><label class="label" for="amt-${i}">Montant total de l'étape (€)</label><input id="amt-${i}" inputmode="numeric" maxlength="7" value="${cur||''}" placeholder="Ex. 150"></div>
+  <p class="small muted" style="margin:0">Répartis-le en 3 parts. Ce qui reste après matériaux et transport est la main-d'œuvre du pro.</p>
+  <div class="row"><div class="field" style="flex:1;min-width:0"><label class="label" for="mat-${i}">Matériaux (€)</label><input id="mat-${i}" inputmode="numeric" maxlength="7" value="${st.mat||''}" placeholder="0"></div><div class="field" style="flex:1;min-width:0"><label class="label" for="tr-${i}">Transport (€)</label><input id="tr-${i}" inputmode="numeric" maxlength="6" value="${st.tr||''}" placeholder="0"></div></div>
+  <div class="field"><label class="label" for="mm-${i}">Qui fournit le matériel ?</label><select id="mm-${i}"><option value="shop"${st.matMode!=='pro'?' selected':''}>Une quincaillerie livre (payée directement)</option><option value="pro"${st.matMode==='pro'?' selected':''}>Le pro achète et envoie la facture</option></select></div>
+  <button class="btn sm" type="submit" style="align-self:flex-start">OK</button></form>`;}
+const ENV_C={mat:'#E6B45A',tr:'#7FB6DD',mo:'var(--ok)'};
+function envParts(st){const mat=Math.min(+st.mat||0,+st.amount||0),tr=Math.min(+st.tr||0,Math.max(0,(+st.amount||0)-mat));return {mat,tr,mo:Math.max(0,(+st.amount||0)-mat-tr)};}
+function envBox(st,r){
+  if(!(+st.mat)&&!(+st.tr)) return '';
+  const e=envParts(st), shop=st.matMode!=='pro', live=['bloque','fait','litige'].includes(st.status);
+  const stt=k=>st.status==='paye'||(k!=='mo'&&st.matPaidAt)?'<span class="small" style="color:var(--ok)">Payé</span>':st.status==='rembourse'?'<span class="small muted">Remboursé</span>':live?'<span class="small" style="color:var(--held)">Bloqué</span>':'<span class="small muted">À bloquer</span>';
+  const row=(k,t,d,a)=>a?`<div class="between" style="gap:10px;padding:8px 0;border-bottom:1px solid var(--line)"><div style="display:flex;gap:10px;align-items:center;min-width:0"><span style="width:8px;align-self:stretch;min-height:30px;background:${ENV_C[k]};flex-shrink:0"></span><div style="min-width:0"><div style="font-weight:500">${t} · ${eur(a)}</div><div class="small muted">${d}</div></div></div>${stt(k)}</div>`:'';
+  return `<div class="stack-s" style="gap:0">${row('mat','Matériaux',shop?'Payés directement à la quincaillerie à la livraison. Le pro ne touche pas cet argent.':'Le pro achète, envoie la facture et la photo, puis il est remboursé.',e.mat)}${row('tr','Transport',shop?'Payé quand la livraison arrive au chantier (code de livraison).':'Pour le pro, qui va chercher le matériel lui-même.',e.tr)}${row('mo','Main-d\'œuvre',r==='pro'?'Ton salaire. Tu le reçois quand le client valide, photos à l\'appui.':'Le salaire du pro, versé quand tu valides le travail.',e.mo)}
+  <p class="small muted" style="margin:6px 0 0">L'argent est gardé par Maison Mère (partenaire de paiement), ni par le client ni par le pro.</p></div>`;
+}
+function matActions(p,st,i,r){
+  if(st.status!=='bloque'&&st.status!=='fait') return '';
+  const e=envParts(st); if(!e.mat&&!e.tr||st.matPaidAt) return '';
+  if(st.matMode!=='pro'){
+    const code=st.code||'----';
+    if(r==='pro') return `<div class="notice">Code de livraison : <b style="font-weight:700;letter-spacing:.2em;color:var(--fg)">${esc(code)}</b>. Donne-le au livreur seulement quand le matériel est arrivé au chantier.</div>${TEST?codeForm(i):''}`;
+    return `<p class="small muted" style="margin:0">Le livreur tape le code que le pro lui donne à l'arrivée du matériel. ${eur(e.mat+e.tr)} partent alors à la quincaillerie et au transport.</p>${(TEST||S.admin)?codeForm(i):''}`;
+  }
+  if(r==='pro'){
+    if(st.invoice) return `<p class="small muted" style="margin:0">Facture envoyée : ${eur(st.invoice.amount)}. En attente de la vérification du client.</p>`;
+    return `<form class="row" data-f="invoice" data-v="${i}"><div class="field" style="flex:1;min-width:0"><label class="label" for="inv-${i}">Montant de la facture (€)</label><input id="inv-${i}" inputmode="numeric" maxlength="7" placeholder="Max ${e.mat}"></div><button class="btn sm" type="submit" style="align-self:flex-end">Envoyer</button></form><p class="small muted" style="margin:0">Ajoute la photo de la facture et du matériel sur le chantier dans l'onglet Photos.</p>`;
+  }
+  if(r==='client'&&st.invoice) return `<p class="small muted" style="margin:0">Le pro a envoyé une facture de ${eur(st.invoice.amount)}. Vérifie la photo dans l'onglet Photos.</p><button class="btn sm" data-a="matok" data-v="${i}">Rembourser le matériel ${eur(Math.min(st.invoice.amount,e.mat)+e.tr)}</button>`;
+  return '';
+}
+function codeForm(i){return `<form class="row" data-f="delcode" data-v="${i}"><div class="field" style="flex:1;min-width:0"><label class="label" for="dc-${i}">${TEST?'Test : ':''}code tapé par le livreur</label><input id="dc-${i}" inputmode="numeric" maxlength="4" placeholder="4 chiffres"></div><button class="btn sm" type="submit" style="align-self:flex-end">Confirmer la livraison</button></form>`;}
 function waNum(x){let d=String(x||'').replace(/[^\d+]/g,'');if(d.startsWith('+'))return d.slice(1);if(d.startsWith('00'))return d.slice(2);return d.length>=11?d:'';}
 function waCall(p,r){
   if(r!=='client'&&r!=='pro'&&r!=='guard') return '';
@@ -830,11 +860,11 @@ function tSteps(p,r){
     if(st.status==='attente'){
       if(r==='client'&&canBlock(p,i)&&!pricesOk(p)) actions=st.amount?'<p class="small muted" style="margin:0">Le blocage sera possible quand vous serez d\'accord sur les prix (voir en haut).</p>':amtForm(i);
       else if(r==='client'&&canBlock(p,i)) actions=st.amount?`<button class="btn" data-a="block" data-v="${i}">Bloquer ${eur(st.amount)}</button><button class="link" data-a="editamt" data-v="${i}">Changer le montant</button>`:amtForm(i);
-      if(r==='client'&&S.p.editAmt===i&&st.amount) actions=amtForm(i,st.amount);
+      if(r==='client'&&S.p.editAmt===i&&st.amount) actions=amtForm(i,st.amount,st);
       info=r!=='client'&&r!=='pro'?'Le client n\'a pas encore bloqué l\'argent de cette étape.':r==='pro'?'Le client n\'a pas encore bloqué l\'argent. Ne commence pas avant.':(canBlock(p,i)?'Bloque l\'argent pour que le travail commence.':'Disponible quand l\'étape précédente est payée.');
     }
     if(st.status==='bloque'){
-      info=r==='pro'?`${eur(st.amount)} bloqués pour toi. Envoie tes photos puis signale la fin de l'étape.`:r==='client'?'Le pro travaille. L\'argent attend ta validation.':'Le pro travaille. L\'argent est bloqué et attend la validation du client.';
+      info=r==='pro'?(envParts(st).mo<st.amount?`${eur(st.amount)} bloqués, dont ${eur(envParts(st).mo)} de main-d'œuvre pour toi. Envoie tes photos puis signale la fin de l'étape.`:`${eur(st.amount)} bloqués pour toi. Envoie tes photos puis signale la fin de l'étape.`):r==='client'?'Le pro travaille. L\'argent attend ta validation.':'Le pro travaille. L\'argent est bloqué et attend la validation du client.';
       if(r==='pro') actions=`<button class="btn" data-a="done" data-v="${i}">Étape terminée</button>`;
       if(r==='client') actions=`<button class="btn ghost sm" data-a="dispute" data-v="${i}">Signaler un problème</button>`;
     }
@@ -857,7 +887,7 @@ function tSteps(p,r){
         <div class="row"><button class="btn sm" type="submit">Ouvrir le litige</button><button class="btn ghost sm" type="button" data-a="nodispute">Annuler</button></div></form>`;
     }
     return `<div class="step${i===curIdx?' current':''}"><div class="between"><div class="stack-s" style="gap:2px;min-width:0"><span class="t" style="font-weight:500">${i+1}. ${esc(st.name)}</span><span class="money small">${st.amount?eur(st.amount):'Montant à définir'}</span></div><span class="pill s-${st.status}">${ST(st.status)}</span></div>
-      ${info?`<p class="small muted" style="margin:0">${info}</p>`:''}${actions?`<div class="stack-s">${actions}</div>`:''}</div>`;
+      ${envBox(st,r)}${info?`<p class="small muted" style="margin:0">${info}</p>`:''}${(()=>{const m=matActions(p,st,i,r);return m?`<div class="stack-s">${m}</div>`:'';})()}${actions?`<div class="stack-s">${actions}</div>`:''}</div>`;
   }).join('');
   let review='';
   const pend=p.steps.findIndex(st=>st.status==='paye'&&((r==='client'&&!st.rvClient)||(r==='pro'&&!st.rvPro)));
@@ -2211,9 +2241,10 @@ document.addEventListener('click',async e=>{
     if(a==='stopno'){S.p.confirmStop=false;return render();}
     if(!p&&['block','done','pay','expert','stopyes'].includes(a)) return;
     if(a==='editamt'){S.p.editAmt=+v;return render();}
-    if(a==='block'){if(!p.steps[+v].amount||!pricesOk(p))return;await setSteps(p,+v,{status:'bloque',blockedAt:Date.now()});await sysMsg(p.id,`${p.steps[+v].name} : ${eur(p.steps[+v].amount)} bloqués par le client.`);}
+    if(a==='block'){if(!p.steps[+v].amount||!pricesOk(p))return;await setSteps(p,+v,{status:'bloque',blockedAt:Date.now(),code:String(1000+Math.floor(Math.random()*9000))});await sysMsg(p.id,`${p.steps[+v].name} : ${eur(p.steps[+v].amount)} bloqués par le client.`);}
     if(a==='done'){await setSteps(p,+v,{status:'fait',doneAt:Date.now()});await sysMsg(p.id,`${p.steps[+v].name} : le pro indique que l'étape est terminée.`);}
-    if(a==='pay'){await setSteps(p,+v,{status:'paye',paidAt:Date.now()});await sysMsg(p.id,`${p.steps[+v].name} : validé par le client, ${eur(p.steps[+v].amount)} versés au pro.`);await bumpPro(p.proId,'paid');}
+    if(a==='pay'){const st0=p.steps[+v],e=envParts(st0);await setSteps(p,+v,{status:'paye',paidAt:Date.now(),matPaidAt:st0.matPaidAt||((e.mat||e.tr)?Date.now():null)});await sysMsg(p.id,e.mo<st0.amount?`${st0.name} : validé par le client. Main-d'œuvre ${eur(e.mo)} versée au pro${st0.matPaidAt?'':`, matériaux et transport ${eur(e.mat+e.tr)} réglés`}.`:`${st0.name} : validé par le client, ${eur(st0.amount)} versés au pro.`);await bumpPro(p.proId,'paid');}
+    if(a==='matok'&&p){const st0=p.steps[+v],e=envParts(st0),m=Math.min((st0.invoice||{}).amount||0,e.mat);await setSteps(p,+v,{matPaidAt:Date.now(),matPaid:m});await sysMsg(p.id,`${st0.name} : facture vérifiée, ${eur(m+e.tr)} remboursés au pro pour le matériel et le transport.${m<e.mat?` Les ${eur(e.mat-m)} non utilisés restent au client.`:''}`);}
     if(a==='expert'&&p){await applyDecision(p,+v,b.dataset.d,S.admin?{d:b.dataset.d,report:'Décision prise par l\'administration.',at:Date.now(),expertName:'Administration'}:null);return;}
     if(a==='stopyes'){
       const steps=p.steps.map(s=>['bloque','fait'].includes(s.status)?Object.assign({},s,{status:'rembourse',paidAt:Date.now()}):s);
@@ -2458,6 +2489,19 @@ document.addEventListener('submit',async e=>{
       else{const ref=await S.db.collection('pros').add(Object.assign(data,{ownerUid:S.uid,verified:false,example:false,reviews:[],createdAt:Date.now()}));await S.db.doc('profiles/'+S.uid).update({proId:ref.id});}
       S.mode='pro';go('home');
     }
+    if(f==='delcode'&&p){
+      const i=+e.target.dataset.v, st0=p.steps[i], c=val('dc-'+i);
+      if(!st0||c!==String(st0.code)){S.err='Code incorrect. Le livreur doit taper le code donné par le pro.';return render();}
+      const ep=envParts(st0); await setSteps(p,i,{matPaidAt:Date.now(),matPaid:ep.mat});
+      await sysMsg(p.id,`${st0.name} : livraison confirmée avec le code. ${eur(ep.mat)} versés à la quincaillerie${ep.tr?` et ${eur(ep.tr)} au transport`:''}.`);S.err='';return render();
+    }
+    if(f==='invoice'&&p){
+      const i=+e.target.dataset.v, st0=p.steps[i], m=parseInt(val('inv-'+i).replace(/\D/g,''),10)||0, ep=envParts(st0);
+      if(!m){S.err='Indique le montant de la facture.';return render();}
+      if(m>ep.mat){S.err=`La facture dépasse les ${eur(ep.mat)} prévus pour le matériel.`;return render();}
+      await setSteps(p,i,{invoice:{amount:m,at:Date.now()}});
+      await sysMsg(p.id,`${st0.name} : le pro a envoyé une facture de matériel de ${eur(m)}. Le client doit la vérifier.`);S.err='';return render();
+    }
     if(f==='dispute'&&p){
       const i=+e.target.dataset.v, reason=val('dp-reason'), text=val('dp-text');
       const ex=await findExpert(p);
@@ -2588,7 +2632,9 @@ document.addEventListener('submit',async e=>{
     if(f==='amt'&&p){
       const i=+e.target.dataset.v, n=parseInt(val('amt-'+i).replace(/\D/g,''),10)||0;
       if(!n){S.err='Indique un montant.';return render();}
-      const steps=p.steps.map((x,k)=>k===i?Object.assign({},x,{amount:n}):x);
+      const mt=parseInt(val('mat-'+i).replace(/\D/g,''),10)||0, tr=parseInt(val('tr-'+i).replace(/\D/g,''),10)||0, mm=val('mm-'+i)==='pro'?'pro':'shop';
+      if(mt+tr>n){S.err='Matériaux et transport dépassent le montant total.';return render();}
+      const steps=p.steps.map((x,k)=>k===i?Object.assign({},x,{amount:n,mat:mt,tr,matMode:mm}):x);
       await S.db.doc('projects/'+p.id).update({steps,pricesStatus:p.proId?'attente_pro':'ok'});
       if(p.proId) await sysMsg(p.id,`${S.me.name} propose ${eur(n)} pour l'étape « ${p.steps[i].name} ». En attente de l'accord du pro.`);
       S.p.editAmt=null;render();
