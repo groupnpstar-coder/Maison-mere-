@@ -337,7 +337,7 @@ const t=fr=>{if(LANG==='fr')return fr;const o=(S.tr&&S.tr[LANG])||{};return o[fr
 const ST=k=>t(STATUS_FR[k]||k);
 const REASONS=['Travail mal fait','Travail pas fait','Retard important','Autre problème'];
 const DAY=86400000;
-const MM_OPS=['M-Pesa (Vodacom)','Orange Money','Airtel Money','Afrimoney','Multicaixa Express (Angola)','Unitel Money (Angola)','Compte bancaire','Autre'];
+const MM_OPS=['M-Pesa (Vodacom)','Orange Money','Airtel Money','Afrimoney','illicocash','Multicaixa Express (Angola)','Unitel Money (Angola)'];
 
 const S={db:null,uid:null,me:undefined,pros:[],myProjects:[],proProjects:[],mode:'client',view:'home',p:{},photos:[],msgs:[],err:'',busy:false,admin:false,allProjects:[],allProfiles:[],bugs:[],products:[],productsOn:false,myOrders:[],sellerOrders:[],guardProjects:[],checkins:[],checkinsLoaded:false};
 let unsubCk=null, watchedCk=null, proUnsubs=[];
@@ -364,7 +364,7 @@ function go(view,p){viewUnsubs.forEach(u=>u());viewUnsubs=[];S.view=view;S.p=p||
 function ensureProducts(){if(S.productsOn||!S.db)return;S.productsOn=true;S.db.collection('products').onSnapshot(q=>{S.products=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});}
 
 /* ---------- boot ---------- */
-const APPV='28.10-e';
+const APPV='28.10-f';
 (function(){try{fetch('version.txt?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(v=>{v=(v||'').trim();if(v&&v!==APPV){const k='mm-upd-'+v;let n=0;try{n=+sessionStorage.getItem(k)||0;sessionStorage.setItem(k,n+1);}catch(e){}if(n<2)location.replace(location.pathname+'?v='+encodeURIComponent(v)+location.hash);}}).catch(()=>{});}catch(e){}})();
 const SLIDE={i:0,k:0};
 function slideTick(first){
@@ -1034,7 +1034,7 @@ function vMyFiche(){
     <div class="field"><label class="label" for="pf-phone">Téléphone WhatsApp, avec l'indicatif (+243…)</label><input id="pf-phone" required maxlength="25" value="${esc(p?p.phone:S.me.phone)}"></div>
     <div class="row"><div class="field" style="flex:1;min-width:0"><label class="label" for="pf-mmop">Compte mobile money</label><select id="pf-mmop">${opts(MM_OPS,(p&&p.mmOp)||MM_OPS[0])}</select></div><div class="field" style="flex:1;min-width:0"><label class="label" for="pf-mmnum">Numéro du compte</label><input id="pf-mmnum" maxlength="25" inputmode="tel" value="${esc((p&&p.mmNum)||(p?p.phone:S.me.phone)||'')}"></div></div>
     <div class="field"><label class="label" for="pf-mmname">Nom exact sur le compte</label><input id="pf-mmname" maxlength="60" value="${esc((p&&p.mmName)||'')}"></div>
-    <p class="small muted" style="margin:-8px 0 0">Ton argent sera versé uniquement sur ce compte. Le nom doit être le même que sur ta pièce d'identité : Maison Mère le vérifie avant le premier paiement.</p>
+    <p class="small muted" style="margin:-8px 0 0">Maison Mère paie uniquement par mobile money, jamais par virement bancaire. Ton argent sera versé uniquement sur ce compte. Le nom doit être le même que sur ta pièce d'identité : Maison Mère le vérifie avant le premier paiement.</p>
     ${lk&&p.rccm?'':`<div class="field"><label class="label" for="pf-rccm">Numéro d'entreprise (RCCM ou autre)</label><input id="pf-rccm" maxlength="40" value="${esc(p?p.rccm:'')}"></div>${!p?'<p class="small muted" style="margin:-8px 0 0">Attention : ton nom, ton pays et ton numéro d\'entreprise seront verrouillés après l\'enregistrement.</p>':''}`}
     <div class="field"><label class="label" for="pf-about">Présentation</label><textarea id="pf-about" rows="3" maxlength="300">${esc(p?p.about:'')}</textarea></div>
     <label style="display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);padding:14px 16px;cursor:pointer"><input type="checkbox" id="pf-insp" ${p&&p.inspector?'checked':''} style="width:20px;height:20px;margin:2px 0 0;flex-shrink:0;accent-color:#B85A35"><span><b style="font-weight:500">Je fais aussi des visites de contrôle</b><br><span class="small muted">Tu passes sur le chantier d'un autre pro de ta ville, tu prends des photos et tu réponds à 3 questions. ${eur(VISIT_PRICE)} par visite.</span></span></label>
