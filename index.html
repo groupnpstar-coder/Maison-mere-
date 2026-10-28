@@ -337,6 +337,7 @@ const t=fr=>{if(LANG==='fr')return fr;const o=(S.tr&&S.tr[LANG])||{};return o[fr
 const ST=k=>t(STATUS_FR[k]||k);
 const REASONS=['Travail mal fait','Travail pas fait','Retard important','Autre problème'];
 const DAY=86400000;
+const MM_OPS=['M-Pesa (Vodacom)','Orange Money','Airtel Money','Afrimoney','Multicaixa Express (Angola)','Unitel Money (Angola)','Compte bancaire','Autre'];
 
 const S={db:null,uid:null,me:undefined,pros:[],myProjects:[],proProjects:[],mode:'client',view:'home',p:{},photos:[],msgs:[],err:'',busy:false,admin:false,allProjects:[],allProfiles:[],bugs:[],products:[],productsOn:false,myOrders:[],sellerOrders:[],guardProjects:[],checkins:[],checkinsLoaded:false};
 let unsubCk=null, watchedCk=null, proUnsubs=[];
@@ -363,7 +364,7 @@ function go(view,p){viewUnsubs.forEach(u=>u());viewUnsubs=[];S.view=view;S.p=p||
 function ensureProducts(){if(S.productsOn||!S.db)return;S.productsOn=true;S.db.collection('products').onSnapshot(q=>{S.products=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});}
 
 /* ---------- boot ---------- */
-const APPV='28.10-d';
+const APPV='28.10-e';
 (function(){try{fetch('version.txt?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(v=>{v=(v||'').trim();if(v&&v!==APPV){const k='mm-upd-'+v;let n=0;try{n=+sessionStorage.getItem(k)||0;sessionStorage.setItem(k,n+1);}catch(e){}if(n<2)location.replace(location.pathname+'?v='+encodeURIComponent(v)+location.hash);}}).catch(()=>{});}catch(e){}})();
 const SLIDE={i:0,k:0};
 function slideTick(first){
@@ -707,7 +708,9 @@ function vProFiche(){
   return `<div class="stack">
     <button class="link" data-a="go" data-v="dir">Retour</button>
     <div class="stack-s">${avatar(proPhoto(p),p.name,88)}<span class="label">${esc(p.metier)} · ${esc(p.ville)}, ${esc(p.pays)}</span><h1>${esc(p.name)}</h1>
-    <span class="small ${p.verified?'verified':'unverified'}">${p.verified?'Vérifié · peut recevoir de l\'argent':'Non vérifié · ne peut pas encore recevoir d\'argent'}${p.example?' · fiche d\'exemple':''}</span></div>
+    <span class="small ${p.verified?'verified':'unverified'}">${p.verified?'Vérifié · peut recevoir de l\'argent':'Non vérifié · ne peut pas encore recevoir d\'argent'}${p.example?' · fiche d\'exemple':''}</span>
+    <span class="small ${p.idVerified?'verified':'unverified'}">${p.idVerified?'✓ Identité vérifiée · compte '+esc(p.mmOp||'mobile money')+' au même nom':'Identité et compte mobile money pas encore vérifiés'}</span>
+    ${p.metier==='Fournisseur de matériaux'?`<span class="small ${p.caution?'verified':'unverified'}">${p.caution?'✓ Caution déposée : '+eur(p.caution)+' · perdue en cas de triche prouvée':'Pas encore de caution déposée'}</span>`:''}</div>
     ${badgesHtml(p)}
     ${p.about?`<p>${esc(p.about)}</p>`:''}
     <div class="stack-s"><span class="label">Contact</span><span class="money" style="user-select:all">${esc(p.phone||'—')}</span></div>
@@ -759,6 +762,7 @@ function role(p){
 function vProject(){
   const p=prjById(S.p.id); if(!p) return `<div class="stack"><button class="link" data-a="home">Retour</button><p class="muted">Chargement du projet…</p></div>`;
   const r=role(p);
+  autoVisit(p,r);
   const tabs={client:[['steps','Étapes'],['photos','Photos'],['msgs','Messages'],['pay','Paiement'],['ctrl','Contrôle']],
     pro:[['steps','Étapes'],['photos','Photos'],['msgs','Messages'],['pay','Paiement']],
     watcher:[['photos','Photos']],
@@ -785,24 +789,34 @@ function amtForm(i,cur,st){st=st||{};return `<form class="stack-s" data-f="amt" 
   <p class="small muted" style="margin:0">Répartis-le en 3 parts. Ce qui reste après matériaux et transport est la main-d'œuvre du pro.</p>
   <div class="row"><div class="field" style="flex:1;min-width:0"><label class="label" for="mat-${i}">Matériaux (€)</label><input id="mat-${i}" inputmode="numeric" maxlength="7" value="${st.mat||''}" placeholder="0"></div><div class="field" style="flex:1;min-width:0"><label class="label" for="tr-${i}">Transport (€)</label><input id="tr-${i}" inputmode="numeric" maxlength="6" value="${st.tr||''}" placeholder="0"></div></div>
   <div class="field"><label class="label" for="mm-${i}">Qui fournit le matériel ?</label><select id="mm-${i}"><option value="shop"${st.matMode!=='pro'?' selected':''}>Une quincaillerie livre (payée directement)</option><option value="pro"${st.matMode==='pro'?' selected':''}>Le pro achète et envoie la facture</option></select></div>
+  <details${(st.wall&&st.wall.l)?' open':''}><summary class="small" style="cursor:pointer">Contrôle des quantités (mur)</summary><div class="stack-s" style="margin-top:8px">
+  <div class="row"><div class="field" style="flex:1;min-width:0"><label class="label" for="wl-${i}">Longueur (m)</label><input id="wl-${i}" inputmode="decimal" maxlength="5" value="${(st.wall&&st.wall.l)||''}"></div><div class="field" style="flex:1;min-width:0"><label class="label" for="wh-${i}">Hauteur (m)</label><input id="wh-${i}" inputmode="decimal" maxlength="5" value="${(st.wall&&st.wall.h)||''}"></div></div>
+  <div class="row"><div class="field" style="flex:1;min-width:0"><label class="label" for="wb-${i}">Blocs commandés</label><input id="wb-${i}" inputmode="numeric" maxlength="5" value="${(st.wall&&st.wall.blocs)||''}"></div><div class="field" style="flex:1;min-width:0"><label class="label" for="ws-${i}">Sacs de ciment</label><input id="ws-${i}" inputmode="numeric" maxlength="4" value="${(st.wall&&st.wall.sacs)||''}"></div></div></div></details>
   <button class="btn sm" type="submit" style="align-self:flex-start">OK</button></form>`;}
+/* estimation indicative : blocs 40×20 (12,5 / m² + 5 % de casse), ~1 sac de 50 kg pour 40 blocs */
+function wallEst(w){if(!w||!(w.l>0)||!(w.h>0))return null;const b=Math.ceil(w.l*w.h*12.5*1.05);return {blocs:b,sacs:Math.ceil(b/40)};}
+function wallBox(st){
+  const w=st.wall, e=wallEst(w); if(!e) return '';
+  const over=(w.blocs&&w.blocs>e.blocs*1.2+2)||(w.sacs&&w.sacs>e.sacs*1.2+1);
+  return `<div class="${over?'':'notice'}" style="${over?'border:1px solid var(--bad);padding:10px 12px':''}"><span class="small">Mur de ${String(w.l).replace('.',',')} × ${String(w.h).replace('.',',')} m : il faut environ <b>${e.blocs} blocs</b> et <b>${e.sacs} sacs</b> de ciment (estimation indicative).${w.blocs||w.sacs?` Commandé : ${w.blocs||0} blocs, ${w.sacs||0} sacs.`:''}</span>${over?'<div class="small" style="color:var(--bad);font-weight:600;margin-top:4px">⚠ La commande dépasse l\'estimation de plus de 20 %. Demande une explication avant de bloquer l\'argent.</div>':''}</div>`;
+}
 const ENV_C={mat:'#E6B45A',tr:'#7FB6DD',mo:'var(--ok)'};
 function envParts(st){const mat=Math.min(+st.mat||0,+st.amount||0),tr=Math.min(+st.tr||0,Math.max(0,(+st.amount||0)-mat));return {mat,tr,mo:Math.max(0,(+st.amount||0)-mat-tr)};}
 function envBox(st,r){
   if(!(+st.mat)&&!(+st.tr)) return '';
   const e=envParts(st), shop=st.matMode!=='pro', live=['bloque','fait','litige'].includes(st.status);
-  const stt=k=>st.status==='paye'||(k!=='mo'&&st.matPaidAt)?'<span class="small" style="color:var(--ok)">Payé</span>':st.status==='rembourse'?'<span class="small muted">Remboursé</span>':live?'<span class="small" style="color:var(--held)">Bloqué</span>':'<span class="small muted">À bloquer</span>';
+  const stt=k=>st.status!=='paye'&&k==='mat'&&st.matPaidAt&&shop?'<span class="small" style="color:var(--warn)">Moitié payée</span>':st.status==='paye'||(k!=='mo'&&st.matPaidAt)?'<span class="small" style="color:var(--ok)">Payé</span>':st.status==='rembourse'?'<span class="small muted">Remboursé</span>':live?'<span class="small" style="color:var(--held)">Bloqué</span>':'<span class="small muted">À bloquer</span>';
   const row=(k,t,d,a)=>a?`<div class="between" style="gap:10px;padding:8px 0;border-bottom:1px solid var(--line)"><div style="display:flex;gap:10px;align-items:center;min-width:0"><span style="width:8px;align-self:stretch;min-height:30px;background:${ENV_C[k]};flex-shrink:0"></span><div style="min-width:0"><div style="font-weight:500">${t} · ${eur(a)}</div><div class="small muted">${d}</div></div></div>${stt(k)}</div>`:'';
-  return `<div class="stack-s" style="gap:0">${row('mat','Matériaux',shop?'Payés directement à la quincaillerie à la livraison. Le pro ne touche pas cet argent.':'Le pro achète, envoie la facture et la photo, puis il est remboursé.',e.mat)}${row('tr','Transport',shop?'Payé quand la livraison arrive au chantier (code de livraison).':'Pour le pro, qui va chercher le matériel lui-même.',e.tr)}${row('mo','Main-d\'œuvre',r==='pro'?'Ton salaire. Tu le reçois quand le client valide, photos à l\'appui.':'Le salaire du pro, versé quand tu valides le travail.',e.mo)}
-  <p class="small muted" style="margin:6px 0 0">L'argent est gardé par Maison Mère (partenaire de paiement), ni par le client ni par le pro.</p></div>`;
+  return `<div class="stack-s" style="gap:0">${row('mat','Matériaux',shop?'Payés directement à la quincaillerie : la moitié à la livraison, le reste quand l\'étape est validée. Le pro ne touche pas cet argent.':'Le pro achète, envoie la facture et la photo, puis il est remboursé.',e.mat)}${row('tr','Transport',shop?'Payé quand la livraison arrive au chantier (code donné par le client).':'Pour le pro, qui va chercher le matériel lui-même.',e.tr)}${row('mo','Main-d\'œuvre',r==='pro'?'Ton salaire. Tu le reçois quand le client valide, photos à l\'appui.':'Le salaire du pro, versé quand tu valides le travail.',e.mo)}
+  <p class="small muted" style="margin:6px 0 0">L'argent est gardé par Maison Mère (partenaire de paiement), ni par le client ni par le pro.</p>${wallBox(st)}</div>`;
 }
 function matActions(p,st,i,r){
   if(st.status!=='bloque'&&st.status!=='fait') return '';
   const e=envParts(st); if(!e.mat&&!e.tr||st.matPaidAt) return '';
   if(st.matMode!=='pro'){
     const code=st.code||'----';
-    if(r==='pro') return `<div class="notice">Code de livraison : <b style="font-weight:700;letter-spacing:.2em;color:var(--fg)">${esc(code)}</b>. Donne-le au livreur seulement quand le matériel est arrivé au chantier.</div>${TEST?codeForm(i):''}`;
-    return `<p class="small muted" style="margin:0">Le livreur tape le code que le pro lui donne à l'arrivée du matériel. ${eur(e.mat+e.tr)} partent alors à la quincaillerie et au transport.</p>${(TEST||S.admin)?codeForm(i):''}`;
+    if(r==='client') return `<div class="notice">Code de livraison : <b style="font-weight:700;letter-spacing:.2em;color:var(--fg)">${esc(code)}</b>. Ne le donne pas au pro. Quand le camion arrive, fais un appel vidéo WhatsApp avec le livreur ou le pro, regarde le matériel, puis donne le code au livreur.</div>${TEST?codeForm(i):''}`;
+    return `<p class="small muted" style="margin:0">${r==='pro'?'Quand le matériel arrive, appelle le client en vidéo : c\'est lui qui donne le code au livreur.':'Le livreur tape le code donné par le client.'} La quincaillerie reçoit la moitié des matériaux et le transport à la livraison, le reste quand l'étape est validée.</p>${(TEST||S.admin)?codeForm(i):''}`;
   }
   if(r==='pro'){
     if(st.invoice) return `<p class="small muted" style="margin:0">Facture envoyée : ${eur(st.invoice.amount)}. En attente de la vérification du client.</p>`;
@@ -912,9 +926,9 @@ function dayCode(pid,t){
   return L[h%24]+(Math.floor(h/24)%10)+'-'+String(Math.floor(h/240)%100).padStart(2,'0');
 }
 const KIND={avant:'Avant',pendant:'Pendant',apres:'Après'};
-const KIND2=Object.assign({controle:'Visite de contrôle',expert:'Constat d\'expert'},KIND);
+const KIND2=Object.assign({controle:'Visite de contrôle',expert:'Constat d\'expert',panorama:'Vidéo 10 s'},KIND);
 function phCard(ph,p){
-  return `<div class="photo"><img loading="lazy" decoding="async" src="${esc(ph.data)}" alt="Photo ${esc(KIND2[ph.kind]||'')} du chantier, ${esc(p.steps[ph.step]?p.steps[ph.step].name:'')}"><span><b style="font-weight:600">${esc(KIND2[ph.kind]||'Photo')}</b> · ${esc(p.steps[ph.step]?p.steps[ph.step].name:'')}<br>${ftime(ph.at)} · ${({client:'Client · ',pro:'Pro · ',watcher:'Proche · ',inspector:'Visiteur · ',expert:'Expert · '})[ph.by]||''}${esc(ph.who)}${ph.code?`<br>Code attendu : <b style="font-weight:600">${esc(ph.code)}</b>`:''}${freshBadge(ph)}</span></div>`;
+  return `<div class="photo"><img loading="lazy" decoding="async" src="${esc(ph.data)}" alt="Photo ${esc(KIND2[ph.kind]||'')} du chantier, ${esc(p.steps[ph.step]?p.steps[ph.step].name:'')}"><span><b style="font-weight:600">${esc(KIND2[ph.kind]||'Photo')}</b> · ${esc(p.steps[ph.step]?p.steps[ph.step].name:'')}<br>${ftime(ph.at)} · ${({client:'Client · ',pro:'Pro · ',watcher:'Proche · ',inspector:'Visiteur · ',expert:'Expert · '})[ph.by]||''}${esc(ph.who)}${ph.code?`<br>Code attendu : <b style="font-weight:600">${esc(ph.code)}</b>`:''}${freshBadge(ph)}${geoBadge(ph)}</span></div>`;
 }
 function photoReqs(p,r){
   const reqs=(p.photoReqs||[]).slice().reverse();
@@ -951,6 +965,7 @@ function tPhotos(p,r){
     <div class="field"><label class="label" for="ph-step">Étape concernée</label><select id="ph-step">${p.steps.map((st,i)=>`<option value="${i}">${esc(st.name)}</option>`).join('')}</select></div>
     <label class="btn" style="display:flex;align-items:center;justify-content:center" for="ph-file">Prendre une photo « ${KIND[kind]} »</label>
     <input id="ph-file" type="file" accept="image/*" capture="environment" hidden>
+    ${camOK()?`<button class="btn ghost" data-a="pano">Vidéo panoramique 10 s</button><p class="small muted" style="margin:-8px 0 0">Filme lentement tout le chantier pendant 10 secondes. L'app en garde 6 images datées, avec la position.</p>`:''}
     `}
     ${S.busy?'<p class="small muted" style="margin:0">Envoi de la photo…</p>':''}${S.err?`<p class="err" style="margin:0">${esc(S.err)}</p>`:''}
     ${!S.photosLoaded?'<p class="small muted" style="margin:0">Chargement des photos…</p>':''}
@@ -1017,6 +1032,9 @@ function vMyFiche(){
     ${lk?'':`<div class="field"><label class="label" for="pf-pays">Pays</label><select id="pf-pays">${opts(PAYS,p?p.pays:(PAYS.includes(S.me.pays)?S.me.pays:'RD Congo'))}</select></div>`}
     <div class="field"><label class="label" for="pf-ville">Ville</label><input id="pf-ville" required maxlength="40" value="${esc(p?p.ville:(S.me.ville||''))}"></div>
     <div class="field"><label class="label" for="pf-phone">Téléphone WhatsApp, avec l'indicatif (+243…)</label><input id="pf-phone" required maxlength="25" value="${esc(p?p.phone:S.me.phone)}"></div>
+    <div class="row"><div class="field" style="flex:1;min-width:0"><label class="label" for="pf-mmop">Compte mobile money</label><select id="pf-mmop">${opts(MM_OPS,(p&&p.mmOp)||MM_OPS[0])}</select></div><div class="field" style="flex:1;min-width:0"><label class="label" for="pf-mmnum">Numéro du compte</label><input id="pf-mmnum" maxlength="25" inputmode="tel" value="${esc((p&&p.mmNum)||(p?p.phone:S.me.phone)||'')}"></div></div>
+    <div class="field"><label class="label" for="pf-mmname">Nom exact sur le compte</label><input id="pf-mmname" maxlength="60" value="${esc((p&&p.mmName)||'')}"></div>
+    <p class="small muted" style="margin:-8px 0 0">Ton argent sera versé uniquement sur ce compte. Le nom doit être le même que sur ta pièce d'identité : Maison Mère le vérifie avant le premier paiement.</p>
     ${lk&&p.rccm?'':`<div class="field"><label class="label" for="pf-rccm">Numéro d'entreprise (RCCM ou autre)</label><input id="pf-rccm" maxlength="40" value="${esc(p?p.rccm:'')}"></div>${!p?'<p class="small muted" style="margin:-8px 0 0">Attention : ton nom, ton pays et ton numéro d\'entreprise seront verrouillés après l\'enregistrement.</p>':''}`}
     <div class="field"><label class="label" for="pf-about">Présentation</label><textarea id="pf-about" rows="3" maxlength="300">${esc(p?p.about:'')}</textarea></div>
     <label style="display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);padding:14px 16px;cursor:pointer"><input type="checkbox" id="pf-insp" ${p&&p.inspector?'checked':''} style="width:20px;height:20px;margin:2px 0 0;flex-shrink:0;accent-color:#B85A35"><span><b style="font-weight:500">Je fais aussi des visites de contrôle</b><br><span class="small muted">Tu passes sur le chantier d'un autre pro de ta ville, tu prends des photos et tu réponds à 3 questions. ${eur(VISIT_PRICE)} par visite.</span></span></label>
@@ -1668,10 +1686,24 @@ function watchExtra(){
 
 function inviteText(p,name){return `Salut ${name}, je t'ai ajouté comme proche de confiance sur mon chantier « ${p.title} » (${p.ville}) sur Maison Mère. Inscris-toi avec ce numéro pour voir le chantier et envoyer des photos : ${location.origin+location.pathname}`;}
 
+/* 2 visites par semaine : une nouvelle visite tous les 3,5 jours tant qu'une étape a de l'argent bloqué */
+const autoVDone={};
+function autoVisit(p,r){
+  if(!p||!p.autoVisits||r!=='client'||p.stopped||autoVDone[p.id]) return;
+  if(!(p.steps||[]).some(x=>x.status==='bloque'||x.status==='fait')) return;
+  const vs=p.visits||[]; if(vs.some(x=>x.status==='assignee'||x.status==='ouverte')) return;
+  const last=Math.max(0,...vs.map(x=>x.at||0)); if(Date.now()-last<3.5*DAY) return;
+  autoVDone[p.id]=true;
+  const x=assignVisit({id:rid(),at:Date.now(),price:VISIT_PRICE,auto:true},pickInspector(p));
+  saveVisits(p,[...vs,x]).then(()=>sysMsg(p.id,'Visite surprise automatique programmée.')).catch(()=>{autoVDone[p.id]=false;});
+}
 function tCtrl(p,r){
   const ws=p.watchers||[], vs=(p.visits||[]).slice().reverse();
   const busy=vs.some(x=>x.status==='assignee'||x.status==='ouverte');
   return `<div class="stack">
+   <div class="step${p.autoVisits?' current':''}"><div class="between"><span class="t" style="font-weight:500">Visites surprises automatiques</span><span class="pill ${p.autoVisits?'s-paye':'s-attente'}">${p.autoVisits?'Activées':'Désactivées'}</span></div>
+    <p class="small muted" style="margin:0">L'app envoie un visiteur tiré au sort 2 fois par semaine, un jour que personne ne connaît, tant que de l'argent est bloqué. ${eur(VISIT_PRICE)} par visite.</p>
+    ${r==='client'?`<button class="btn ${p.autoVisits?'ghost ':''}sm" data-a="v-auto" style="align-self:flex-start">${p.autoVisits?'Arrêter':'Activer 2 visites par semaine'}</button>`:''}</div>
    <div class="stack-s"><span class="label">Visite de contrôle surprise · ${eur(VISIT_PRICE)}</span>
     ${vs.map(x=>visitCard(p,x,r)).join('')}
     ${busy?'':`<button class="btn" data-a="v-order">Commander une visite · ${eur(VISIT_PRICE)} bloqués</button>`}
@@ -2071,7 +2103,7 @@ function vAdmin(){
       <div class="field"><label class="label" for="ap-phone">Téléphone public</label><input id="ap-phone" maxlength="25"></div>
       <button class="btn sm" type="submit">Ajouter</button></form>
     ${pros.length?`<div class="list">${pros.map(p=>`<div class="item"><div><div class="t">${esc(p.name)}${p.hidden?' · masqué':''}</div><div class="small muted">${esc(p.metier)} · ${esc(p.ville)}, ${esc(p.pays)}${p.rccm?' · '+esc(p.rccm):''}</div><div class="small ${p.verified?'verified':'unverified'}">${p.verified?'Vérifié':'Non vérifié'}</div>${p.idRequest?'<div class="small" style="color:var(--warn)">Demande de changement d\'identité</div>':''}${p.idUnlocked?'<div class="small muted">Identité débloquée (une fois)</div>':''}</div>
-      <div class="stack-s" style="flex-shrink:0"><button class="btn ghost sm" data-a="adm-verify" data-v="${p.id}">${p.verified?'Retirer':'Vérifier'}</button>${p.idRequest?`<button class="btn sm" data-a="adm-unlock" data-v="${p.id}">Débloquer</button>`:''}<button class="link" data-a="adm-hide" data-v="${p.id}">${p.hidden?'Réafficher':'Masquer'}</button></div></div>`).join('')}</div>`:'<div class="empty">Aucun pro.</div>'}`;
+      <div class="stack-s" style="flex-shrink:0"><button class="btn ghost sm" data-a="adm-verify" data-v="${p.id}">${p.verified?'Retirer':'Vérifier'}</button><button class="btn ghost sm" data-a="adm-id" data-v="${p.id}" title="${esc((p.mmOp||'')+' '+(p.mmNum||'')+' · '+(p.mmName||'nom non indiqué'))}">${p.idVerified?'Identité ✓':'Vérifier l\'identité'}</button><button class="btn ghost sm" data-a="adm-caution" data-v="${p.id}">Caution${p.caution?' '+eur(p.caution):''}</button>${p.idRequest?`<button class="btn sm" data-a="adm-unlock" data-v="${p.id}">Débloquer</button>`:''}<button class="link" data-a="adm-hide" data-v="${p.id}">${p.hidden?'Réafficher':'Masquer'}</button></div></div>`).join('')}</div>`:'<div class="empty">Aucun pro.</div>'}`;
   if(tab==='users') body=S.allProfiles.length?`<div class="list">${S.allProfiles.sort((a,b)=>b.createdAt-a.createdAt).map(u=>`<div class="item"><div><div class="t">${esc(u.name)}</div><div class="small muted">${esc(u.ville)}, ${esc(u.pays)} · ${esc(u.phone)}</div></div><span class="meta">${fdate(u.createdAt)}${u.proId?' · pro':''}</span></div>`).join('')}</div>`:'<div class="empty">Aucun compte.</div>';
   if(tab==='tr'){const keys=Object.keys(I18N.ln), cur=(S.tr&&S.tr.ln)||{};
     body=`<form class="stack" data-f="tr"><p class="small muted" style="margin:0">Ce sont mes propositions de traduction. Corrige-les, puis enregistre : l'app en lingala change pour tout le monde.</p>
@@ -2141,6 +2173,7 @@ document.addEventListener('click',async e=>{
 
     if(a==='wacall'){const pp=prjById(S.p.id);if(pp)sysMsg(pp.id,`${role(pp)==='client'?S.me.name:myName(pp)} a demandé un appel vidéo WhatsApp (code du jour : ${dayCode(pp.id)}).`).catch(()=>{});return;}
     if(a==='phkind'){S.p.phKind=v;return render();}
+    if(a==='pano'){const inp=document.getElementById('ph-file');if(inp)openPano(inp);return;}
     if(a==='hideintro'){const h=hiddenIntros();h[v]=1;try{localStorage.setItem('mm-intro',JSON.stringify(h));}catch(x){}return render();}
     if(a==='showintros'){try{localStorage.removeItem('mm-intro');}catch(x){}return render();}
     if(a==='choose'){if(v==='admin'&&!S.admin)return;S.chosen=true;try{sessionStorage.setItem('mm-chosen-'+S.uid,'1');localStorage.setItem('mm-mode-'+S.uid,v);}catch(e){}S.mode=v;if(v==='pro'&&!S.me.proId)return go('myfiche');return go('home');}
@@ -2157,6 +2190,7 @@ document.addEventListener('click',async e=>{
     if(a==='atab'){S.p.atab=v;return render();}
     if(a==='mkpro'){S.mode='pro';return go('myfiche');}
     if(a==='avpick'){const i=document.getElementById('av-file');if(i)i.click();return;}
+    if(a==='v-auto'&&p){await S.db.doc('projects/'+p.id).update({autoVisits:!p.autoVisits});await sysMsg(p.id,p.autoVisits?'Visites surprises automatiques arrêtées.':'Visites surprises automatiques activées : 2 par semaine tant que de l\'argent est bloqué.');return;}
     if(a==='v-order'&&p){const pr=pickInspector(p);const x=assignVisit({id:rid(),at:Date.now(),price:VISIT_PRICE},pr);await saveVisits(p,[...(p.visits||[]),x]);return;}
     if(a==='v-retry'&&p){const x=(p.visits||[]).find(y=>y.id===v);if(!x)return;const pr=pickInspector(p,[x.inspectorUid]);await saveVisits(p,p.visits.map(y=>y.id===v?assignVisit(y,pr):y));return;}
     if(a==='v-rate'&&p){await saveVisits(p,p.visits.map(y=>y.id===v?Object.assign({},y,{rated:+b.dataset.d}):y));return;}
@@ -2236,6 +2270,8 @@ document.addEventListener('click',async e=>{
       await bumpPro(g.proId,'paid');
       await sysMsg(p.id,`Gardien ${g.proName} : mois clôturé, ${stt.present}/${stt.expected} pointages, ${eur(stt.amount)} versés, ${eur(g.salary-stt.amount)} rendus au client.`);return;}
     if(a==='check'){const cur=!!(S.me.checks&&S.me.checks[v]);await S.db.doc('profiles/'+S.uid).update({['checks.'+v]:!cur});return;}
+    if(a==='adm-id'&&S.admin){const pr=proById(v);if(pr){if(!pr.idVerified&&!confirm(`Le nom sur le compte ${pr.mmOp||''} ${pr.mmNum||''} est-il bien « ${pr.mmName||'?'} », comme sur la pièce d'identité ?`))return;await S.db.doc('pros/'+v).update({idVerified:!pr.idVerified,idVerifiedAt:Date.now()});}return;}
+    if(a==='adm-caution'&&S.admin){const pr=proById(v);if(pr){const x=prompt('Caution déposée par '+pr.name+' (€). 0 pour retirer.',pr.caution||0);if(x!==null){await S.db.doc('pros/'+v).update({caution:Math.max(0,parseInt(x,10)||0)});}}return;}
     if(a==='adm-verify'&&S.admin){const pr=proById(v);if(pr) await S.db.doc('pros/'+v).update({verified:!pr.verified,verifiedAt:Date.now()});return;}
     if(a==='idreq'&&S.me.proId){await S.db.doc('pros/'+S.me.proId).update({idRequest:{at:Date.now(),by:S.me.name}});return;}
     if(a==='adm-unlock'&&S.admin){await S.db.doc('pros/'+v).update({idUnlocked:true,idRequest:null});return;}
@@ -2246,7 +2282,7 @@ document.addEventListener('click',async e=>{
     if(a==='editamt'){S.p.editAmt=+v;return render();}
     if(a==='block'){if(!p.steps[+v].amount||!pricesOk(p))return;await setSteps(p,+v,{status:'bloque',blockedAt:Date.now(),code:String(1000+Math.floor(Math.random()*9000))});await sysMsg(p.id,`${p.steps[+v].name} : ${eur(p.steps[+v].amount)} bloqués par le client.`);}
     if(a==='done'){await setSteps(p,+v,{status:'fait',doneAt:Date.now()});await sysMsg(p.id,`${p.steps[+v].name} : le pro indique que l'étape est terminée.`);}
-    if(a==='pay'){const st0=p.steps[+v],e=envParts(st0);await setSteps(p,+v,{status:'paye',paidAt:Date.now(),matPaidAt:st0.matPaidAt||((e.mat||e.tr)?Date.now():null)});await sysMsg(p.id,e.mo<st0.amount?`${st0.name} : validé par le client. Main-d'œuvre ${eur(e.mo)} versée au pro${st0.matPaidAt?'':`, matériaux et transport ${eur(e.mat+e.tr)} réglés`}.`:`${st0.name} : validé par le client, ${eur(st0.amount)} versés au pro.`);await bumpPro(p.proId,'paid');}
+    if(a==='pay'){const st0=p.steps[+v],e=envParts(st0);await setSteps(p,+v,{status:'paye',paidAt:Date.now(),matPaidAt:st0.matPaidAt||((e.mat||e.tr)?Date.now():null)});await sysMsg(p.id,e.mo<st0.amount?`${st0.name} : validé par le client. Main-d'œuvre ${eur(e.mo)} versée au pro${st0.matPaidAt?(st0.matMode!=='pro'&&(st0.matPaid||0)<e.mat?`, reste des matériaux ${eur(e.mat-(st0.matPaid||0))} versé à la quincaillerie`:''):`, matériaux et transport ${eur(e.mat+e.tr)} réglés`}.`:`${st0.name} : validé par le client, ${eur(st0.amount)} versés au pro.`);await bumpPro(p.proId,'paid');}
     if(a==='matok'&&p){const st0=p.steps[+v],e=envParts(st0),m=Math.min((st0.invoice||{}).amount||0,e.mat);await setSteps(p,+v,{matPaidAt:Date.now(),matPaid:m});await sysMsg(p.id,`${st0.name} : facture vérifiée, ${eur(m+e.tr)} remboursés au pro pour le matériel et le transport.${m<e.mat?` Les ${eur(e.mat-m)} non utilisés restent au client.`:''}`);}
     if(a==='expert'&&p){await applyDecision(p,+v,b.dataset.d,S.admin?{d:b.dataset.d,report:'Décision prise par l\'administration.',at:Date.now(),expertName:'Administration'}:null);return;}
     if(a==='stopyes'){
@@ -2293,8 +2329,9 @@ async function handleFile(el,file,camShot){
     S.busy=true;S.err='';render();
     try{
       const shotAt=camShot||await exifDate(file), isV=el.id==='vi-file';
+      const gc=await geoCheck(p,false); if(!gc){S.busy=false;return render();}
       const data=await shrink(file,720,80000,dayCode(p.id)+' · '+new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · Maison Mère');
-      await S.db.collection('photos').add({projectId:p.id,step:isV?0:+el.dataset.v,kind:isV?'controle':'expert',visitId:isV?el.dataset.v:null,code:dayCode(p.id),shotAt,src:camShot?'camera':'fichier',uid:S.uid,who:S.me.name,by:isV?'inspector':'expert',data,at:Date.now()});
+      await S.db.collection('photos').add({geo:gc.geo,dist:gc.dist,projectId:p.id,step:isV?0:+el.dataset.v,kind:isV?'controle':'expert',visitId:isV?el.dataset.v:null,code:dayCode(p.id),shotAt,src:camShot?'camera':'fichier',uid:S.uid,who:S.me.name,by:isV?'inspector':'expert',data,at:Date.now()});
     }catch(err){S.err='La photo n\'a pas pu être envoyée. Réessaie.';}
     S.busy=false;render();return;
   }
@@ -2349,8 +2386,10 @@ async function handleFile(el,file,camShot){
     S.busy=true;S.err='';render();
     try{
       const shotAt=camShot||await exifDate(file);
-      const data=await shrink(file,720,80000,dayCode(p.id)+' · '+new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · Maison Mère');
-      await S.db.collection('photos').add({projectId:p.id,step:+val('ph-step')||0,kind:S.p.phKind||'pendant',code:dayCode(p.id),shotAt,src:camShot?'camera':'fichier',reqId:S.p.answerReq||null,uid:S.uid,who:myName(p),by:role(p),data,at:Date.now()});
+      const gc=await geoCheck(p,role(p)==='pro'); if(!gc){S.p.pano=false;S.busy=false;return render();}
+      const pano=!!S.p.pano; S.p.pano=false;
+      const data=await shrink(file,pano?1200:720,pano?170000:80000,dayCode(p.id)+' · '+new Date().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})+' · Maison Mère');
+      await S.db.collection('photos').add({geo:gc.geo,dist:gc.dist,projectId:p.id,step:+val('ph-step')||0,kind:pano?'panorama':(S.p.phKind||'pendant'),code:dayCode(p.id),shotAt,src:camShot?'camera':'fichier',reqId:S.p.answerReq||null,uid:S.uid,who:myName(p),by:role(p),data,at:Date.now()});
     }catch(err){S.err='La photo n\'a pas pu être envoyée. Essaie une autre image.';}
     S.busy=false;render();
   }
@@ -2360,6 +2399,23 @@ async function handleFile(el,file,camShot){
 
 /* ---------- appareil photo intégré : pas de galerie ---------- */
 function camOK(){return !!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia);}
+const SITE_R=300;
+function getGeo(){return new Promise(res=>{if(!navigator.geolocation)return res(null);navigator.geolocation.getCurrentPosition(q=>res({lat:+q.coords.latitude.toFixed(6),lng:+q.coords.longitude.toFixed(6),acc:Math.round(q.coords.accuracy)}),()=>res(null),{enableHighAccuracy:true,timeout:9000,maximumAge:60000});});}
+function distM(a,b){const R=6371000,r=x=>x*Math.PI/180,dl=r(b.lat-a.lat),dg=r(b.lng-a.lng);const h=Math.sin(dl/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dg/2)**2;return 2*R*Math.asin(Math.sqrt(h));}
+function fmtDist(m){return m<1000?m+' m':(m/1000).toFixed(1).replace('.',',')+' km';}
+/* vérifie la position avant d'accepter une photo du chantier ; renvoie {geo,dist} ou null si refusée */
+async function geoCheck(p,canSetSite){
+  const geo=await getGeo();
+  if(!geo){if(!TEST){S.err='Active la localisation du téléphone pour Maison Mère : chaque photo doit être prise sur le chantier.';return null;}return {geo:null,dist:null};}
+  if(!p.site){if(canSetSite){await S.db.doc('projects/'+p.id).update({site:geo});await sysMsg(p.id,'Position du chantier enregistrée avec la première photo. Les prochaines photos devront être prises à moins de '+SITE_R+' m.');}return {geo,dist:0};}
+  const dist=Math.round(distM(geo,p.site));
+  if(dist>SITE_R+Math.min(geo.acc||0,200)&&!TEST){S.err=`Photo refusée : tu es à ${fmtDist(dist)} du chantier. Prends-la sur place.`;return null;}
+  return {geo,dist};
+}
+function geoBadge(ph){
+  if(ph.dist==null&&!ph.geo) return ph.kind==='panorama'||ph.src==='camera'?'<br><span style="color:var(--warn)">⚠ Position non enregistrée</span>':'';
+  return ph.dist>SITE_R?`<br><b style="font-weight:600;color:var(--bad)">⚠ Prise à ${fmtDist(ph.dist)} du chantier</b>`:`<br><b style="font-weight:600;color:var(--ok)">📍 Sur le chantier${ph.dist?' ('+fmtDist(ph.dist)+')':''}</b>`;
+}
 async function openCam(inp){
   const ov=document.createElement('div');
   ov.setAttribute('role','dialog');ov.setAttribute('aria-label','Appareil photo');
@@ -2392,6 +2448,37 @@ async function openCam(inp){
     }
   });
   start();
+}
+async function openPano(inp){
+  const ov=document.createElement('div');
+  ov.setAttribute('role','dialog');ov.setAttribute('aria-label','Vidéo panoramique');
+  ov.style.cssText='position:fixed;inset:0;z-index:50;background:#000;display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)';
+  ov.innerHTML=`<div style="color:#fff;font:600 13px system-ui;padding:12px 16px;display:flex;justify-content:space-between;align-items:center"><span>Vidéo 10 s · code <span style="background:#FFD400;color:#111;padding:2px 6px">${esc(S.p&&S.p.id?dayCode(S.p.id):'')}</span></span><button data-c="x" style="background:none;border:1px solid #fff;color:#fff;padding:6px 10px">Fermer</button></div>
+    <video playsinline autoplay muted style="flex:1;min-height:0;width:100%;object-fit:contain;background:#000"></video>
+    <p data-c="msg" style="color:#ddd;font:13px system-ui;text-align:center;margin:8px 16px">Ouverture de la caméra…</p>
+    <div style="display:flex;justify-content:center;padding:14px 0 22px"><button data-c="rec" disabled style="width:74px;height:74px;border-radius:37px;border:5px solid #fff;background:#e0362c;color:#fff;font:700 15px system-ui" aria-label="Filmer 10 secondes">10</button></div>`;
+  document.body.appendChild(ov);
+  const video=ov.querySelector('video'), msg=ov.querySelector('[data-c="msg"]'), rec=ov.querySelector('[data-c="rec"]');
+  let stream=null, busy=false;
+  const close=()=>{if(stream)stream.getTracks().forEach(t=>t.stop());ov.remove();};
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:960}},audio:false});
+    video.srcObject=stream;await video.play().catch(()=>{});rec.disabled=false;msg.textContent='Montre le code du jour, puis appuie et tourne lentement autour du chantier.';}
+  catch(e){msg.textContent='Impossible d\'ouvrir la caméra. Autorise l\'appareil photo pour ce site.';}
+  ov.addEventListener('click',async ev=>{
+    const c=ev.target.closest('[data-c]'); if(!c) return;
+    if(c.dataset.c==='x'&&!busy) close();
+    if(c.dataset.c==='rec'&&!busy&&video.videoWidth){
+      busy=true; const W=400,H=Math.round(400*video.videoHeight/video.videoWidth), cv=document.createElement('canvas'); cv.width=W*3; cv.height=H*2;
+      const g=cv.getContext('2d'), t0=Date.now();
+      for(let k=0;k<6;k++){
+        if(k) await new Promise(r=>setTimeout(r,2000));
+        g.drawImage(video,(k%3)*W,Math.floor(k/3)*H,W,H);
+        g.fillStyle='rgba(0,0,0,.6)';g.fillRect((k%3)*W,Math.floor(k/3)*H,58,24);g.fillStyle='#fff';g.font='700 15px system-ui';g.fillText((k*2)+' s',(k%3)*W+10,Math.floor(k/3)*H+17);
+        rec.textContent=String(10-k*2); msg.textContent='Continue de tourner lentement… '+(10-k*2)+' s';
+      }
+      cv.toBlob(b=>{close();if(b){S.p.pano=true;handleFile(inp,new File([b],'panorama.jpg',{type:'image/jpeg'}),t0);}},'image/jpeg',.88);
+    }
+  });
 }
 /* date de prise de vue cachée dans la photo (EXIF) */
 function exifDate(file){
@@ -2485,7 +2572,8 @@ document.addEventListener('submit',async e=>{
     }
     if(f==='fiche'){
       const cur=S.me.proId?proById(S.me.proId):null, lk=!!(cur&&!cur.idUnlocked);
-      const data={photo:S.me.photo||'',name:lk?cur.name:val('pf-name'),metier:val('pf-metier'),pays:lk?cur.pays:val('pf-pays'),ville:val('pf-ville'),phone:val('pf-phone'),rccm:lk&&cur.rccm?cur.rccm:val('pf-rccm'),about:val('pf-about'),inspector:!!(document.getElementById('pf-insp')||{}).checked};
+      const data={photo:S.me.photo||'',name:lk?cur.name:val('pf-name'),metier:val('pf-metier'),pays:lk?cur.pays:val('pf-pays'),ville:val('pf-ville'),phone:val('pf-phone'),rccm:lk&&cur.rccm?cur.rccm:val('pf-rccm'),about:val('pf-about'),inspector:!!(document.getElementById('pf-insp')||{}).checked,mmOp:val('pf-mmop'),mmNum:val('pf-mmnum'),mmName:val('pf-mmname')};
+      if(cur&&(cur.mmNum!==data.mmNum||cur.mmName!==data.mmName)) data.idVerified=false;
       if(cur&&cur.idUnlocked){data.idUnlocked=false;}
       if(!data.name||!data.ville||!data.phone){S.err='Remplis le nom, la ville et le téléphone.';return render();}
       if(S.me.proId){await S.db.doc('pros/'+S.me.proId).update(data);}
@@ -2495,8 +2583,8 @@ document.addEventListener('submit',async e=>{
     if(f==='delcode'&&p){
       const i=+e.target.dataset.v, st0=p.steps[i], c=val('dc-'+i);
       if(!st0||c!==String(st0.code)){S.err='Code incorrect. Le livreur doit taper le code donné par le pro.';return render();}
-      const ep=envParts(st0); await setSteps(p,i,{matPaidAt:Date.now(),matPaid:ep.mat});
-      await sysMsg(p.id,`${st0.name} : livraison confirmée avec le code. ${eur(ep.mat)} versés à la quincaillerie${ep.tr?` et ${eur(ep.tr)} au transport`:''}.`);S.err='';return render();
+      const ep=envParts(st0), half=Math.round(ep.mat/2); await setSteps(p,i,{matPaidAt:Date.now(),matPaid:half});
+      await sysMsg(p.id,`${st0.name} : livraison confirmée avec le code. ${eur(half)} versés à la quincaillerie (la moitié)${ep.tr?` et ${eur(ep.tr)} au transport`:''}. Les ${eur(ep.mat-half)} restants partiront quand l'étape sera validée.`);S.err='';return render();
     }
     if(f==='invoice'&&p){
       const i=+e.target.dataset.v, st0=p.steps[i], m=parseInt(val('inv-'+i).replace(/\D/g,''),10)||0, ep=envParts(st0);
@@ -2637,7 +2725,9 @@ document.addEventListener('submit',async e=>{
       if(!n){S.err='Indique un montant.';return render();}
       const mt=parseInt(val('mat-'+i).replace(/\D/g,''),10)||0, tr=parseInt(val('tr-'+i).replace(/\D/g,''),10)||0, mm=val('mm-'+i)==='pro'?'pro':'shop';
       if(mt+tr>n){S.err='Matériaux et transport dépassent le montant total.';return render();}
-      const steps=p.steps.map((x,k)=>k===i?Object.assign({},x,{amount:n,mat:mt,tr,matMode:mm}):x);
+      const num=id=>parseFloat(val(id).replace(',','.'))||0;
+      const wall={l:num('wl-'+i),h:num('wh-'+i),blocs:parseInt(val('wb-'+i),10)||0,sacs:parseInt(val('ws-'+i),10)||0};
+      const steps=p.steps.map((x,k)=>k===i?Object.assign({},x,{amount:n,mat:mt,tr,matMode:mm,wall:(wall.l&&wall.h)?wall:null}):x);
       await S.db.doc('projects/'+p.id).update({steps,pricesStatus:p.proId?'attente_pro':'ok'});
       if(p.proId) await sysMsg(p.id,`${S.me.name} propose ${eur(n)} pour l'étape « ${p.steps[i].name} ». En attente de l'accord du pro.`);
       S.p.editAmt=null;render();
