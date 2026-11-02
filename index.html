@@ -364,7 +364,7 @@ function go(view,p){viewUnsubs.forEach(u=>u());viewUnsubs=[];S.view=view;S.p=p||
 function ensureProducts(){if(S.productsOn||!S.db)return;S.productsOn=true;S.db.collection('products').onSnapshot(q=>{S.products=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});}
 
 /* ---------- boot ---------- */
-const APPV='29.10-b';
+const APPV='02.11-a';
 (function(){try{fetch('version.txt?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(v=>{v=(v||'').trim();if(v&&v!==APPV){const k='mm-upd-'+v;let n=0;try{n=+sessionStorage.getItem(k)||0;sessionStorage.setItem(k,n+1);}catch(e){}if(n<2)location.replace(location.pathname+'?v='+encodeURIComponent(v)+location.hash);}}).catch(()=>{});}catch(e){}})();
 const SLIDE={i:0,k:0};
 function slideTick(first){
@@ -1860,7 +1860,7 @@ const PILLS=[['dir','Maçonnerie','Maçon','<path d="M3 20h18"></path><path d="M
  ['dir','Peinture','Peintre','<rect x="4" y="3" width="13" height="6"></rect><path d="M17 6h3v5h-8v3"></path><path d="M11 14h2v7h-2z"></path>'],
  ['dir','Ingénieur civil','Ingénieur','<path d="M4 20h16"></path><path d="M6 20V10l6-6 6 6v10"></path><path d="M10 20v-5h4v5"></path>']];
 const HOW=[['Trouve','Un pro vérifié ou une quincaillerie de ta ville. Compare les avis et les prix.','#3A1519','#F2E4D6'],
- ['Bloque','Tu bloques l\'argent étape par étape. Le pro sait qu\'il sera payé, toi tu gardes le contrôle.','#3A1418','#F2E4D6'],
+ ['Bloque','Tu bloques l\'argent étape par étape. Le pro sait qu\'il sera payé, toi tu gardes le contrôle.','#4A2620','#F2E4D6'],
  ['Observe','Photos datées avec le code du jour, messages, visites surprises : tu vois ton chantier comme si tu y étais.','#5C2A2E','#F4E7DA'],
  ['Valide','Tu valides, le pro est payé. Un problème ? Un expert indépendant tranche.','#BF9E68','#2A0E11']];
 const ico=(d,sz)=>`<svg width="${sz||18}" height="${sz||18}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
