@@ -364,7 +364,7 @@ function go(view,p){viewUnsubs.forEach(u=>u());viewUnsubs=[];S.view=view;S.p=p||
 function ensureProducts(){if(S.productsOn||!S.db)return;S.productsOn=true;S.db.collection('products').onSnapshot(q=>{S.products=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});}
 
 /* ---------- boot ---------- */
-const APPV='02.11-a';
+const APPV='02.11-b';
 (function(){try{fetch('version.txt?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(v=>{v=(v||'').trim();if(v&&v!==APPV){const k='mm-upd-'+v;let n=0;try{n=+sessionStorage.getItem(k)||0;sessionStorage.setItem(k,n+1);}catch(e){}if(n<2)location.replace(location.pathname+'?v='+encodeURIComponent(v)+location.hash);}}).catch(()=>{});}catch(e){}})();
 const SLIDE={i:0,k:0};
 function slideTick(first){
@@ -398,10 +398,14 @@ function start(u){
   const db=S.db;
   S.uid=u.uid; S.email=(u.email||'').toLowerCase(); S.me=undefined;
   S.admin=(window.ADMIN_EMAILS||[]).map(x=>String(x).toLowerCase()).includes(S.email);
+  /* numéro de téléphone : rangé à part, lisible seulement par la personne elle-même (et l'admin) */
+  S.priv=undefined;
+  db.doc('private/'+S.uid).onSnapshot(s=>{S.priv=s.exists?s.data():{};if(S.me&&S.priv.phone)S.me.phone=S.priv.phone;movePhone();watchExtra();render();},()=>{S.priv={};});
   db.doc('profiles/'+S.uid).onSnapshot(s=>{
     const before=S.me&&S.me.proId;
     const first=S.me===undefined;
     S.me=s.exists?Object.assign({id:s.id},s.data()):null;
+    if(S.me){S.me._oldPhone=S.me.phone||'';if(S.priv&&S.priv.phone)S.me.phone=S.priv.phone;movePhone();}
     if(first&&S.me){try{S.chosen=sessionStorage.getItem('mm-chosen-'+S.uid)==='1';}catch(e){S.chosen=false;}let m=null;try{m=localStorage.getItem('mm-mode-'+S.uid);}catch(e){}S.mode=m&&(m!=='admin'||S.admin)?m:(S.me.role==='pro'?'pro':'client');}
     if(S.me&&S.me.proId!==before) watchProProjects();
     watchExtra();
@@ -409,7 +413,10 @@ function start(u){
   },()=>{});
   if(S.admin){
     db.collection('projects').onSnapshot(q=>{S.allProjects=q.docs.map(d=>Object.assign({id:d.id},d.data()));autoRelease();render();},()=>{});
-    db.collection('profiles').onSnapshot(q=>{S.allProfiles=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});
+    db.collection('profiles').onSnapshot(q=>{S.allProfiles=q.docs.map(d=>Object.assign({id:d.id},d.data()));
+      S.allProfiles.forEach(x=>{if(x.phone) savePhone(x.id,x.phone).then(()=>db.doc('profiles/'+x.id).update({phone:firebase.firestore.FieldValue.delete()})).catch(()=>{});});
+      render();},()=>{});
+    db.collection('private').onSnapshot(q=>{S.allPriv={};q.docs.forEach(d=>S.allPriv[d.id]=d.data());render();},()=>{});
     db.collection('orders').onSnapshot(q=>{S.adminOrders=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});
     db.collection('bugs').onSnapshot(q=>{S.bugs=q.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>b.at-a.at);render();},()=>{});
   }
@@ -837,8 +844,10 @@ function waNum(x){let d=String(x||'').replace(/[^\d+]/g,'');if(d.startsWith('+')
 function waCall(p,r){
   if(r!=='client'&&r!=='pro'&&r!=='guard') return '';
   let phone='', who='';
-  if(r==='client'){const pr=proById(p.proId);if(!pr)return '';phone=pr.phone;who=pr.name;}
-  else{if(S.p.cphone===undefined){S.p.cphone=null;S.db.doc('profiles/'+p.clientUid).get().then(d=>{S.p.cphone=d.exists?(d.data().phone||''):'';render();}).catch(()=>{S.p.cphone='';});}phone=S.p.cphone||'';who=p.clientName;}
+  if(r==='client'){const pr=proById(p.proId);if(!pr)return '';phone=pr.phone;who=pr.name;
+    /* le numéro du client est copié dans SON projet : seuls les gens du chantier le voient */
+    if(S.me&&S.me.phone&&p.clientPhone!==S.me.phone&&!S._cpw){S._cpw=1;S.db.doc('projects/'+p.id).update({clientPhone:S.me.phone}).catch(()=>{}).finally(()=>{S._cpw=0;});}}
+  else{phone=p.clientPhone||'';who=p.clientName;}
   const n=waNum(phone);
   const msg=r==='client'?`Bonjour, c'est ${S.me.name} (Maison Mère). Peux-tu m'appeler en vidéo pour me montrer le chantier « ${p.title} » ? Code du jour : ${dayCode(p.id)}`:`Bonjour, c'est ${myName(p)} (Maison Mère). Je peux t'appeler en vidéo pour te montrer le chantier « ${p.title} » ? Code du jour : ${dayCode(p.id)}`;
   const ico='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="12" height="10"></rect><path d="M15 11l6-3v8l-6-3"></path></svg>';
@@ -1047,7 +1056,7 @@ function vMyFiche(){
     <label style="display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);padding:14px 16px;cursor:pointer"><input type="checkbox" id="pf-insp" ${p&&p.inspector?'checked':''} style="width:20px;height:20px;margin:2px 0 0;flex-shrink:0;accent-color:#B85A35"><span><b style="font-weight:500">Je fais aussi des visites de contrôle</b><br><span class="small muted">Tu passes sur le chantier d'un autre pro de ta ville, tu prends des photos et tu réponds à 3 questions. ${eur(VISIT_PRICE)} par visite.</span></span></label>
     ${S.err?`<p class="err">${esc(S.err)}</p>`:''}
     <button class="btn" type="submit">Enregistrer</button>
-    ${p&&!p.verified?`<div class="stack-s"><p class="notice">Dans la vraie app, la vérification passe par la pièce d'identité, un selfie et le numéro d'entreprise. Ici, tu peux la simuler.</p><button class="btn ghost" type="button" data-a="verify">Vérifier mon compte (test)</button></div>`:''}
+    ${p&&!p.verified?`<div class="stack-s"><p class="notice">Ton compte sera vérifié par Maison Mère : pièce d'identité, selfie et numéro d'entreprise.</p></div>`:''}
   </form>`;
 }
 
@@ -1661,6 +1670,15 @@ function tGuard(p,r){
 const VISIT_PRICE=15, EXPERT_PRICE=50;
 const key9=x=>{const d=String(x||'').replace(/\D/g,'');return d.length>=8?d.slice(-9):'';};
 const myKey=()=>key9(S.me&&S.me.phone);
+const savePhone=(uid,phone)=>S.db.doc('private/'+uid).set({phone:phone||'',wkey:key9(phone)},{merge:true});
+let phoneMoving=false;
+function movePhone(){ /* ancien compte : on déplace le numéro du profil (visible) vers la partie privée */
+  const m=S.me; if(!m||S.priv===undefined||!m._oldPhone||phoneMoving) return; phoneMoving=true;
+  const ph=S.priv.phone||m._oldPhone;
+  (S.priv.phone&&S.priv.wkey?Promise.resolve():savePhone(S.uid,ph))
+    .then(()=>S.db.doc('profiles/'+S.uid).update({phone:firebase.firestore.FieldValue.delete()}))
+    .catch(()=>{}).finally(()=>{phoneMoving=false;});
+}
 const isWatcher=p=>!!myKey()&&(p.watchKeys||[]).includes(myKey());
 const myVisit=p=>(p.visits||[]).find(x=>x.inspectorUid===S.uid&&x.status==='assignee'&&(x.showAt||0)<=Date.now());
 const isExpertOn=p=>(p.expertUids||[]).includes(S.uid);
@@ -1814,7 +1832,7 @@ function vExpertHome(){
     <div class="field"><label class="label" for="ea-dip">Ton diplôme ou ton numéro d'ordre</label><input id="ea-dip" required maxlength="80"></div>
     <button class="btn" type="submit">Envoyer ma demande</button>
     <p class="small muted" style="margin:0">L'administration vérifie ton diplôme avant de t'envoyer des dossiers.</p></form>`;
-  if(ex.status==='demande') return `<div class="stack"><div class="stack-s"><span class="label">Espace expert</span><h1>Demande envoyée</h1></div><p style="margin:0">L'administration vérifie ton diplôme (${esc(ex.dip)}). Tu recevras des dossiers dès que c'est validé.</p>${TEST?'<button class="btn ghost" data-a="ex-selfok">Valider ma demande (test)</button>':''}</div>`;
+  if(ex.status==='demande') return `<div class="stack"><div class="stack-s"><span class="label">Espace expert</span><h1>Demande envoyée</h1></div><p style="margin:0">L'administration vérifie ton diplôme (${esc(ex.dip)}). Tu recevras des dossiers dès que c'est validé.</p>${TEST&&S.admin?'<button class="btn ghost" data-a="ex-selfok">Valider ma demande (test)</button>':''}</div>`;
   const prj=allProjects().filter(isExpertOn);
   const mine=prj.map(p=>({p,n:p.steps.filter(s=>s.status==='litige'&&s.dispute&&s.dispute.expertUid===S.uid).length})).filter(x=>x.n);
   const done=prj.flatMap(p=>p.steps.filter(s=>s.dispute&&s.dispute.expertUid===S.uid&&s.dispute.decision).map(s=>({p,s})));
@@ -2111,7 +2129,7 @@ function vAdmin(){
       <button class="btn sm" type="submit">Ajouter</button></form>
     ${pros.length?`<div class="list">${pros.map(p=>`<div class="item"><div><div class="t">${esc(p.name)}${p.hidden?' · masqué':''}</div><div class="small muted">${esc(p.metier)} · ${esc(p.ville)}, ${esc(p.pays)}${p.rccm?' · '+esc(p.rccm):''}</div><div class="small ${p.verified?'verified':'unverified'}">${p.verified?'Vérifié':'Non vérifié'}</div>${p.idRequest?'<div class="small" style="color:var(--warn)">Demande de changement d\'identité</div>':''}${p.idUnlocked?'<div class="small muted">Identité débloquée (une fois)</div>':''}</div>
       <div class="stack-s" style="flex-shrink:0"><button class="btn ghost sm" data-a="adm-verify" data-v="${p.id}">${p.verified?'Retirer':'Vérifier'}</button><button class="btn ghost sm" data-a="adm-id" data-v="${p.id}" title="${esc((p.mmOp||'')+' '+(p.mmNum||'')+' · '+(p.mmName||'nom non indiqué'))}">${p.idVerified?'Identité ✓':'Vérifier l\'identité'}</button><button class="btn ghost sm" data-a="adm-caution" data-v="${p.id}">Caution${p.caution?' '+eur(p.caution):''}</button>${p.idRequest?`<button class="btn sm" data-a="adm-unlock" data-v="${p.id}">Débloquer</button>`:''}<button class="link" data-a="adm-hide" data-v="${p.id}">${p.hidden?'Réafficher':'Masquer'}</button></div></div>`).join('')}</div>`:'<div class="empty">Aucun pro.</div>'}`;
-  if(tab==='users') body=S.allProfiles.length?`<div class="list">${S.allProfiles.sort((a,b)=>b.createdAt-a.createdAt).map(u=>`<div class="item"><div><div class="t">${esc(u.name)}</div><div class="small muted">${esc(u.ville)}, ${esc(u.pays)} · ${esc(u.phone)}</div></div><span class="meta">${fdate(u.createdAt)}${u.proId?' · pro':''}</span></div>`).join('')}</div>`:'<div class="empty">Aucun compte.</div>';
+  if(tab==='users') body=S.allProfiles.length?`<div class="list">${S.allProfiles.sort((a,b)=>b.createdAt-a.createdAt).map(u=>`<div class="item"><div><div class="t">${esc(u.name)}</div><div class="small muted">${esc(u.ville)}, ${esc(u.pays)} · ${esc(((S.allPriv||{})[u.id]||{}).phone||u.phone||'')}</div></div><span class="meta">${fdate(u.createdAt)}${u.proId?' · pro':''}</span></div>`).join('')}</div>`:'<div class="empty">Aucun compte.</div>';
   if(tab==='tr'){const keys=Object.keys(I18N.ln), cur=(S.tr&&S.tr.ln)||{};
     body=`<form class="stack" data-f="tr"><p class="small muted" style="margin:0">Ce sont mes propositions de traduction. Corrige-les, puis enregistre : l'app en lingala change pour tout le monde.</p>
       ${keys.map((k,i)=>`<div class="field"><label class="label" for="tr-${i}" style="text-transform:none;letter-spacing:0">${esc(k)}</label><input id="tr-${i}" data-k="${esc(k)}" value="${esc(cur[k]||I18N.ln[k])}"></div>`).join('')}
@@ -2171,7 +2189,7 @@ document.addEventListener('click',async e=>{
     if(a==='accept'){
       const x=S.p.req,o=(S.p.offers||[]).find(y=>y.id===v); if(!x||!o||x.status!=='ouverte') return;
       const steps=offerSteps(o).map(st=>({name:st.name,amount:+st.amount||0,status:'attente',blockedAt:null,doneAt:null,paidAt:null}));
-      const ref=await S.db.collection('projects').add({title:x.title,pays:x.pays,ville:x.ville,clientUid:S.uid,clientName:S.me.name,proId:o.proId,proName:o.proName,createdAt:Date.now(),steps,fromRequest:x.id,reviewed:false,proReviewed:false,stopped:null});
+      const ref=await S.db.collection('projects').add({title:x.title,pays:x.pays,ville:x.ville,clientUid:S.uid,clientName:S.me.name,clientPhone:S.me.phone||'',proId:o.proId,proName:o.proName,createdAt:Date.now(),steps,fromRequest:x.id,reviewed:false,proReviewed:false,stopped:null});
       await S.db.doc('requests/'+x.id).update({status:'attribuee',chosenOfferId:o.id,projectId:ref.id});
       await S.db.doc('offers/'+o.id).update({status:'acceptee',projectId:ref.id});
       await S.db.doc('messages/'+ref.id).set({items:[{uid:'system',who:'Maison Mère',text:`Projet créé à partir de la proposition de ${o.proName} : ${eur(o.price)}${o.delay?', délai '+o.delay:''}.`,at:Date.now()}]});
@@ -2562,11 +2580,12 @@ document.addEventListener('submit',async e=>{
     if(f==='signup'){
       if(!val('su-name')||!val('su-phone')||!val('su-ville')){S.err='Remplis tous les champs.';return render();}
       const role=S.p.role==='pro'?'pro':'client';
-      await S.db.doc('profiles/'+S.uid).set({name:val('su-name'),phone:val('su-phone'),pays:val('su-pays'),ville:val('su-ville'),role,createdAt:Date.now(),proId:null,reviews:[]});
+      await savePhone(S.uid,val('su-phone'));
+      await S.db.doc('profiles/'+S.uid).set({name:val('su-name'),pays:val('su-pays'),ville:val('su-ville'),role,createdAt:Date.now(),proId:null,reviews:[]});
       S.mode=role;S.chosen=true;try{localStorage.setItem('mm-mode-'+S.uid,role);sessionStorage.setItem('mm-chosen-'+S.uid,'1');}catch(e){}
       if(role==='pro') return go('myfiche');
     }
-    if(f==='account'){await S.db.doc('profiles/'+S.uid).update({name:val('ac-name'),phone:val('ac-phone'),ville:val('ac-ville')});go('home');}
+    if(f==='account'){await savePhone(S.uid,val('ac-phone'));await S.db.doc('profiles/'+S.uid).update({name:val('ac-name'),ville:val('ac-ville')});go('home');}
     if(f==='newp'){
       const proId=val('np-pro'), pro=proById(proId);
       const steps=[0,1,2,3].map(i=>({name:val('np-s'+i),amount:parseInt(val('np-a'+i).replace(/\D/g,''),10)||0})).filter(s=>s.name)
@@ -2574,7 +2593,7 @@ document.addEventListener('submit',async e=>{
       if(!val('np-title')||!val('np-ville')){S.err='Donne un nom et une ville au projet.';return render();}
       if(proId&&!OK(pro)){S.err='Ce professionnel n\'est pas vérifié.';return render();}
       if(!steps.length){S.err='Ajoute au moins une étape, par exemple « Fondations ».';return render();}
-      const ref=await S.db.collection('projects').add({title:val('np-title'),pays:val('np-pays'),ville:val('np-ville'),clientUid:S.uid,clientName:S.me.name,proId:proId||null,proName:pro?pro.name:'',createdAt:Date.now(),steps,pricesStatus:proId?'attente_pro':'ok',reviewed:false,proReviewed:false,stopped:null});
+      const ref=await S.db.collection('projects').add({title:val('np-title'),pays:val('np-pays'),ville:val('np-ville'),clientUid:S.uid,clientName:S.me.name,clientPhone:S.me.phone||'',proId:proId||null,proName:pro?pro.name:'',createdAt:Date.now(),steps,pricesStatus:proId?'attente_pro':'ok',reviewed:false,proReviewed:false,stopped:null});
       go('project',{id:ref.id,tab:'steps'});
     }
     if(f==='fiche'){
