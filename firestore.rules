@@ -1,21 +1,62 @@
 rules_version = '2';
-// Maison Mère — règles de sécurité (version 02.11-b)
+// Maison Mère — règles de sécurité (version 03.11-a)
 // 1. Seul le client peut valider (payer) une étape.
 // 2. Chacun ne voit que ses chantiers ; les numéros de téléphone sont privés.
 // 3. Un prix accepté ne peut plus être changé en cachette.
+// 4. Photos, messages, commandes, offres : seulement les personnes concernées.
+// 5. Un avis = un vrai chantier ou une vraie commande ensemble ; on ne peut pas effacer un avis.
+// 6. Le compte admin doit avoir un email confirmé.
 // En cas de problème : copier le contenu de firestore-ancien.rules dans la console.
 service cloud.firestore {
   match /databases/{database}/documents {
 
     function signed()  { return request.auth != null; }
     function uid()     { return request.auth.uid; }
-    function isAdmin() { return signed() && request.auth.token.email == 'groupnpstar@gmail.com'; }
+    function isAdmin() { return signed() && request.auth.token.email == 'groupnpstar@gmail.com' && request.auth.token.email_verified == true; }
     function me()      { return get(/databases/$(database)/documents/profiles/$(uid())).data; }
     function myProId() { return me().get('proId', null); }
     function amExpert(){ return me().get('expertOk', false) == true; }
     function myWKey()  { return get(/databases/$(database)/documents/private/$(uid())).data.get('wkey', ''); }
     function now()     { return request.time.toMillis(); }
     function changed() { return request.resource.data.diff(resource.data).affectedKeys(); }
+    function prj(id)   { return get(/databases/$(database)/documents/projects/$(id)).data; }
+    function ord(id)   { return get(/databases/$(database)/documents/orders/$(id)).data; }
+
+    // la personne fait-elle partie de ce chantier ?
+    function seeProject(id) {
+      let d = prj(id);
+      return isAdmin() || d.clientUid == uid()
+        || (myProId() != null && (d.get('proId', null) == myProId() || d.get('guardProId', null) == myProId() || d.get('openVisit', false) == true))
+        || uid() in d.get('inspectorUids', []) || uid() in d.get('expertUids', [])
+        || (d.get('needExpert', false) == true && amExpert())
+        || (myWKey() != '' && myWKey() in d.get('watchKeys', []));
+    }
+
+    // un avis ajouté à la fin de la liste, signé, et lié à un vrai chantier / une vraie commande
+    function lastReview() { return request.resource.data.reviews[request.resource.data.reviews.size() - 1]; }
+    function oneMoreReview() {
+      return changed().hasOnly(['reviews'])
+        && request.resource.data.reviews.size() == resource.data.get('reviews', []).size() + 1
+        && request.resource.data.reviews[0:resource.data.get('reviews', []).size()] == resource.data.get('reviews', [])
+        && lastReview().uid == uid();
+    }
+    // avis du client sur un pro
+    function reviewOfPro(proId) {
+      let t = lastReview().tx.split(':');
+      return oneMoreReview() && (
+        (t[0] in ['step', 'prj'] && prj(t[1]).clientUid == uid() && prj(t[1]).proId == proId)
+        || (t[0] == 'g' && prj(t[1]).clientUid == uid() && prj(t[1]).guardHistory[int(t[2])].proId == proId)
+        || (t[0] == 'ord' && ord(t[1]).clientUid == uid() && ord(t[1]).sellerProId == proId));
+    }
+    // avis d'un pro sur un client
+    function reviewOfClient(u) {
+      let t = lastReview().tx.split(':');
+      return oneMoreReview() && (
+        (t[0] in ['step', 'prj'] && myProId() != null && prj(t[1]).clientUid == u && prj(t[1]).proId == myProId())
+        || (t[0] == 'g' && myProId() != null && prj(t[1]).clientUid == u && prj(t[1]).guardHistory[int(t[2])].proId == myProId())
+        || (t[0] == 'ord' && ord(t[1]).clientUid == u
+            && (ord(t[1]).get('sellerUid', null) == uid() || (myProId() != null && ord(t[1]).get('sellerProId', null) == myProId()))));
+    }
 
     // ---------- PROFILS (sans numéro de téléphone) ----------
     match /profiles/{u} {
@@ -26,15 +67,14 @@ service cloud.firestore {
         && request.resource.data.get('proId', null) == null;
       allow update: if isAdmin()
         || (signed() && u == uid()
+            && !changed().hasAny(['reviews'])
             && (!changed().hasAny(['phone']) || !('phone' in request.resource.data))
             && (!changed().hasAny(['expertOk']) || request.resource.data.expertOk == false)
             && (!changed().hasAny(['expert']) || request.resource.data.expert.status == 'demande')
             && (!changed().hasAny(['proId']) || request.resource.data.proId == null
                 || get(/databases/$(database)/documents/pros/$(request.resource.data.proId)).data.ownerUid == uid()))
-        // un autre membre peut seulement ajouter UN avis signé de son nom
-        || (signed() && u != uid() && changed().hasOnly(['reviews'])
-            && request.resource.data.reviews.size() == resource.data.get('reviews', []).size() + 1
-            && request.resource.data.reviews[request.resource.data.reviews.size() - 1].uid == uid());
+        // un pro peut seulement AJOUTER un avis sur un client avec qui il a travaillé
+        || (signed() && reviewOfClient(u));
       allow delete: if isAdmin();
     }
 
@@ -54,9 +94,7 @@ service cloud.firestore {
         || (signed() && resource.data.ownerUid == uid()
             && !changed().hasAny(['ownerUid','verified','verifiedAt','idVerified','idVerifiedAt','caution','idUnlocked','hidden','stats','reviews']))
         || (signed() && changed().hasOnly(['stats']))
-        || (signed() && changed().hasOnly(['reviews'])
-            && request.resource.data.reviews.size() == resource.data.get('reviews', []).size() + 1
-            && request.resource.data.reviews[request.resource.data.reviews.size() - 1].uid == uid());
+        || (signed() && reviewOfPro(id));
       allow delete: if isAdmin();
     }
 
@@ -85,8 +123,8 @@ service cloud.firestore {
           && (!ch.hasAny(['doneAt']) || (ch.hasAny(['status']) && b.status == 'fait'))
           && (!ch.hasAny(['code']) || (cl && a.status == 'attente' && b.status == 'bloque'))
           && (!ch.hasAny(['invoice']) || pr)
-          && (!ch.hasAny(['matPaid', 'matPaidAt']) || cl
-              || (pr && a.get('matPaidAt', null) == null && b.get('matPaid', 0) <= a.get('mat', 0) / 2 + 1))
+          // l'argent du matériel ne part que sur décision du client (ou de l'admin)
+          && (!ch.hasAny(['matPaid', 'matPaidAt']) || cl)
           && (!ch.hasAny(['dispute']) || cl || ex);
       }
       function stepAt(o, n, i, cl, pr, ex, ps, hasPro) {
@@ -168,6 +206,81 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // ---------- MESSAGES ET PHOTOS DU CHANTIER ----------
+    match /messages/{pid} {
+      allow read, write: if signed() && seeProject(pid);
+    }
+    match /photos/{id} {
+      allow read: if signed() && seeProject(resource.data.projectId);
+      allow create: if signed() && request.resource.data.uid == uid() && seeProject(request.resource.data.projectId);
+      allow update, delete: if isAdmin();
+    }
+    match /checkins/{id} {
+      allow read: if signed() && seeProject(resource.data.projectId);
+      allow create: if signed() && request.resource.data.uid == uid() && seeProject(request.resource.data.projectId);
+      allow update, delete: if isAdmin();
+    }
+
+    // ---------- DEMANDES DE TRAVAUX (visibles par les pros) ----------
+    match /requests/{id} {
+      allow read: if signed();
+      allow create: if signed() && request.resource.data.clientUid == uid();
+      allow update: if isAdmin()
+        || (signed() && resource.data.clientUid == uid() && !changed().hasAny(['clientUid']))
+        || (signed() && myProId() != null && changed().hasOnly(['offerCount'])
+            && request.resource.data.offerCount == resource.data.get('offerCount', 0) + 1);
+      allow delete: if isAdmin();
+    }
+
+    // ---------- OFFRES DE PRIX : le client et le pro concerné ----------
+    match /offers/{id} {
+      allow read: if isAdmin()
+        || (signed() && resource.data.clientUid == uid())
+        || (signed() && myProId() != null && resource.data.proId == myProId());
+      allow create: if signed() && request.resource.data.proUid == uid()
+        && myProId() != null && request.resource.data.proId == myProId()
+        && request.resource.data.status == 'envoyee';
+      allow update: if isAdmin()
+        || (signed() && resource.data.clientUid == uid() && changed().hasOnly(['status', 'projectId', 'msgN', 'lastMsgAt', 'lastMsgBy']))
+        || (signed() && myProId() != null && resource.data.proId == myProId() && changed().hasOnly(['msgN', 'lastMsgAt', 'lastMsgBy']));
+      allow delete: if isAdmin();
+    }
+    match /offerchats/{oid} {
+      allow read, write: if isAdmin() || (signed() && (
+        get(/databases/$(database)/documents/offers/$(oid)).data.clientUid == uid()
+        || get(/databases/$(database)/documents/offers/$(oid)).data.proUid == uid()
+        || (myProId() != null && get(/databases/$(database)/documents/offers/$(oid)).data.proId == myProId())));
+    }
+
+    // ---------- COMMANDES EN QUINCAILLERIE : l'acheteur et le vendeur ----------
+    match /orders/{id} {
+      function isBuyer()  { return resource.data.clientUid == uid(); }
+      function isSeller() { return resource.data.get('sellerUid', null) == uid()
+                                   || (myProId() != null && resource.data.get('sellerProId', null) == myProId()); }
+      function st0() { return resource.data.status; }
+      function st1() { return request.resource.data.status; }
+      allow read: if isAdmin()
+        || (signed() && resource.data.clientUid == uid())
+        || (signed() && resource.data.sellerUid == uid())
+        || (signed() && myProId() != null && resource.data.sellerProId == myProId());
+      allow create: if signed() && request.resource.data.clientUid == uid() && request.resource.data.status == 'bloque';
+      allow update: if isAdmin() || (signed()
+        && !changed().hasAny(['clientUid', 'sellerUid', 'sellerProId', 'storeId', 'productId', 'price', 'qty', 'fee', 'total', 'cur'])
+        && (
+          // l'acheteur : payer ou ouvrir un litige
+          (isBuyer() && changed().hasOnly(['status', 'paidAt', 'disputeAt', 'rvClient', 'msgN', 'lastMsgAt', 'lastMsgBy'])
+            && (!changed().hasAny(['status']) || (st0() in ['bloque', 'livre'] && st1() in ['paye', 'litige'])))
+          // le vendeur : dire « livré » avec une photo
+          || (isSeller() && changed().hasOnly(['status', 'deliveredAt', 'photo', 'rvSeller', 'msgN', 'lastMsgAt', 'lastMsgBy'])
+            && (!changed().hasAny(['status']) || (st0() == 'bloque' && st1() == 'livre'
+                && request.resource.data.deliveredAt > now() - 21600000 && request.resource.data.deliveredAt < now() + 21600000)))
+          // paiement automatique 7 jours après la livraison sans réponse
+          || ((isBuyer() || isSeller()) && changed().hasOnly(['status', 'paidAt', 'auto'])
+            && st0() == 'livre' && st1() == 'paye' && now() - resource.data.deliveredAt > 604800000)
+        ));
+      allow delete: if isAdmin();
+    }
+
     // ---------- RÉGLAGES DE L'APP ----------
     match /config/{id} {
       allow read: if true;
@@ -176,7 +289,7 @@ service cloud.firestore {
 
     // ---------- LE RESTE (inchangé pour l'instant : à revoir par le développeur) ----------
     match /{col}/{doc} {
-      allow read, write: if signed() && !(col in ['profiles', 'private', 'pros', 'projects', 'config']);
+      allow read, write: if signed() && !(col in ['profiles', 'private', 'pros', 'projects', 'config', 'messages', 'photos', 'checkins', 'requests', 'offers', 'offerchats', 'orders']);
     }
   }
 }

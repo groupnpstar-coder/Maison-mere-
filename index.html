@@ -352,19 +352,19 @@ const opts=(arr,sel)=>arr.map(x=>`<option${x===sel?' selected':''}>${esc(x)}</op
 const proById=id=>S.pros.find(p=>p.id===id);
 const allProjects=()=>{const m=new Map();[...S.allProjects,...S.myProjects,...S.proProjects,...(S.watchProjects||[]),...(S.visitProjects||[]),...(S.expertProjects||[])].forEach(p=>m.set(p.id,p));return [...m.values()];};
 const prjById=id=>allProjects().find(p=>p.id===id);
-const isVis=x=>!x.hidden||Date.now()-x.at>14*DAY;
-const vr=r=>(r||[]).filter(isVis);
+const isVis=(x,sh)=>!x.hidden||(sh||[]).includes(x.tx)||Date.now()-x.at>14*DAY;
+const vr=(r,sh)=>(r||[]).filter(x=>isVis(x,sh));
 const TEST=window.TEST_MODE!==false;
 const OK=x=>!!x&&!x.hidden&&(TEST||!!x.verified);
 const nv=x=>x&&!x.verified?' (non vérifié)':'';
-const avg=r0=>{const r=vr(r0);return r.length?(r.reduce((a,b)=>a+b.note,0)/r.length):0;};
+const avg=(r0,sh)=>{const r=vr(r0,sh);return r.length?(r.reduce((a,b)=>a+b.note,0)/r.length):0;};
 
 let viewUnsubs=[];
 function go(view,p){viewUnsubs.forEach(u=>u());viewUnsubs=[];S.view=view;S.p=p||{};S.err='';if(view==='req')watchReq();window.scrollTo(0,0);if(['market','estim','myfiche','home','store','mystore','search'].includes(view))ensureProducts();if(['market','store','mystore','search','home'].includes(view))ensureStores();watchProject();render();}
 function ensureProducts(){if(S.productsOn||!S.db)return;S.productsOn=true;S.db.collection('products').onSnapshot(q=>{S.products=q.docs.map(d=>Object.assign({id:d.id},d.data()));render();},()=>{});}
 
 /* ---------- boot ---------- */
-const APPV='02.11-b';
+const APPV='03.11-a';
 (function(){try{fetch('version.txt?t='+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.text():'').then(v=>{v=(v||'').trim();if(v&&v!==APPV){const k='mm-upd-'+v;let n=0;try{n=+sessionStorage.getItem(k)||0;sessionStorage.setItem(k,n+1);}catch(e){}if(n<2)location.replace(location.pathname+'?v='+encodeURIComponent(v)+location.hash);}}).catch(()=>{});}catch(e){}})();
 const SLIDE={i:0,k:0};
 function slideTick(first){
@@ -398,6 +398,8 @@ function start(u){
   const db=S.db;
   S.uid=u.uid; S.email=(u.email||'').toLowerCase(); S.me=undefined;
   S.admin=(window.ADMIN_EMAILS||[]).map(x=>String(x).toLowerCase()).includes(S.email);
+  S.adminUnverified=S.admin&&!u.emailVerified;
+  if(S.adminUnverified){let sent=false;try{sent=sessionStorage.getItem('mm-vmail')==='1';}catch(e){}if(!sent){u.sendEmailVerification().catch(()=>{});try{sessionStorage.setItem('mm-vmail','1');}catch(e){}}}
   /* numéro de téléphone : rangé à part, lisible seulement par la personne elle-même (et l'admin) */
   S.priv=undefined;
   db.doc('private/'+S.uid).onSnapshot(s=>{S.priv=s.exists?s.data():{};if(S.me&&S.priv.phone)S.me.phone=S.priv.phone;movePhone();watchExtra();render();},()=>{S.priv={};});
@@ -704,21 +706,21 @@ function vHome(){
 function vDir(){
   const q=(S.p.q||'').toLowerCase(), c=S.p.pays||'Tous';
   const list=S.pros.filter(p=>!p.hidden&&(c==='Tous'||p.pays===c)&&(!q||(p.name+' '+p.metier+' '+p.ville).toLowerCase().includes(q)))
-    .sort((a,b)=>(b.verified?1:0)-(a.verified?1:0)||avg(b.reviews)-avg(a.reviews));
+    .sort((a,b)=>(b.verified?1:0)-(a.verified?1:0)||avg(b.reviews,b.reviewsShown)-avg(a.reviews,a.reviewsShown));
   return `<div class="stack">
     <button class="link" data-a="home">Retour</button>
     <h1>Professionnels</h1>
     <div class="field"><label class="label" for="dir-q">Métier, nom ou ville</label><input id="dir-q" data-a="dirq" value="${esc(S.p.q||'')}" data-fresh="1"></div>
     <div class="field"><label class="label" for="dir-pays">Pays</label><select id="dir-pays" data-a="dirpays" data-fresh="1">${opts(['Tous',...PAYS],c)}</select></div>
     ${list.length?`<div class="list">${list.map(p=>`<button class="item" data-a="pro" data-v="${p.id}" style="justify-content:flex-start"><span style="align-self:flex-start">${avatar(proPhoto(p),p.name,48)}</span><div><div class="t">${esc(p.name)}</div><div class="small muted">${esc(p.metier)} · ${esc(p.ville)}, ${esc(p.pays)}</div>
-      ${vr(p.reviews).length?`<div class="small">★ ${avg(p.reviews).toFixed(1).replace('.',',')}/5 · ${vr(p.reviews).length} avis</div>`:''}${badgesHtml(p,true)}</div></button>`).join('')}</div>`
+      ${vr(p.reviews,p.reviewsShown).length?`<div class="small">★ ${avg(p.reviews,p.reviewsShown).toFixed(1).replace('.',',')}/5 · ${vr(p.reviews,p.reviewsShown).length} avis</div>`:''}${badgesHtml(p,true)}</div></button>`).join('')}</div>`
     :`<div class="empty">Aucun professionnel trouvé. Essaie un autre pays ou un autre mot.</div>`}
   </div>`;
 }
 
 function vProFiche(){
   const p=proById(S.p.id); if(!p) return `<div class="stack"><button class="link" data-a="go" data-v="dir">Retour</button><p>Fiche introuvable.</p></div>`;
-  const r=vr(p.reviews);
+  const r=vr(p.reviews,p.reviewsShown);
   return `<div class="stack">
     <button class="link" data-a="go" data-v="dir">Retour</button>
     <div class="stack-s">${avatar(proPhoto(p),p.name,88)}<span class="label">${esc(p.metier)} · ${esc(p.ville)}, ${esc(p.pays)}</span><h1>${esc(p.name)}</h1>
@@ -732,7 +734,7 @@ function vProFiche(){
       return `<a class="btn ghost" href="https://wa.me/${n}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="12" height="10"></rect><path d="M15 11l6-3v8l-6-3"></path></svg>Appel vidéo WhatsApp</a>
       <p class="small muted" style="margin:-8px 0 0">Vois le pro et ses chantiers en vidéo avant de le choisir. WhatsApp s'ouvre avec un message prêt, puis appuie sur la caméra.</p>`;})()}
     <div class="stack-s"><span class="label">Avis de clients ayant payé via l'app${r.length?' · '+avg(r).toFixed(1).replace('.',',')+'/5':''}</span>
-    ${reviewsList(p.reviews)}</div>
+    ${reviewsList(p.reviews,p.reviewsShown)}</div>
     ${OK(p)?`<button class="btn" data-a="newwith" data-v="${p.id}">Choisir pour un projet</button>`:`<p class="notice">Seuls les professionnels vérifiés peuvent recevoir de l'argent dans l'app.</p>`}
   </div>`;
 }
@@ -830,7 +832,7 @@ function matActions(p,st,i,r){
   if(st.matMode!=='pro'){
     const code=st.code||'----';
     if(r==='client') return `<div class="notice">Code de livraison : <b style="font-weight:700;letter-spacing:.2em;color:var(--fg)">${esc(code)}</b>. Ne le donne pas au pro. Quand le camion arrive, fais un appel vidéo WhatsApp avec le livreur ou le pro, regarde le matériel, puis donne le code au livreur.</div>${TEST?codeForm(i):''}`;
-    return `<p class="small muted" style="margin:0">${r==='pro'?'Quand le matériel arrive, appelle le client en vidéo : c\'est lui qui donne le code au livreur.':'Le livreur tape le code donné par le client.'} La quincaillerie reçoit la moitié des matériaux et le transport à la livraison, le reste quand l'étape est validée.</p>${(TEST||S.admin)?codeForm(i):''}`;
+    return `<p class="small muted" style="margin:0">${r==='pro'?'Quand le matériel arrive, appelle le client en vidéo : c\'est lui qui donne le code au livreur.':'Le livreur tape le code donné par le client.'} La quincaillerie reçoit la moitié des matériaux et le transport à la livraison, le reste quand l'étape est validée.</p>${S.admin?codeForm(i):''}`;
   }
   if(r==='pro'){
     if(st.invoice) return `<p class="small muted" style="margin:0">Facture envoyée : ${eur(st.invoice.amount)}. En attente de la vérification du client.</p>`;
@@ -1061,7 +1063,7 @@ function vMyFiche(){
 }
 
 function vAccount(){
-  const r=vr(S.me.reviews);
+  const r=vr(S.me.reviews,S.me.reviewsShown);
   return `<form class="stack" data-f="account">
     <button class="link" type="button" data-a="home">Retour</button>
     <h1>Mon compte</h1>
@@ -1077,7 +1079,7 @@ function vAccount(){
     <button class="link" type="button" data-a="showintros">Réafficher les explications</button>
     <button class="btn ghost" type="button" data-a="logout">Se déconnecter</button>
     <div class="stack-s"><span class="label">Avis des pros sur toi${r.length?' · '+avg(r).toFixed(1).replace('.',',')+'/5':''}</span>
-    ${reviewsList(S.me.reviews)}</div>
+    ${reviewsList(S.me.reviews,S.me.reviewsShown)}</div>
   </form>`;
 }
 
@@ -1089,8 +1091,13 @@ function proReqs(me){
 function watchReq(){
   const id=S.p.id; if(!id||!S.db) return;
   S.p.offers=null; S.p.req=null;
-  viewUnsubs.push(S.db.doc('requests/'+id).onSnapshot(d=>{S.p.req=d.exists?Object.assign({id:d.id},d.data()):false;render();},()=>{}));
-  viewUnsubs.push(S.db.collection('offers').where('requestId','==',id).onSnapshot(q=>{S.p.offers=q.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>a.price-b.price);render();},()=>{}));
+  let offSub=false;
+  viewUnsubs.push(S.db.doc('requests/'+id).onSnapshot(d=>{S.p.req=d.exists?Object.assign({id:d.id},d.data()):false;
+    if(!S.p.req){S.p.offers=[];}
+    else if(!offSub){offSub=true;let q=S.db.collection('offers').where('requestId','==',id);
+      if(S.p.req.clientUid===S.uid) q=q.where('clientUid','==',S.uid); else if(!S.admin) q=q.where('proId','==',(S.me&&S.me.proId)||'-');
+      viewUnsubs.push(q.onSnapshot(q=>{S.p.offers=q.docs.map(d=>Object.assign({id:d.id},d.data())).sort((a,b)=>a.price-b.price);render();},()=>{S.p.offers=[];render();}));}
+    render();},()=>{S.p.req=false;render();}));
 }
 function watchChat(oid){
   if(S.p.chatId===oid) return; S.p.chatId=oid; S.p.chat=[];
@@ -1160,7 +1167,7 @@ function vReq(){
     return `<div class="stack">${head}
       <span class="label">${offers.length} proposition${offers.length>1?'s':''}</span>
       ${offers.length?offers.map(o=>{const pr=proById(o.proId);const acc=x.chosenOfferId===o.id;return `<div class="step${acc?' current':''}">
-        <div class="between"><div class="who" style="align-items:flex-start">${avatar(proPhoto(pr),o.proName,44)}<div style="min-width:0"><div class="t" style="font-weight:500">${esc(o.proName)}</div>${badgesHtml(pr,true)}${pr&&vr(pr.reviews).length?`<div class="small">★ ${avg(pr.reviews).toFixed(1).replace('.',',')}/5 · ${vr(pr.reviews).length} avis</div>`:''}</div></div>
+        <div class="between"><div class="who" style="align-items:flex-start">${avatar(proPhoto(pr),o.proName,44)}<div style="min-width:0"><div class="t" style="font-weight:500">${esc(o.proName)}</div>${badgesHtml(pr,true)}${pr&&vr(pr.reviews,pr.reviewsShown).length?`<div class="small">★ ${avg(pr.reviews,pr.reviewsShown).toFixed(1).replace('.',',')}/5 · ${vr(pr.reviews,pr.reviewsShown).length} avis</div>`:''}</div></div>
         <div style="text-align:right;flex-shrink:0"><div class="big" style="font-size:26px">${eur(o.price)}</div><div class="small muted">${esc(o.delay||'')}</div></div></div>
         ${o.note?`<p class="small" style="margin:0;white-space:pre-line">${esc(o.note)}</p>`:''}
         <div class="small muted">${offerSteps(o).map(st=>esc(st.name)+' : '+eur(st.amount)).join(' · ')}</div>
@@ -1232,25 +1239,25 @@ function rvForm(kind,v,x,title,who){
     <p class="meta" style="margin:0">Ton avis reste confidentiel jusqu'à ce que l'autre personne publie le sien, ou pendant 14 jours maximum. Passé ce délai, il devient automatiquement public et ne peut plus être modifié ni supprimé.</p>
     <button class="btn sm" type="submit"${n?'':' disabled'}>Publier l'avis</button></form>`;
 }
-function reviewsList(all){
-  const r=vr(all), pend=(all||[]).length-r.length;
+function reviewsList(all,sh){
+  const r=vr(all,sh), pend=(all||[]).length-r.length;
   const note=pend?`<p class="meta" style="margin:0">${pend} avis en attente : ${pend>1?'ils seront visibles':'il sera visible'} quand les deux personnes auront noté, ou après 14 jours.</p>`:'';
   return note+(r&&r.length?`<div class="list">${r.slice().reverse().map(x=>`<div class="item"><div><div class="t">${x.note}/5 · ${esc(x.name||'')}</div>${x.about?`<div class="meta">${esc(x.about)}</div>`:''}${x.text?`<div class="small">${esc(x.text)}</div>`:''}</div><span class="meta">${fdate(x.at)}</span></div>`).join('')}</div>`:(pend?'':'<p class="small muted" style="margin:0">Pas encore d\'avis.</p>'));
 }
 function vClient(){
   const c=S.p.data;
   if(!c) return `<div class="stack"><button class="link" data-a="home">${t('Retour')}</button><p class="muted">Profil introuvable.</p></div>`;
-  const r=vr(c.reviews);
+  const r=vr(c.reviews,c.reviewsShown);
   return `<div class="stack"><button class="link" data-a="back">${t('Retour')}</button>
     <div class="stack-s">${avatar(c.photo,c.name,88)}<span class="label">${t('Profil du client')} · ${esc(c.ville)}, ${esc(c.pays)}</span><h1>${esc(c.name)}</h1>
     <span class="small muted">Membre depuis le ${fdate(c.createdAt)}${r.length?' · '+avg(r).toFixed(1).replace('.',',')+'/5 · '+r.length+' avis':''}</span></div>
-    <div class="stack-s"><span class="label">${t('Avis')} des professionnels</span>${reviewsList(c.reviews)}</div></div>`;
+    <div class="stack-s"><span class="label">${t('Avis')} des professionnels</span>${reviewsList(c.reviews,c.reviewsShown)}</div></div>`;
 }
 
 /* ---------- badges ---------- */
 function badges(p){
   if(!p) return [];
-  const r=vr(p.reviews), st=p.stats||{}, out=[];
+  const r=vr(p.reviews,p.reviewsShown), st=p.stats||{}, out=[];
   out.push(p.verified?t('Vérifié'):t('Non vérifié'));
   if(r.length>=3&&avg(r)>=4.5) out.push(t('Bien noté'));
   if((st.paid||0)>=5&&!(st.lost||0)) out.push(t('Fiable')+' · '+st.paid+' étapes');
@@ -2143,6 +2150,7 @@ function vAdmin(){
   if(tab==='bugs') body=S.bugs.length?`<div class="list">${S.bugs.map(b=>`<div class="item"><div><div class="small">${esc(b.text)}</div><div class="meta">${esc(b.who)} · ${ftime(b.at)}</div></div></div>`).join('')}</div>`:'<div class="empty">Aucun bug signalé pour l\'instant.</div>';
   return `<div class="stack">
     <div class="stack-s"><span class="label">Visible seulement par toi</span><h1>Espace admin</h1></div>
+    ${S.adminUnverified?`<div class="notice" style="border:2px solid var(--warn)"><b>Confirme ton adresse email.</b> Pour protéger ton compte admin, le serveur exige que ton email soit confirmé. Ouvre l'email de Firebase dans ta boîte ${esc(S.email)} et clique sur le lien, puis reviens ici et recharge la page. <button class="btn ghost sm" data-a="adm-mail">Renvoyer l'email</button></div>`:''}
     ${planCard()}
     <div class="tabs" role="tablist">${tabs.map(t=>`<button role="tab" aria-selected="${t[0]===tab}" data-a="atab" data-v="${t[0]}">${t[1]}</button>`).join('')}</div>
     ${body}
@@ -2294,6 +2302,7 @@ document.addEventListener('click',async e=>{
       await S.db.doc('projects/'+p.id).update({guard:null,guardHistory:[...(p.guardHistory||[]),{proId:g.proId,proName:g.proName,startAt:g.startAt,endAt:Date.now(),present:stt.present,expected:stt.expected,amount:stt.amount}]});
       await bumpPro(g.proId,'paid');
       await sysMsg(p.id,`Gardien ${g.proName} : mois clôturé, ${stt.present}/${stt.expected} pointages, ${eur(stt.amount)} versés, ${eur(g.salary-stt.amount)} rendus au client.`);return;}
+    if(a==='adm-mail'){const u=firebase.auth().currentUser;if(u)await u.sendEmailVerification().catch(()=>{});S.err='';alert('Email envoyé à '+S.email);return;}
     if(a==='check'){const cur=!!(S.me.checks&&S.me.checks[v]);await S.db.doc('profiles/'+S.uid).update({['checks.'+v]:!cur});return;}
     if(a==='adm-id'&&S.admin){const pr=proById(v);if(pr){if(!pr.idVerified&&!confirm(`Le nom sur le compte ${pr.mmOp||''} ${pr.mmNum||''} est-il bien « ${pr.mmName||'?'} », comme sur la pièce d'identité ?`))return;await S.db.doc('pros/'+v).update({idVerified:!pr.idVerified,idVerifiedAt:Date.now()});}return;}
     if(a==='adm-caution'&&S.admin){const pr=proById(v);if(pr){const x=prompt('Caution déposée par '+pr.name+' (€). 0 pour retirer.',pr.caution||0);if(x!==null){await S.db.doc('pros/'+v).update({caution:Math.max(0,parseInt(x,10)||0)});}}return;}
@@ -2732,7 +2741,7 @@ document.addEventListener('submit',async e=>{
       if(kind==='step-c'||kind==='step-p'){const pr=prjById(v),st=pr.steps[+x];tx='step:'+v+':'+x;other=kind==='step-c'?!!st.rvPro:!!st.rvClient;mine=kind==='step-c'?'profiles/'+pr.clientUid:'pros/'+pr.proId;}
       if(kind==='ord-c'||kind==='ord-s'){const o=[...S.myOrders,...S.sellerOrders].find(y=>y.id===v);tx='ord:'+v;other=kind==='ord-c'?!!o.rvSeller:!!o.rvClient;mine=kind==='ord-c'?'profiles/'+o.clientUid:'pros/'+o.sellerProId;}
       if(kind==='g-c'||kind==='g-g'){const pr=prjById(v),h=pr.guardHistory[+x];tx='g:'+v+':'+x;other=kind==='g-c'?!!h.rvGuard:!!h.rvClient;mine=kind==='g-c'?'profiles/'+pr.clientUid:'pros/'+h.proId;}
-      if(other){const ref=S.db.doc(mine);const d=await ref.get();if(d.exists){await ref.update({reviews:(d.data().reviews||[]).map(y=>y.tx===tx?Object.assign({},y,{hidden:false}):y)});}}
+      if(other){await S.db.doc(mine).update({reviewsShown:firebase.firestore.FieldValue.arrayUnion(tx)}).catch(()=>{});}
       const add=async(path,about)=>{const ref=S.db.doc(path);const d=await ref.get();if(!d.exists)return;await ref.update({reviews:[...(d.data().reviews||[]),{tx,hidden:!other,uid:S.uid,name:kind==='step-p'?(prjById(v)||{}).proName:kind==='ord-s'?((S.sellerOrders.find(o=>o.id===v)||{}).sellerName):kind==='g-g'?((proById(S.me.proId)||{}).name):S.me.name,note:n,text,about,at:Date.now()}]});};
       if(kind==='step-c'||kind==='step-p'){const pr=prjById(v);const i=+x;const st=pr.steps[i];
         await add(kind==='step-c'?'pros/'+pr.proId:'profiles/'+pr.clientUid,st.name+' · '+pr.title);
@@ -2821,8 +2830,8 @@ document.addEventListener('submit',async e=>{
     if((f==='rv'||f==='rc')&&p){
       const n=S.p[f+'n']; if(!n) return;
       const text=val(f+'-text');
-      if(f==='rv'){const pro=proById(p.proId);if(pro){await S.db.doc('pros/'+pro.id).update({reviews:[...(pro.reviews||[]),{uid:S.uid,name:S.me.name,note:n,text,at:Date.now()}]});}await S.db.doc('projects/'+p.id).update({reviewed:true});}
-      if(f==='rc'){const ref=S.db.doc('profiles/'+p.clientUid);const s=await ref.get();if(s.exists){await ref.update({reviews:[...(s.data().reviews||[]),{uid:S.uid,name:p.proName,note:n,text,at:Date.now()}]});}await S.db.doc('projects/'+p.id).update({proReviewed:true});}
+      if(f==='rv'){const pro=proById(p.proId);if(pro){await S.db.doc('pros/'+pro.id).update({reviews:[...(pro.reviews||[]),{tx:'prj:'+p.id,uid:S.uid,name:S.me.name,note:n,text,at:Date.now()}]});}await S.db.doc('projects/'+p.id).update({reviewed:true});}
+      if(f==='rc'){const ref=S.db.doc('profiles/'+p.clientUid);const s=await ref.get();if(s.exists){await ref.update({reviews:[...(s.data().reviews||[]),{tx:'prj:'+p.id,uid:S.uid,name:p.proName,note:n,text,at:Date.now()}]});}await S.db.doc('projects/'+p.id).update({proReviewed:true});}
     }
   }catch(err){S.err=err&&err.code==='quota_exceeded'?'La base de test est pleine.':'Enregistrement impossible pour le moment. Réessaie.';render();}
 });
